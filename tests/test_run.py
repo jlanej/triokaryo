@@ -73,9 +73,12 @@ def test_sex_chromosomes_and_sex_check(run, mock):
     k = s["child_karyotype"]
     main = k.split("/")[-1]
     assert k.startswith("mos ") and main.startswith("47,XY,") and main.endswith(",+21mat(MI)"), k            # one constitutional whole-chromosome gain
-    assert re.search(r"del\(2\)\(100\.\d-10[56]\.\dMb\)pat,upd\(7\)mat\(iso\),dup\(10\)\(q:\d+\.\d-133\.8Mb\)pat,upd\(15\)mat\(hetero\),del\(18\)\(55\.\d-80\.4Mb\)pat", main), main
-    assert "/48,XY,+12pat(MII/mit)[0.30]/" in k and re.search(r"47,XY,loh\(6\)\(p:0\.0-59\.\dMb\)mat\[0\.[34]\d\]", k), k
-    assert re.fullmatch(r"46,XY,del\(2\)\(100\.\d-10[56]\.\dMb\),dup\(10\)\(q:\d+\.\d-133\.8Mb\)", s["father_karyotype"]), s["father_karyotype"]
+    # cytogenetic bands from the site-resolution boundaries: the inherited 10q gain's refined start lands in a centromeric band (p11.1 or q11.1)
+    assert re.search(r"del\(2\)\(q11\.2q12\.[12]\)pat,upd\(7\)mat\(iso\),dup\(10\)\((p11\.1|q11\.1|q11\.2\d)q26\.3\)pat,upd\(15\)mat\(hetero\),del\(18\)\(q21\.[12]q23\)pat", main), main
+    assert "/48,XY,+12pat(MII/mit)[0.30]/" in k and re.search(r"47,XY,loh\(6\)\(p25\.3p11\.1\)mat\[0\.[34]\d\]", k), k
+    assert re.fullmatch(r"46,XY,del\(2\)\(q11\.2q12\.[12]\),dup\(10\)\((p11\.1|q11\.1|q11\.2\d)q26\.3\)", s["father_karyotype"]), s["father_karyotype"]
+    (e2,) = [e for e in run["events"] if e.sample == "KID" and e.chrom == "chr2"]
+    assert e2.bands.startswith("q11.2") and all(e.bands for e in run["events"])
     assert re.fullmatch(r"mos 47,XX,\+8\[0\.1\d\]/46,XX", s["mother_karyotype"]), s["mother_karyotype"]
 
 

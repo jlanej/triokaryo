@@ -219,18 +219,30 @@ def _short_origin(e):
     return "mat" if (j < 0 or (0 <= i < j)) else "pat"
 
 
-def _coords(e):
+def event_bands(e, genome):
+    """The cytogenetic bands an event spans, from its site-resolution boundaries where available ('' without a band table)."""
+    a = e.start_fine if np.isfinite(e.start_fine) else e.start
+    b = e.end_fine if np.isfinite(e.end_fine) else e.end
+    return genome.band_range(e.chrom, int(a), int(b)) if genome is not None else ""
+
+
+def _coords(e, genome=None):
+    """A segment's extent for the karyotype string: its bands (ISCN) when the genome carries a band table, else Mb."""
+    bands = e.bands or event_bands(e, genome)
+    if bands:
+        return bands
     a = e.start_fine if np.isfinite(e.start_fine) else e.start
     b = e.end_fine if np.isfinite(e.end_fine) else e.end
     return "%s%.1f-%.1fMb" % ((e.span + ":") if e.span in ("p", "q") else "", a / 1e6, b / 1e6)
 
 
-def karyotype_string(events, complement, chrom_order):
+def karyotype_string(events, complement, chrom_order, genome=None):
     """An ISCN-like summary of one member. The main line is the modal number and sex-chromosome complement, annotated for a
     constitutional sex-chromosome aneuploidy with the parent of the extra or lost copy and the meiotic stage (47,XXY(mat,MI)),
-    followed by the constitutional autosomal terms: +N / -N with mat/pat and the stage, upd(N)mat(iso|hetero), roh(N)(a-bMb),
-    loh/dup/del(N)(a-bMb) with mat/pat. Each mosaic event forms its own line relative to the base complement, with its cell
-    fraction in brackets: mos 47,XXY(pat)[0.40]/46,XY. A term ending in ? is a call the phased track doubts."""
+    followed by the constitutional autosomal terms: +N / -N with mat/pat and the stage, upd(N)mat(iso|hetero), roh(N)(bands),
+    loh/dup/del(N)(bands) with mat/pat; the bands are cytogenetic (q22.1q31.1) with a band table, else Mb. Each mosaic event
+    forms its own line relative to the base complement, with its cell fraction in brackets: mos 47,XXY(pat)[0.40]/46,XY. A
+    term ending in ? is a call the phased track doubts."""
     comp = complement or "?"
     events = sorted(events, key=lambda e: (chrom_order.get(e.chrom, 99), e.start))
     is_mos = lambda e: np.isfinite(e.f) and e.f < 0.9  # noqa: E731
@@ -258,13 +270,13 @@ def karyotype_string(events, complement, chrom_order):
         if e.type == "UPD" or (e.type == "LOH" and e.span == "whole" and "isodisomy" in e.note):
             term = "upd(%s)%s(%s)" % (n, o, "hetero" if e.type == "UPD" else "iso")
         elif e.type == "LOH" and "run of homozygosity" in e.note:
-            term = "roh(%s)(%s)" % (n, _coords(e))
+            term = "roh(%s)(%s)" % (n, _coords(e, genome))
         elif e.type == "LOH":
-            term = "loh(%s)(%s)%s" % (n, _coords(e), o)
+            term = "loh(%s)(%s)%s" % (n, _coords(e, genome), o)
         elif e.span == "whole":
             term = "%s%s%s%s" % ("+" if e.type == "gain" else "-", n, o, "(%s)" % stg if stg else "")
         else:
-            term = "%s(%s)(%s)%s" % ("dup" if e.type == "gain" else "del", n, _coords(e), o)
+            term = "%s(%s)(%s)%s" % ("dup" if e.type == "gain" else "del", n, _coords(e, genome), o)
         term += doubt
         if mos:
             m2 = modal + (1 if (autosomal_whole(e) and e.type == "gain") else -1 if autosomal_whole(e) else 0)

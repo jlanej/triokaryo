@@ -19,7 +19,9 @@ A call is *confident* when DP ≥ `--min-dp` (8) and GQ ≥ `--min-gq` (20).
 ## Bins and per-bin statistics
 
 Fixed-width bins from each chromosome start. Per bin and member: the number of sites with depth; the **depth**, the
-median DP over them; the numbers of confident calls and of confident heterozygous calls; the **heterozygosity rate**,
+20% trimmed mean of DP over them (the mean of the central 60% of the sites' depths: robust to paralogous sites, and
+continuous where the median of hundreds of integer depths is quantised to steps of one read, which would quantise the
+LRR in steps of about 1/(depth ln 2) and the depth-based cell fraction in steps of 2/depth); the numbers of confident calls and of confident heterozygous calls; the **heterozygosity rate**,
 heterozygous over confident calls; and the **band deviation**, the median |BAF − 1/2| over the heterozygous sites
 when there are at least five. **LRR** = log2(depth / m), where m is the member's median depth over autosomal bins
 with ≥ 20 sites.
@@ -47,7 +49,10 @@ correction, when requested, is applied to the panel-corrected LRR.
 ## Segmentation of the depth track
 
 Per member and chromosome, over unmasked bins with ≥ 20 sites (`min_sites`). The noise scale σ is 1.4826 × MAD of the
-first differences, divided by √2. Binary segmentation splits recursively at the position maximising
+first differences, divided by √2, but never below the counting noise of the bin depth (about 1.1 √(depth/sites) reads in
+log2 units: a uniform, deeply sampled genome has first differences that are mostly zero, and a robust scale of zero
+would disable the segmentation). The same floor applies to the depth's standard error in the phased scan's typing and
+to the step fit's penalty. Binary segmentation splits recursively at the position maximising
 |mean(left) − mean(right)| / (σ √(1/n_L + 1/n_R)) while the statistic is ≥ `--z` (5) and both sides hold ≥ `--min-len`
 (5) bins, to at most 20 segments per chromosome. Each boundary is then moved within ±4 bins to the position minimising
 the two adjacent segments' within-segment sums of squares, and adjacent segments whose means differ by less than
@@ -92,10 +97,18 @@ VCF's Y sites has 0 Y copies; without Y records in the VCF the Y is unknown. The
 XXY, X, XYY, XXX, ...) is compared with the pedigree sex (`sex_check`; `x_check` keeps the X-only wording). Read
 against the autosomes alone, a male's Y carries a mappability deficit of roughly 5–10%, so the raw Y copy number of a
 normal male is slightly under 1. A reference panel corrects it: `triokaryo panel` writes each genome's X and Y on the
-diploid scale (a male's X shifted up by its own median; a Y with depth shifted up by exactly one unit, so that the
-panel's Y rows hold the male level with its deficit, which then cancels for a member as the X deficit does). A panel
+diploid scale, a one-copy X or Y (median LRR under −0.5) shifted up by exactly one unit, so that the rows hold each
+chromosome's level with its mappability deficit whatever the genome's sex and the deficit cancels for a member. A panel
 written before this convention holds its Y rows at the one-copy level and is lifted by one unit when loaded. Y bins
-need three panel genomes rather than five, since only males contribute. The Y is not segmented. Without a panel, the
+need three panel genomes rather than five, since only males contribute. The Y is not segmented.
+
+**Mosaic loss of Y in a father without a son.** The father/son ratio is unavailable, and without a panel the Y deficit
+and a loss are confounded, so only a deviation of 0.25 or more is reported. A panel built from the cohort's own runs
+supplies the male Y level: `triokaryo panel --runs 'out/*' --roles father,child --out cohort.panel.tsv` takes every
+father and son of a first pass (three or more males are needed for the Y rows; `triokaryo panel` reports how many
+genomes carried a Y), and a second pass with `--panel cohort.panel.tsv` reads each father's Y against it. The
+estimate is relative to the cohort's median male; in a cohort of older fathers it is a loss relative to that median.
+Without a panel, the
 X is corrected within the trio: the median, over the members with a pedigree or Y-implied sex, of the deviation of
 their X level (log2 of raw copies over 2) from its expectation (one copy for a male, two for a female) is subtracted
 from every member's X (`x_offset_trio`). This removes the X's mappability deficit of about 5–10% relative to the
@@ -221,13 +234,15 @@ Each member receives an ISCN-like summary (`karyotype` in the summary and on the
 number (44 plus the complement, plus constitutional whole-chromosome gains and minus losses) and the sex-chromosome
 complement, annotated for a constitutional sex-chromosome aneuploidy with the parent of the extra or lost copy and the
 meiotic stage, e.g. `47,XXY(mat,MI)`, `47,XXX(pat,MII)`, `45,X(pat)`; then the constitutional autosomal terms in
-chromosome order: `+21mat(MI)`, `-18`, `upd(7)mat(iso)`, `upd(15)mat(hetero)`, `roh(10)(23.7-34.2Mb)`,
-`loh(6)(p:0.0-59.8Mb)mat`, `dup(13)(q:87.6-114.4Mb)`, `del(2)(140.7-173.2Mb)pat` (coordinates at site resolution
-where available, else bin edges). Each mosaic event (cell fraction under 0.9) forms its own line relative to the base
-complement with its cell fraction in brackets, e.g. `mos 47,XXY(pat)[0.40]/46,XY`, `mos 45,X[0.30]/46,XY` for a mosaic
-loss of Y, `mos 47,XY,+12pat(MII/mit)[0.30]/46,XY`; a mosaic line carries the modal number of the constitutional
-karyotype but lists only its own term. `mat`/`pat` name the parent of the extra, lost or retained copy; `MI`, `MII`
-and `MII/mit` abbreviate the stage; a term ending in `?` is a depth call the phased track doubts.
+chromosome order: `+21mat(MI)`, `-18`, `upd(7)mat(iso)`, `upd(15)mat(hetero)`, `roh(10)(p12.2p11.22)`,
+`loh(6)(p25.3p11.1)mat`, `dup(13)(q31.2q34)`, `del(2)(q22.1q31.1)pat`. Segments are given by their cytogenetic bands
+(GRCh38, UCSC cytoBand, shipped with the package; the `bands` column of every event) from the site-resolution
+boundaries where available, else the bin edges; without a band table the Mb coordinates are written instead. Each
+mosaic event (cell fraction under 0.9) forms its own line relative to the base complement with its cell fraction in
+brackets, e.g. `mos 47,XXY(pat)[0.40]/46,XY`, `mos 45,X[0.30]/46,XY` for a mosaic loss of Y,
+`mos 47,XY,+12pat(MII/mit)[0.30]/46,XY`; a mosaic line carries the modal number of the constitutional karyotype but
+lists only its own term. `mat`/`pat` name the parent of the extra, lost or retained copy; `MI`, `MII` and `MII/mit`
+abbreviate the stage; a term ending in `?` is a depth call the phased track doubts.
 
 ## Parent of origin from informative sites
 
@@ -267,6 +282,17 @@ A child's LOH with f ≥ 0.8 is a uniparental isodisomy only when it carries Men
 Without such errors it is a run of homozygosity (both copies identical by descent, the parents sharing the haplotype)
 and no parent of origin is given. A parent's LOH with f ≥ 0.8 is annotated as a run of homozygosity unless the depth
 indicates otherwise.
+
+## Calibration
+
+`triokaryo calibrate` describes performance without changing the method: for each cell fraction and depth of a grid,
+one simulated trio carries a gain, a loss and a copy-neutral LOH of each size on separate autosomes (the duplicated,
+lost or replaced copy paternal; each event starts 20 Mb into the q arm). A planted event is detected when a child's
+call of the same type intersects at least half of it; the row records the source, the three cell-fraction estimates
+and whether the parent of origin matched. `calibration.md` tabulates the detection rate by type, size and cell
+fraction per depth and the median absolute error of each estimate; the figure shows the same grid. The simulated site
+density matters: the phased scan and the site-resolution boundaries scale with it, and real WGS carries about 1,000
+PASS SNVs per Mb against the simulator's default 60.
 
 ## Supplied events
 

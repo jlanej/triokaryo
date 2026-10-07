@@ -40,3 +40,36 @@ def test_shipped_panel_resolves_by_name(mock, tmp_path):
     head = open(os.path.join(str(out), "bins.tsv")).readline().split("\t")
     rows = open(os.path.join(str(out), "bins.tsv")).read().splitlines()[1:]
     assert "panel_median" in head and any(r.split("\t")[head.index("panel_median")] != "NA" for r in rows)
+
+
+def test_cohort_panel_corrects_the_y_for_a_father_of_a_daughter(tmp_path):
+    """Mosaic loss of Y in a father without a son needs the Y level of other males. A panel built from the cohort's runs (its
+    fathers and sons, --roles father,child) holds the male Y and X levels with their mappability deficit; a 15% loss, invisible
+    without a panel (no son to compare, and under the 25% floor), is then read from the panel-corrected level, and the daughter's
+    X is not read as a loss despite the male-only panel."""
+    from triokaryo.mock import DAD
+    deficit = (0.93, 0.95)
+    runs = []
+    for i in range(3):                                                    # three ordinary trios: six males for the Y rows
+        m = write_mock(str(tmp_path / ("t%d" % i)), seed=20 + i, no_events=True, prefix="T%d_" % i, sex_deficit=deficit)
+        out = str(tmp_path / ("run%d" % i))
+        run_trio(m["vcf"], read_trios(m["trios"])[0], out, figures=False, log=lambda s: None)
+        runs.append(out)
+    panel = tmp_path / "cohort.panel.tsv"
+    assert main(["panel", "--runs"] + runs + ["--roles", "father,child", "--out", str(panel)]) == 0
+    p = load_panel(str(panel))
+    y = [v for (c, _), v in p.items() if c == "chrY"]
+    x = [v for (c, _), v in p.items() if c == "chrX"]
+    assert len(y) >= 10 and all(v[0] == 6 for v in y) and abs(np.median([v[1] for v in y]) - np.log2(0.95)) < 0.05         # one Y copy with its deficit, on the diploid scale
+    assert len(x) >= 100 and abs(np.median([v[1] for v in x]) - np.log2(0.93)) < 0.05                                       # the males' X likewise
+    loy = [dict(member=DAD, chrom="chrY", start=0, end=None, f=0.15, delta={"h0": -1}, label="mosaic loss of Y in the father (15% of cells)", type="loss", origin="", inherited=False)]
+    m = write_mock(str(tmp_path / "daughter"), seed=30, child_sex="F", events=loy, sex_deficit=deficit)
+    trio = read_trios(m["trios"])[0]
+    res0 = run_trio(m["vcf"], trio, str(tmp_path / "d0"), figures=False, log=lambda s: None)
+    assert not [e for e in res0["events"] if e.chrom == "chrY"] and abs(res0["summary"]["father_y_copies_raw"] - 0.81) < 0.05   # deficit and loss confounded: under the 25% floor
+    res1 = run_trio(m["vcf"], trio, str(tmp_path / "d1"), panel=str(panel), figures=False, log=lambda s: None)
+    ys = [e for e in res1["events"] if e.chrom == "chrY"]
+    assert len(ys) == 1 and ys[0].sample == "DAD" and ys[0].type == "loss" and abs(ys[0].f - 0.15) < 0.06 and "against the panel" in ys[0].note, [(e.sample, e.type, e.f) for e in ys]
+    assert res1["summary"]["y_panel"] and not [e for e in res1["events"] if e.chrom == "chrX"], [(e.sample, e.chrom, e.type, e.f) for e in res1["events"]]
+    assert abs(res1["summary"]["child_x_copies_raw"] - 2) < 0.06 and abs(res1["summary"]["mother_x_copies_raw"] - 2) < 0.06
+    assert res1["summary"]["father_karyotype"] == "mos 45,X[%.2f]/46,XY" % ys[0].f

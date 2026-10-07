@@ -2,7 +2,7 @@ title: Expected appearance of each event type (copy number)
 caption: Idealised cards (simulated with the noise of a 30x genome): the child's five rows, position in Mb. Gain of the paternal homologue in 40% of cells: LRR up by log2(1 + f/2), the raw bands split to 1/(2 + f) and (1 + f)/(2 + f), the maternal fraction on the lower band (paternal homologue in excess), paternal copy number 1.4. Loss of the paternal copy in 60%: LRR down by log2(1 - f/2), the maternal fraction on the upper band at 1/(2 - f), paternal copy number 0.4. Copy-neutral LOH with the maternal copy retained in 40%: LRR flat, bands at (1 +- f)/2, maternal fraction (1 + f)/2, copy numbers 1.4 and 0.6, heterozygosity retained. Maternal isodisomy: LRR flat, no heterozygous calls, maternal fraction 1 (the child homozygous for the maternal allele at every informative site), copy numbers 2 and 0, Mendelian errors at every informative site.
 keys: depth,step,baf,psite,phased,aux_mat,aux_pat,cmat,cpat,gain,loss,loh,ref
 key:
-  #444444  filled circle  LRR per bin: log2 of the bin's median depth over the member's autosomal median (GC- and panel-corrected where applicable)
+  #444444  filled circle  LRR per bin: log2 of the bin's trimmed-mean depth over the member's autosomal median (GC- and panel-corrected where applicable)
   #000000  line  step fit of the track (exact total-variation denoising)
   #9C9C9C  filled circle  BAF: alt-allele read fraction at the member's heterozygous sites (subsampled)
   #C8C8C8  filled circle  phased fraction at one site: maternal allele (child) or transmitted allele (parent), reference bias removed

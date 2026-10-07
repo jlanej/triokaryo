@@ -17,6 +17,7 @@ COLUMN_DOCS = [
     ("chrom, start, end", "the event in bp: the first bin's start (0-based) and the last bin's end; for a phased-scan event, its first and last window sites"),
     ("start_fine, end_fine, edge_sites", "boundaries at site resolution from the phased sites on either side of each bin edge (NA at a chromosome end or with too few sites), and the smaller of the two site counts used"),
     ("span", "whole (90% of the chromosome's usable bins), p or q (90% of the arm's bins and under half of the other arm's), else stretch"),
+    ("bands", "the cytogenetic bands spanned (GRCh38, UCSC cytoBand) in ISCN form, from the site-resolution boundaries where available: q22.1q31.1, or one band"),
     ("type", "gain, loss, LOH (copy-neutral loss of heterozygosity), UPD (uniparental heterodisomy: both copies from one parent as two different homologues, heterozygosity retained)"),
     ("source", "depth (LRR segmentation), bands (band deviation or heterozygosity rate), phased (the phased scan: events the depth did not call)"),
     ("f", "cell fraction: f_lrr for a depth-called gain or loss, otherwise f_baf (2d for LOH; 1 where the heterozygosity rate indicates a constitutional event)"),
@@ -36,7 +37,7 @@ COLUMN_DOCS = [
 ]
 
 ROWS = [
-    ("1 · LRR", "log2 of each bin's median depth over the member's autosomal median, GC- and panel-corrected where applicable, with its step fit (black) and the calls as lines: gain at the segment's mean LRR (vermillion), loss (blue), copy-neutral LOH or heterodisomy at 0 (reddish purple). Brackets above: supplied events.",
+    ("1 · LRR", "log2 of each bin's trimmed-mean depth over the member's autosomal median, GC- and panel-corrected where applicable, with its step fit (black) and the calls as lines: gain at the segment's mean LRR (vermillion), loss (blue), copy-neutral LOH or heterodisomy at 0 (reddish purple). Brackets above: supplied events.",
      "a plateau away from 0 over several bins: log2(1 + f/2) for a gain, log2(1 - f/2) for a loss; a flat LRR under split bands indicates a copy-neutral event"),
     ("2 · BAF", "alt-allele read fraction at the member's heterozygous sites (subsampled). In the child, informative sites (parents opposite homozygotes) are coloured by the parent of the alt allele (pink maternal, orange paternal).",
      "two bands splitting from 1/2; under a gain the duplicated parent's alleles lie on the upper band, under a loss the retained parent's; an empty interval is a constitutional loss of heterozygosity"),

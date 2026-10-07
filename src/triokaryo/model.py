@@ -1,5 +1,5 @@
-"""From sites to tracks: fixed-width bins along each chromosome; per member the depth (median over the bin's sites), the
-LRR (log2 of the depth over the member's autosomal median; GC- and panel-corrected where given), the heterozygosity
+"""From sites to tracks: fixed-width bins along each chromosome; per member the depth (the 20% trimmed mean over the bin's
+sites), the LRR (log2 of the depth over the member's autosomal median; GC- and panel-corrected where given), the heterozygosity
 rate and the B-allele band deviation at heterozygous sites; the within-trio depth tracks (child over the parents' mean,
 father over mother, per site); and the band-deviation estimator used by the calls.
 
@@ -76,6 +76,37 @@ def _median_or_nan(v):
     return float(np.median(v)) if len(v) else NA
 
 
+def trimmed_mean(v, trim=0.2):
+    """The mean of the central 1 - 2 trim of the values (the median for fewer than five). The bin depth: robust to outlying
+    sites (paralogous depth), and continuous where the median of hundreds of integer depths is quantised to steps of one read,
+    which would quantise the LRR in steps of about 1/(depth ln 2) and the depth-based cell fraction in steps of 2/depth."""
+    v = np.sort(np.asarray(v, dtype=float))
+    n = len(v)
+    if n == 0:
+        return NA
+    if n < 5:
+        return float(np.median(v))
+    k = int(n * trim)
+    return float(v[k:n - k].mean())
+
+
+def lrr_noise_floor(depth, sites):
+    """The smallest credible noise scale of a bin LRR track: the counting noise of a trimmed mean over `sites` Poisson depths of
+    mean `depth`, about 1.1 sqrt(depth / sites) reads, in log2 units. A uniform, deeply sampled genome can have first differences
+    that are mostly zero, and a robust scale of zero would otherwise disable the segmentation."""
+    if not (np.isfinite(depth) and np.isfinite(sites)) or depth <= 0 or sites <= 0:
+        return NA
+    return float(1.1 * np.sqrt(depth / sites) / (depth * np.log(2)))
+
+
+def member_noise_floor(bins, m):
+    """lrr_noise_floor at the member's median autosomal bin depth and sites per bin."""
+    ok = bins.autosomal & np.isfinite(bins.depth[m]) & (bins.n_dp[m] >= 20)
+    if not ok.any():
+        return NA
+    return lrr_noise_floor(float(np.median(bins.depth[m][ok])), float(np.median(bins.n_dp[m][ok])))
+
+
 PANEL_MAX_RSD = 0.25        # a bin whose LRR robust SD across the panel's genomes exceeds this is not called
 PANEL_MIN_N = 5             # minimum genomes per bin: a median over fewer follows one genome's own event
 PANEL_MIN_N_Y = 3           # the same for the Y, to which only the panel's males contribute
@@ -133,7 +164,7 @@ def make_bins(scan, genome, bin_size=1_000_000, min_dp=8, min_gq=20, gc_track=No
         for m in range(3):
             ok = dp[m] > 0
             n_dp[m, i] = int(ok.sum())
-            depth[m, i] = _median_or_nan(dp[m][ok])
+            depth[m, i] = trimmed_mean(dp[m][ok])
             called = (dp[m] >= min_dp) & (gq[m] >= min_gq) & (gt[m] >= GT_HOMREF)
             n_called[m, i] = int(called.sum())
             het = called & (gt[m] == GT_HET)

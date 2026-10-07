@@ -31,7 +31,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from .model import NA, MEMBERS, f_from_d, site_stats
+from .model import NA, MEMBERS, f_from_d, member_noise_floor, site_stats
 from .segment import Event, binary_segmentation, merge_similar, refine_boundaries, robust_sd, span_of
 from .smooth import tv_denoise_nan, tv_lambda, windows_by_count
 from .trio import _confident
@@ -172,7 +172,8 @@ def lrr_step(bins, m, median_bins=1):
     """The step fit of the member's LRR, chromosome by chromosome, one penalty for the genome; over a running median of
     median_bins bins first where asked (the copies: a dip of a bin or two is not a large event)."""
     y = bins.lrr_gc[m]
-    lam = tv_lambda(y[bins.autosomal], TV_K)
+    floor = member_noise_floor(bins, m)
+    lam = max(tv_lambda(y[bins.autosomal], TV_K), TV_K * floor if np.isfinite(floor) else 0.0)
     out = np.full(len(y), NA)
     for c in bins.index:
         sl = bins.of(c)
@@ -600,6 +601,8 @@ def phased_scan(tracks, bins, scan, m, sample, genome, events, params, min_dp, m
         sl = bins.of(chrom)
         lrr_all = bins.lrr_gc[m][sl]
         lsd = robust_sd(lrr_all[np.isfinite(lrr_all)])
+        floor = member_noise_floor(bins, m)
+        lsd = max(lsd if np.isfinite(lsd) else 0.0, floor if np.isfinite(floor) else 0.0)
         valid = np.isfinite(lrr_all)
         starts = bins.start[sl][valid]
         sites = scan.sites(chrom)

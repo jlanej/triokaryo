@@ -12,7 +12,7 @@ PAL = dict(child="#D55E00", father="#E69F00", mother="#CC79A7", gain="#D55E00", 
            baf="#9C9C9C", ref="#7F7F7F", ext="#000000", mat="#CC79A7", pat="#E69F00", band="#F2F2F2", phased="#009E73", psite="#C8C8C8", step="#000000",
            trans="#D55E00", untrans="#56B4E9")
 KEY = {
-    "depth": (PAL["depth"], "point", "LRR per bin: log2 of the bin's median depth over the member's autosomal median (GC- and panel-corrected where applicable)"),
+    "depth": (PAL["depth"], "point", "LRR per bin: log2 of the bin's trimmed-mean depth over the member's autosomal median (GC- and panel-corrected where applicable)"),
     "baf": (PAL["baf"], "point", "BAF: alt-allele read fraction at the member's heterozygous sites (subsampled)"),
     "gain": (PAL["gain"], "line", "called gain (line at the segment's mean LRR)"),
     "loss": (PAL["loss"], "line", "called loss"),
@@ -179,7 +179,7 @@ def _copies_lines(ax, tracks, m, chrom=None, off=None, lw=0.9):
 
 def genome_caption(bin_size, gc_corrected):
     """The genome figure's caption; also used by `triokaryo report` to rebuild the sidecar from the tables."""
-    return ("Child (a, b), father (c, d) and mother (e, f): LRR per %d-kb bin (log2 of the bin's median depth over the member's autosomal median%s) with its "
+    return ("Child (a, b), father (c, d) and mother (e, f): LRR per %d-kb bin (log2 of the bin's trimmed-mean depth over the member's autosomal median%s) with its "
             "step fit and the called gains, losses and copy-neutral events as lines; and BAF at the member's heterozygous sites (subsampled; dotted lines at "
             "1/2, 1/3 and 2/3) overlaid with the phased fraction pooled by window (maternal allele along the child, transmitted allele along a parent), which "
             "is 1/2 with equal homologue copy and deviates along an event with the sign giving the parent of origin (%s). (g) The child's depth over the "

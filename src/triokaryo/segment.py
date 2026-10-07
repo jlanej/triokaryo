@@ -5,7 +5,7 @@ from dataclasses import dataclass, field, asdict
 
 import numpy as np
 
-from .model import NA, MEMBERS, chrom_level, f_from_d, f_from_lrr, site_stats
+from .model import NA, MEMBERS, chrom_level, f_from_d, f_from_lrr, member_noise_floor, site_stats
 
 PARAMS = dict(min_abs=0.07,      # minimum |mean LRR| of a gain or loss: log2(1 + 0.10/2), a cell fraction of about 10%
               z=5.0,             # minimum split statistic for a segment boundary (binary segmentation)
@@ -28,6 +28,7 @@ class Event:
     end: int
     span: str
     type: str
+    bands: str = ""             # the cytogenetic bands spanned, from the site-resolution boundaries where available (q22.1q31.1)
     lrr: float = NA
     lrr_se: float = NA
     n_bins: int = 0
@@ -240,6 +241,7 @@ def call_member(bins, scan, m, sample, genome, params=None, sex=""):
     base_het = float(np.nanmedian(bins.het_rate[m][auto & (bins.n_called[m] >= min_called)])) if (auto & (bins.n_called[m] >= min_called)).any() else NA
     x_copies = NA
     x_mosaic = False                                               # a whole-X copy number off an integer: a whole-X mosaic (sexchrom), whose split bands are not an LOH
+    floor = member_noise_floor(bins, m)                            # the counting noise of the bin depth: the noise scale is never below it
     for chrom in bins.index:
         sl = bins.of(chrom)
         y_all = bins.lrr_gc[m][sl].copy()
@@ -260,7 +262,8 @@ def call_member(bins, scan, m, sample, genome, params=None, sex=""):
         starts = bins.start[sl][valid]
         ends = bins.end[sl][valid]
         sd = robust_sd(y)
-        if not np.isfinite(sd) or sd <= 0:
+        sd = max(sd if np.isfinite(sd) else 0.0, floor if np.isfinite(floor) else 0.0)
+        if sd <= 0:
             continue
         segs = merge_similar(y, refine_boundaries(y, binary_segmentation(y, P["min_len"], P["z"], sd)), sd)
         sites = scan.sites(chrom)

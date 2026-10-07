@@ -18,3 +18,5 @@ ci_out/
 *.fa
 *.fa.gz
 *.fai
+# calibration runs are regenerated; only the summary, table and figure are kept
+docs/calibration/runs/

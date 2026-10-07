@@ -9,7 +9,7 @@ import numpy as np
 
 from .model import MEMBERS, NA
 
-EVENT_COLS = ("sample", "role", "chrom", "start", "end", "span", "type", "source", "f", "f_lrr", "f_baf", "f_phase", "lrr", "lrr_se", "n_bins", "d_hat", "llr_baf",
+EVENT_COLS = ("sample", "role", "chrom", "start", "end", "span", "bands", "type", "source", "f", "f_lrr", "f_baf", "f_phase", "lrr", "lrr_se", "n_bins", "d_hat", "llr_baf",
               "phase_shift", "phase_se", "n_phased", "homologues", "hetero_share", "stage", "centromere", "n_crossovers", "crossovers", "start_fine", "end_fine", "edge_sites",
               "het_rate", "het_rate_rel", "n_het", "n_called", "mie_rate", "origin", "origin_llr", "origin_n", "origin_phase", "inheritance", "external", "note")
 
@@ -47,7 +47,7 @@ def karyotypes_of(events, summ, genome):
         comp = summ.get("%s_sex_karyotype" % role) or ""
         if not comp and _finite(summ.get("%s_x_copies" % role)):
             comp = "X" * int(float(summ["%s_x_copies" % role]))
-        out[role] = karyotype_string([e for e in events if e.role == role], comp, order)
+        out[role] = karyotype_string([e for e in events if e.role == role], comp, order, genome)
     return out
 
 
@@ -175,7 +175,7 @@ def write_html(out, trio, figs, events, summ, external, mock_note="", genome=Non
         if _finite(summ.get("y_father_son_log2")) else ""))
     w.append("<h2>Events</h2>")
     if events:
-        w.append(_table(["role", "chrom", "span", "start", "end", "start_fine", "end_fine", "type", "source", "f", "f_lrr", "f_baf", "f_phase", "lrr", "d_hat", "phase_shift",
+        w.append(_table(["role", "chrom", "span", "bands", "start", "end", "start_fine", "end_fine", "type", "source", "f", "f_lrr", "f_baf", "f_phase", "lrr", "d_hat", "phase_shift",
                          "n_phased", "homologues", "stage", "crossovers", "het_rate_rel", "mie_rate", "origin", "origin_llr", "origin_n", "origin_phase", "inheritance", "external", "note"],
                         [e.as_dict() for e in events]))
     else:
@@ -193,7 +193,7 @@ def write_html(out, trio, figs, events, summ, external, mock_note="", genome=Non
     w.append("<h2>How to read it</h2>")
     from .guide import key_table
     from .plots import DIRECTION
-    w.append("<p><b>Rows.</b> LRR: log2 of the bin's median depth over the member's autosomal median, with its step fit and the calls (a gain in a cell fraction f "
+    w.append("<p><b>Rows.</b> LRR: log2 of the bin's trimmed-mean depth over the member's autosomal median, with its step fit and the calls (a gain in a cell fraction f "
              "reads log2(1 + f/2), a loss log2(1 - f/2); copy-neutral events are drawn at 0). BAF: the alt-allele read fraction at heterozygous sites, with the "
              "child's informative sites coloured by the parent of the alt allele. Phased fraction: the maternal-allele fraction along the child, the "
              "transmitted-allele fraction along a parent (sites, pooled windows, step fit); thin lines are the auxiliary tracks, which depart from the main track "
@@ -332,7 +332,7 @@ if (box) box.addEventListener('input', () => { const q = box.value.toLowerCase()
   document.getElementById('nshown').textContent = n; });
 """
 
-COHORT_COLS = ["trio", "sample", "role", "chrom", "start", "end", "start_fine", "end_fine", "span", "type", "source", "f", "f_lrr", "f_baf", "f_phase", "lrr", "d_hat",
+COHORT_COLS = ["trio", "sample", "role", "chrom", "start", "end", "start_fine", "end_fine", "span", "bands", "type", "source", "f", "f_lrr", "f_baf", "f_phase", "lrr", "d_hat",
                "phase_shift", "n_phased", "homologues", "hetero_share", "stage", "centromere", "n_crossovers", "crossovers", "het_rate_rel", "mie_rate", "origin", "origin_llr",
                "origin_n", "origin_phase", "inheritance", "external", "note"]
 
@@ -460,14 +460,14 @@ def write_cohort(out, run_dirs, events_path=None, genome_name="grch38", log=None
     w.append("<h2>Events</h2><p>Click a heading to sort; type to filter. <input id=\"filter\" placeholder=\"filter: a trio, a chromosome, a type, a word of a note\"> "
              "<span id=\"nshown\">%d</span> shown. %s</p>" % (len(events), html.escape(DIRECTION)))
     w.append('<table class="sortable" id="events"><thead><tr>' + "".join("<th>%s</th>" % h for h in (
-        "trio", "member", "chrom", "start (Mb)", "end (Mb)", "span", "type", "source", "f", "f depth", "f bands", "f phased", "origin", "homologues", "stage", "crossovers (Mb)",
+        "trio", "member", "chrom", "start (Mb)", "end (Mb)", "span", "bands", "type", "source", "f", "f depth", "f bands", "f phased", "origin", "homologues", "stage", "crossovers (Mb)",
         "inheritance", "supplied", "notes", "page", "figure")) + "</tr></thead><tbody>")
     for s in summaries:
         page = os.path.relpath(os.path.join(s["run"], "index.html"), out)
         for e in s["events_obj"]:
             fine = lambda v, b: ("%.2f" % (v / 1e6)) if (isinstance(v, (int, float)) and np.isfinite(v)) else ("%.0f" % (b / 1e6))  # noqa: E731
             figp = os.path.relpath(os.path.join(s["run"], "figures", "chrom_%s.png" % e.chrom), out)
-            cells = [s["trio"], "%s (%s)" % (e.sample, e.role), e.chrom, fine(e.start_fine, e.start), fine(e.end_fine, e.end), e.span, e.type, e.source, fmt(e.f, 2), fmt(e.f_lrr, 2),
+            cells = [s["trio"], "%s (%s)" % (e.sample, e.role), e.chrom, fine(e.start_fine, e.start), fine(e.end_fine, e.end), e.span, e.bands, e.type, e.source, fmt(e.f, 2), fmt(e.f_lrr, 2),
                      fmt(e.f_baf, 2), fmt(e.f_phase, 2), e.origin_phase or e.origin, e.homologues, e.stage, e.crossovers, e.inheritance, e.external, e.note]
             w.append("<tr>" + "".join("<td>%s</td>" % html.escape(str(c)) for c in cells) + '<td><a href="%s">page</a></td><td><a href="%s">%s</a></td></tr>' % (
                 html.escape(page), html.escape(figp), html.escape(e.chrom)))

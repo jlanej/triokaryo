@@ -2,7 +2,7 @@ title: Expected appearance of each event type (disomies, trisomies)
 caption: Maternal heterodisomy: LRR flat and heterozygosity retained (the child heterozygous wherever the mother is), yet the maternal fraction is 1 and the copy numbers 2 and 0; the track read at the father's homozygous sites (pink line) stays at 1/2, since both of the child's alleles there are maternal. Run of homozygosity: no heterozygous calls, no Mendelian errors, no sites for the maternal fraction (the parents share the haplotype), copy number not drawn. Maternal meiotic trisomy with a crossover at 60 Mb: LRR at log2(1.5), bands at 1/3 and 2/3, maternal fraction 2/3, and the pink auxiliary track at 1/3 where the two maternal copies are different homologues (heterozygosity raised there), returning to 2/3 beyond the crossover where they are identical. Mitotic or meiosis II trisomy: the same, with the auxiliary track on the main track throughout.
 keys: depth,step,baf,psite,phased,aux_mat,aux_pat,cmat,cpat,gain,loss,loh,ref
 key:
-  #444444  filled circle  LRR per bin: log2 of the bin's median depth over the member's autosomal median (GC- and panel-corrected where applicable)
+  #444444  filled circle  LRR per bin: log2 of the bin's trimmed-mean depth over the member's autosomal median (GC- and panel-corrected where applicable)
   #000000  line  step fit of the track (exact total-variation denoising)
   #9C9C9C  filled circle  BAF: alt-allele read fraction at the member's heterozygous sites (subsampled)
   #C8C8C8  filled circle  phased fraction at one site: maternal allele (child) or transmitted allele (parent), reference bias removed

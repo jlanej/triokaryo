@@ -114,3 +114,24 @@ def test_run_of_homozygosity_gets_no_parent_of_origin_from_the_phased_track():
         annotate_events([ev], [{"chr1": track}, {}, {}], scan, bins, genome())
         assert ev.n_phased == n and abs(ev.phase_shift - 0.3) < 1e-9
         assert bool(ev.origin_phase) is expect and bool(ev.homologues) is False
+
+
+def test_trimmed_mean_and_noise_floor_keep_a_quantised_depth_track_segmentable():
+    """A bin depth that is the median of hundreds of integer depths is quantised to one read, so a track of such bins can have
+    first differences that are all zero and a robust noise scale of zero, which would disable the segmentation; the trimmed mean
+    is continuous and the counting-noise floor bounds the scale from below."""
+    from triokaryo.model import lrr_noise_floor, trimmed_mean
+    from triokaryo.segment import binary_segmentation, robust_sd
+    rng = np.random.default_rng(5)
+    med = [float(np.median(rng.poisson(30, 600))) for _ in range(50)]
+    tm = [trimmed_mean(rng.poisson(30, 600)) for _ in range(50)]
+    assert len(set(med)) <= 3 and len(set(tm)) >= 40                      # the median takes a few integer values; the trimmed mean does not
+    assert trimmed_mean([1, 2, 3, 4, 100]) == 3.0 and trimmed_mean([1, 2, 100]) == 2.0 and trimmed_mean([]) != trimmed_mean([])   # NaN for no values
+    y = np.zeros(100)
+    y[40:60] = np.log2(1.5)
+    assert robust_sd(y) == 0.0                                            # the degenerate scale
+    floor = lrr_noise_floor(30, 600)
+    assert 0.01 < floor < 0.015
+    segs = binary_segmentation(y, 5, 5.0, sd=max(robust_sd(y), floor))
+    assert (40, 60) in segs, segs
+    assert binary_segmentation(y, 5, 5.0, sd=0.0) == [(0, 100)]            # without the floor nothing is segmented

@@ -6,6 +6,7 @@
   triokaryo gc-track --fasta ref.fa --out gc.tsv [--bin 1000000]
   triokaryo mock --out mock_dir [--seed 1] [--no-events] [--xxy] [--contigs chr15,chr16,chr17 --sites-per-mb 1000 --low-share | --meiosis]
   triokaryo cohort --runs 'out/*' --out cohort [--events other_calls.tsv]   # cohort report and guide
+  triokaryo calibrate --out calib [--cell-fractions 0.05,0.1,0.2,0.3,0.5,1 --depths 15,30,60 --sizes 5,10,20,50 --replicates 2]
   triokaryo report --runs 'out/*'                   # rebuild a run's page from its tables (no VCF needed)
   triokaryo guide --out guide.html                  # the meaning of every figure row, colour and column
 """
@@ -59,16 +60,23 @@ def cmd_panel(a):
     from .genome import genome
     from .panel import build_panel, write_panel
     runs = sorted(d for pat in (a.runs or []) for d in glob.glob(pat))
-    rows, samples = build_panel(genome(a.genome), a.bin, vcfs=a.vcfs or (), samples=set(a.samples.split(",")) if a.samples else None, runs=runs, log=_log, thin=a.thin)
+    roles = tuple(r.strip() for r in a.roles.split(",") if r.strip()) if a.roles else None
+    if roles and any(r not in ("child", "father", "mother") for r in roles):
+        sys.exit("--roles takes child, father, mother (comma-separated); got %s" % a.roles)
+    rows, samples, n_y = build_panel(genome(a.genome), a.bin, vcfs=a.vcfs or (), samples=set(a.samples.split(",")) if a.samples else None, runs=runs, log=_log,
+                                     thin=a.thin, roles=roles)
     if not rows:
         sys.exit("no genome read for the panel (--vcfs and/or --runs)")
     write_panel(a.out, rows, samples, a.bin)
     import numpy as np
-    from .model import PANEL_MAX_RSD, PANEL_MIN_N
-    unp = sum(1 for r in rows if r["n"] < PANEL_MIN_N or (np.isfinite(r["lrr_rsd"]) and r["lrr_rsd"] > PANEL_MAX_RSD))
+    from .model import PANEL_MAX_RSD, PANEL_MIN_N, PANEL_MIN_N_Y
+    unp = sum(1 for r in rows if r["n"] < (PANEL_MIN_N_Y if r["chrom"] == "chrY" else PANEL_MIN_N) or (np.isfinite(r["lrr_rsd"]) and r["lrr_rsd"] > PANEL_MAX_RSD))
     if len(samples) < PANEL_MIN_N:
         _log("WARNING: %d genomes: a panel needs %d or more, or every bin is left out of the calls" % (len(samples), PANEL_MIN_N))
-    _log("panel of %d genomes, %d bins (%d masked) -> %s" % (len(samples), len(rows), unp, a.out))
+    if n_y < PANEL_MIN_N_Y:
+        _log("WARNING: %d genome(s) with a Y: the Y rows need %d or more (males), or the Y is not corrected and mosaic loss of Y is read from the "
+             "father/son ratio only" % (n_y, PANEL_MIN_N_Y))
+    _log("panel of %d genomes (%d with a Y), %d bins (%d masked) -> %s" % (len(samples), n_y, len(rows), unp, a.out))
     return 0
 
 
@@ -96,6 +104,15 @@ def cmd_mock(a):
     paths = write_mock(a.out, seed=a.seed, sites_per_mb=a.sites_per_mb, no_events=a.no_events, xxy=a.xxy, prefix=a.prefix, events=events,
                        contigs=a.contigs.split(",") if a.contigs else None, child_sex=a.child_sex, xxx=a.xxx, sex_deficit=deficit)
     _log("mock trio -> %s" % paths["vcf"])
+    return 0
+
+
+def cmd_calibrate(a):
+    from .calibrate import run_calibration
+    fl = lambda s: tuple(float(x) for x in s.split(",") if x.strip())  # noqa: E731
+    rows = run_calibration(a.out, fractions=fl(a.cell_fractions), depths=fl(a.depths), sizes=fl(a.sizes), replicates=a.replicates, seed=a.seed,
+                           sites_per_mb=a.sites_per_mb, log=_log, figures=not a.no_figures, contigs=a.contigs.split(",") if a.contigs else None)
+    _log("%d planted events, %d detected -> %s" % (len(rows), sum(1 for r in rows if r["detected"]), a.out))
     return 0
 
 
@@ -157,6 +174,8 @@ def main(argv=None):
     pn.add_argument("--vcfs", nargs="*", help="VCFs to read (every sample of each unless --samples)")
     pn.add_argument("--samples", help="comma-separated sample names to take from the VCFs")
     pn.add_argument("--runs", nargs="*", help="earlier run directories (bins.tsv + summary.tsv), e.g. 'out/*'")
+    pn.add_argument("--roles", default="", help="with --runs: the members to take from each run, comma-separated (child, father, mother; default all three); "
+                                               "e.g. father,child for a panel whose Y rows come from every male")
     pn.add_argument("--out", required=True)
     pn.add_argument("--bin", type=int, default=1_000_000)
     pn.add_argument("--thin", type=int, default=1)
@@ -189,6 +208,17 @@ def main(argv=None):
     c.add_argument("--events", help="events from another method to match (as for run)")
     c.add_argument("--genome", default="grch38")
     c.set_defaults(fn=cmd_cohort)
+    cb = sub.add_parser("calibrate", help="detection and cell-fraction accuracy on the simulator over a grid of cell fractions, depths and event sizes")
+    cb.add_argument("--out", required=True)
+    cb.add_argument("--cell-fractions", default="0.05,0.1,0.2,0.3,0.5,1", help="comma-separated cell fractions (default 0.05,0.1,0.2,0.3,0.5,1)")
+    cb.add_argument("--depths", default="30", help="comma-separated mean depths (default 30)")
+    cb.add_argument("--sizes", default="5,10,20,50", help="comma-separated event sizes in Mb (default 5,10,20,50)")
+    cb.add_argument("--replicates", type=int, default=1)
+    cb.add_argument("--seed", type=int, default=1)
+    cb.add_argument("--sites-per-mb", type=int, default=60, help="simulated site density (real WGS: about 1000 per Mb; 60 is quick but understates the phased scan)")
+    cb.add_argument("--contigs", default="", help="restrict the simulation to these chromosomes, e.g. chr1,...,chr16 with a dense --sites-per-mb")
+    cb.add_argument("--no-figures", action="store_true")
+    cb.set_defaults(fn=cmd_calibrate)
     g = sub.add_parser("guide", help="the guide: the meaning of every figure row, colour, call and column, with pattern cards (one self-contained page)")
     g.add_argument("--out", required=True, help="the HTML file to write")
     g.add_argument("--figures", help="keep the pattern figures (PNG, SVG, PDF, sidecars, legends) in this directory")

@@ -87,6 +87,9 @@ def run_trio(vcf, trio, out, gc_track=None, events_path=None, bin_size=1_000_000
     events.sort(key=lambda e: (MEMBERS.index(e.role), G.chroms.index(e.chrom), e.start))
     base_mie = read_trio(events, scan, G, min_dp, min_gq, child_x_copies=x_copies["child"], child_x_baseline=child_x_baseline)
     annotate_events(events, tracks, scan, bins, G, child_x_baseline=child_x_baseline)
+    from .sexchrom import event_bands
+    for e in events:
+        e.bands = event_bands(e, G)
     external = read_events(events_path, G) if events_path else []
     external = [x for x in external if x.sample in trio.members]
     match_external(events, external)

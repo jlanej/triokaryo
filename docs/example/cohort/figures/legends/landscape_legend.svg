@@ -6,7 +6,7 @@
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
     <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:date>2026-10-07T13:22:37.538701</dc:date>
+    <dc:date>2026-10-07T13:48:07.826525</dc:date>
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
@@ -33,32 +33,32 @@ z
    <g id="line2d_1">
     <path d="M 9.83622 14.293701 
 L 20.381102 14.293701 
-" clip-path="url(#p312ed0e203)" style="fill: none; stroke: #d55e00; stroke-width: 2; stroke-linecap: square"/>
+" clip-path="url(#p5877a0d544)" style="fill: none; stroke: #d55e00; stroke-width: 2; stroke-linecap: square"/>
    </g>
    <g id="line2d_2">
     <path d="M 9.83622 28.481102 
 L 20.381102 28.481102 
-" clip-path="url(#p312ed0e203)" style="fill: none; stroke: #0072b2; stroke-width: 2; stroke-linecap: square"/>
+" clip-path="url(#p5877a0d544)" style="fill: none; stroke: #0072b2; stroke-width: 2; stroke-linecap: square"/>
    </g>
    <g id="line2d_3">
     <path d="M 9.83622 42.668504 
 L 20.381102 42.668504 
-" clip-path="url(#p312ed0e203)" style="fill: none; stroke: #cc79a7; stroke-width: 2; stroke-linecap: square"/>
+" clip-path="url(#p5877a0d544)" style="fill: none; stroke: #cc79a7; stroke-width: 2; stroke-linecap: square"/>
    </g>
    <g id="line2d_4">
     <path d="M 9.83622 56.855906 
 L 20.381102 56.855906 
-" clip-path="url(#p312ed0e203)" style="fill: none; stroke: #000000; stroke-width: 1.2; stroke-linecap: square"/>
+" clip-path="url(#p5877a0d544)" style="fill: none; stroke: #000000; stroke-width: 1.2; stroke-linecap: square"/>
    </g>
    <g id="line2d_5">
     <path d="M 9.83622 58.558394 
 L 9.83622 56.855906 
-" clip-path="url(#p312ed0e203)" style="fill: none; stroke: #000000; stroke-width: 1.2; stroke-linecap: square"/>
+" clip-path="url(#p5877a0d544)" style="fill: none; stroke: #000000; stroke-width: 1.2; stroke-linecap: square"/>
    </g>
    <g id="line2d_6">
     <path d="M 20.381102 58.558394 
 L 20.381102 56.855906 
-" clip-path="url(#p312ed0e203)" style="fill: none; stroke: #000000; stroke-width: 1.2; stroke-linecap: square"/>
+" clip-path="url(#p5877a0d544)" style="fill: none; stroke: #000000; stroke-width: 1.2; stroke-linecap: square"/>
    </g>
    <g id="text_1">
     <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="28.289764" y="15.846377" transform="rotate(-0 28.289764 15.846377)">called gain (line at the segment's mean LRR)</text>
@@ -75,7 +75,7 @@ L 20.381102 56.855906
   </g>
  </g>
  <defs>
-  <clipPath id="p312ed0e203">
+  <clipPath id="p5877a0d544">
    <rect x="7.2" y="7.2" width="263.622047" height="56.749606"/>
   </clipPath>
  </defs>

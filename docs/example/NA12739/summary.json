@@ -48,6 +48,7 @@
    "end": 5000000,
    "span": "stretch",
    "type": "gain",
+   "bands": "p36.33p36.32",
    "lrr": 0.08436079537703292,
    "lrr_se": 0.014453184575903886,
    "n_bins": 5,
@@ -91,6 +92,7 @@
    "end": 133275309,
    "span": "whole",
    "type": "gain",
+   "bands": "p13.33q24.33",
    "lrr": 0.5640817246893616,
    "lrr_se": 0.001746161151422175,
    "n_bins": 132,
@@ -134,6 +136,7 @@
    "end": 114364328,
    "span": "stretch",
    "type": "gain",
+   "bands": "q31.2q34",
    "lrr": 0.42920884448775803,
    "lrr_se": 0.005568474022063852,
    "n_bins": 27,
@@ -177,6 +180,7 @@
    "end": 46699598,
    "span": "stretch",
    "type": "loss",
+   "bands": "q22.3",
    "lrr": -0.6150893391582619,
    "lrr_se": 0.011181392176023578,
    "n_bins": 4,
@@ -410,8 +414,8 @@
   "sites": 0
  },
  "karyotypes": {
-  "child": "mos 47,XY,dup(1)(0.0-3.8Mb)mat?[0.12]/47,XY,+12pat(MII/mit)",
-  "father": "mos 46,XY,dup(13)(87.6-114.4Mb)[0.69]/46,XY,del(21)(42.6-46.7Mb)[0.59]/46,XY",
+  "child": "mos 47,XY,dup(1)(p36.33p36.32)mat?[0.12]/47,XY,+12pat(MII/mit)",
+  "father": "mos 46,XY,dup(13)(q31.2q34)[0.69]/46,XY,del(21)(q22.3)[0.59]/46,XY",
   "mother": "46,XX"
  }
 }

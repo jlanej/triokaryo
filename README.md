@@ -98,7 +98,8 @@ depth structure (centromere flanks, segmental duplications, acrocentric short ar
 paralogous sequence, which segment into spurious events. `--panel` subtracts the per-bin median LRR, band deviation
 and heterozygosity rate of other genomes processed the same way and masks bins the panel cannot characterise.
 Build a panel from any genomes called the same way (`triokaryo panel --vcfs ...`; five or more), or, with many trios,
-from a first pass's `bins.tsv` files (`--runs 'out/*'`). `--panel 1kg-dragen` is a shipped panel of twelve public
+from a first pass's `bins.tsv` files (`--runs 'out/*'`; `--roles father,child` takes the males, whose Y rows let a
+father without a son be read for mosaic loss of Y). `--panel 1kg-dragen` is a shipped panel of twelve public
 1000 Genomes genomes for data called by DRAGEN 3.7.6. Per-sample VCFs are merged into a trio VCF with
 `bcftools merge -0`; a sample with no record at a site is then written as homozygous reference, which the trio
 analysis accepts as a confident parental genotype.
@@ -107,7 +108,7 @@ analysis accepts as a confident parental genotype.
 
 | signal | definition | expected value under an event in a cell fraction *f* |
 | --- | --- | --- |
-| **LRR** | log2 of the bin's median depth over the member's autosomal median, GC-corrected against a GC track by a running median | one-copy gain: log2(1 + f/2); one-copy loss: log2(1 − f/2) |
+| **LRR** | log2 of the bin's trimmed-mean depth (the central 60% of its sites) over the member's autosomal median, GC-corrected against a GC track by a running median | one-copy gain: log2(1 + f/2); one-copy loss: log2(1 − f/2) |
 | **BAF** | alt-allele read fraction at the member's heterozygous sites | gain: bands at 1/(2+f) and (1+f)/(2+f) (1/3, 2/3 at f = 1); loss: (1−f)/(2−f) and 1/(2−f); CN-LOH: (1−f)/2 and (1+f)/2 |
 | **heterozygosity rate** | heterozygous calls over confident calls per bin | zero under a constitutional loss of heterozygosity (isodisomy, deletion, run of homozygosity); unchanged under trisomy |
 | **phased fraction** | fraction of reads carrying the maternal allele (child) or the transmitted allele (parent), at phased sites | 1/2 ± d with the sign giving the parent of origin; 1 where only one parent's copies are present |
@@ -139,8 +140,8 @@ autosomal trisomy. Segmental X events are called relative to the member's own X 
 baseline for the parent-of-origin likelihood and for Mendelian errors. Without a pedigree sex, the Y implies it; without
 a panel, the X level is corrected within the trio by the median deviation of the members' X from their expected copy
 number, which removes the X's mappability deficit. Each
-member also receives an ISCN-like karyotype string, e.g. `47,XXY(mat,MI)`, `mos 47,XXY(pat)[0.40]/46,XY`,
-`47,XY,+21mat(MI)`, `mos 46,XX,del(2)(140.7-173.2Mb)pat[0.67]/46,XX`.
+member also receives an ISCN-like karyotype string with cytogenetic bands, e.g. `47,XXY(mat,MI)`,
+`mos 47,XXY(pat)[0.40]/46,XY`, `47,XY,+21mat(MI)`, `mos 46,XX,del(2)(q22.1q31.1)pat[0.67]/46,XX`.
 
 **Parent of origin** is estimated twice. (i) At informative sites (parents opposite homozygotes), the child's alt
 read count is modelled as binomial with a success probability determined by the event type, *f*, and which parent
@@ -156,7 +157,7 @@ none.
 
 ## Output (per trio, under `--out`)
 
-- `events.tsv`: one row per event with sample, role, coordinates, span, type (gain, loss, LOH, UPD), source (depth,
+- `events.tsv`: one row per event with sample, role, coordinates, span, cytogenetic bands, type (gain, loss, LOH, UPD), source (depth,
   bands, phased), `f`, `f_lrr`, `f_baf`, `f_phase`, LRR, band deviation and its likelihood ratio, phased shift and
   site counts, homologue classification, site-resolution boundaries, heterozygosity rate, Mendelian-error rate,
   parent of origin (both estimates), inheritance, overlapping supplied events, and notes.
@@ -205,6 +206,19 @@ inheritance; that nothing else is called; that a null trio yields no calls; that
 bias; that a 47,XXY child reads two X copies; that the step fit equals the exact total-variation solution; and that
 8% events planted in a dense simulation are recovered by the phased scan. `--xxy`, `--no-events` and `--low-share`
 produce those variants.
+
+## Calibration
+
+`triokaryo calibrate --out calib` plants a gain, a loss and a copy-neutral LOH of each size on separate autosomes of a
+simulated trio at each cell fraction and depth of a grid, runs the method, and reports per planted event whether it
+was detected, by which source, the three cell-fraction estimates and whether the parent of origin was named
+(`calibration.tsv`), with detection-rate tables (`calibration.md`) and a figure. The default grid (cell fractions
+0.05–1, 30×, 5–50 Mb, 60 sites per Mb) runs in a few minutes; real WGS carries about 1,000 PASS SNVs per Mb, so
+`--sites-per-mb 600 --contigs chr1,...,chr16` gives a realistic phased scan at a fraction of the cost of whole
+genomes. The grid in [`docs/calibration/`](docs/calibration/README.md) (30×, 600 sites per Mb, one replicate) finds
+every planted event of 5 Mb and up from a cell fraction of 0.3, events of 10 Mb and up at 0.2, 20 Mb and up at 0.1 and
+nothing at 0.05, with the cell fraction within 0.02, the parent of origin always correct and no false call on the
+unaffected chromosomes.
 
 ## Limitations
 

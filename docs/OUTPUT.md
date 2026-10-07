@@ -8,6 +8,7 @@
 | chrom, start, end | the event in bp: the first bin's start (0-based) and the last bin's end; for a phased-scan event, its first and last window sites |
 | start_fine, end_fine, edge_sites | boundaries at site resolution from the phased sites (NA at a chromosome end or with too few sites), and the smaller of the two site counts used |
 | span | whole, p, q or stretch |
+| bands | the cytogenetic bands spanned (GRCh38, UCSC cytoBand) in ISCN form, from the site-resolution boundaries where available: q22.1q31.1, or one band |
 | type | gain, loss, LOH (copy-neutral loss of heterozygosity), UPD (uniparental heterodisomy) |
 | source | depth (LRR segmentation), bands (band deviation or heterozygosity rate), phased (the phased scan) |
 | f | cell fraction: f_lrr for a depth-called gain or loss, otherwise f_baf |
@@ -41,7 +42,7 @@ segment mean; or, with flat depth, a shift under the bands-only floor of 0.025.
 ## bins.tsv
 
 Per bin: chrom, start, end, gc; the panel's median LRR and robust SD, the mask, the panel's band deviation and the
-band mask; per member `n_sites`, `depth`, `lrr`, `lrr_gc` (GC- and panel-corrected), `n_called`, `n_het`, `het_rate`,
+band mask; per member `n_sites`, `depth` (the 20% trimmed mean over the bin's sites), `lrr`, `lrr_gc` (GC- and panel-corrected), `n_called`, `n_het`, `het_rate`,
 `bdev`, `het_rel` (relative to the panel); `child_vs_mid` and `father_vs_mother`.
 
 ## summary.tsv and summary.json
@@ -95,3 +96,11 @@ segments, events, flagged events, run time, run directory), `concordance.tsv`,
 
 Rebuilds a run's page, figure sidecars, legend images and guide from its tables and existing figures, without the
 VCF: after a change to the page or the key, or to add the guide to an older run.
+
+## triokaryo calibrate --out
+
+`calibration.tsv`: one row per planted event (replicate, depth, f, type, size_mb, chrom, detected, source, f_called,
+f_lrr, f_baf, f_phase, origin_ok, origin, span_called, other_calls_on_chrom). `calibration.md`: detection-rate tables
+per type and depth (rows cell fraction, columns size) and the median absolute error of each estimate.
+`calibration.{png,svg,pdf}`: the detection grid per type (rows) and depth (columns), each cell its rate and the source
+(D depth, B bands, P phased). `runs/`: the simulated trios and their runs, regenerated and not kept.

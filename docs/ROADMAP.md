@@ -24,6 +24,14 @@ ordered by expected value; "done" items are kept for the record with the commit 
   copy number), so the X's mappability deficit no longer reads as a mosaic X loss in every female.
 - The cohort report lists the sex-chromosome aneuploidies with counts by complement, parent of origin and stage
   (`sex_aneuploidies.tsv`).
+- Mosaic loss of Y in a father without a son: a panel from the cohort's runs (`triokaryo panel --runs 'out/*' --roles
+  father,child`) supplies the male Y level; the panel's X and Y rows now keep the mappability deficit for either sex.
+- `triokaryo calibrate`: detection and cell-fraction accuracy over a grid of cell fractions, depths and sizes on the
+  simulator (`docs/calibration/`).
+- Cytogenetic bands (GRCh38 cytoBand, shipped) on every event and in the karyotype string.
+- The bin depth is a 20% trimmed mean (continuous; the median of hundreds of integer depths was quantised to one read, which
+  the calibration grid exposed as a zero noise scale that silently skipped whole chromosomes), and the noise scale has a
+  counting-noise floor.
 
 ## Method
 
@@ -42,9 +50,9 @@ ordered by expected value; "done" items are kept for the record with the commit 
 
 ## Calibration and evaluation
 
-- **Sensitivity curves from the simulator.** Sweep cell fraction (2–20%), depth (15–60×), event size (2–20 Mb) and
-  site density; report detection per source (depth, bands, phased) and the error of each cell-fraction estimate. The
-  mock machinery (`triokaryo mock`) already supports planted events, dense contigs and low cell fractions.
+- **Calibration grid extensions.** `triokaryo calibrate` covers cell fraction, depth and size for gains, losses and
+  CN-LOH; add uniparental disomy and whole-chromosome events, a site-density sweep, more replicates for rates with
+  confidence intervals, and a false-positive count per run from the unaffected chromosomes.
 - **False-discovery control for the phased scan.** A tag-permutation null (shuffle the parental tags within windows)
   gives an empirical distribution of segment shifts under no event; report an FDR per threshold.
 - **Leave-trio-out evaluation.** Run more 1000 Genomes trios with a panel that excludes the evaluated trio; the
@@ -55,16 +63,15 @@ ordered by expected value; "done" items are kept for the record with the commit 
 
 - **Y segmental events.** The Y is analysed only as a whole chromosome (copy number, mosaic loss); segmental Y events
   would need a male-only panel with Y bins aligned to one copy and a mappability-aware bin mask.
-- **Panel Y rows.** The shipped panel predates the diploid-scale Y convention; its Y rows are lifted by one unit at load
-  time. Rebuild it from the twelve VCFs when they are next available, ideally with more males (five contribute now).
-- **Mosaic loss of Y in daughters' fathers.** Without a son the father/son ratio is unavailable and, without a panel,
-  a loss of Y needs a 25% deviation; a male-only Y panel built from the cohort's fathers would resolve it.
+- **Rebuild the shipped panel** from the twelve VCFs when they are next available: it predates the diploid-scale Y
+  convention (its Y rows are lifted by one unit at load time), the one-unit X shift and the trimmed-mean bin depth
+  (differences under 2%), and has only five males.
 - **X inactivation and PAR.** The pseudoautosomal regions are excluded throughout; PAR1 could be analysed as autosomal
   (both parents contribute).
 
 ## Outputs and usability
 
-- **Standard CNV export** (BED or VCF) for downstream tools; cytoband names in the karyotype string from a band table.
+- **Standard CNV export** (BED or VCF) for downstream tools.
 - **Crossover map table** per meiotic event: the `crossovers` column lists positions; a dedicated table with the parent,
   the resolving auxiliary track and the state on each side would make them queryable, and a crossover track could be
   drawn on the chromosome figure.

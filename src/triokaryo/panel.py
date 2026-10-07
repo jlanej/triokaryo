@@ -9,31 +9,26 @@ import os
 
 import numpy as np
 
-from .model import NA
+from .model import NA, trimmed_mean
 from .vcfscan import scan_vcf
 
 
 def align_sex_chromosomes(lrr):
-    """A genome's X and Y LRR on the diploid scale, in place: a male's X (median under -0.5) is shifted up by its own median,
-    and a Y with depth (median under -0.5: one copy) is shifted up by exactly one unit, so that the panel's Y rows hold the
-    male Y level with its mappability deficit, which then cancels for a member as the X deficit does."""
-    xs = [v for (c, _), v in lrr.items() if c == "chrX"]
-    if len(xs) >= 20:
-        xmed = float(np.median(xs))
-        if xmed < -0.5:
+    """A genome's X and Y LRR on the diploid scale, in place: a one-copy X (median under -0.5: a male, or a 45,X) and a one-copy
+    Y (median under -0.5) are each shifted up by exactly one unit. The rows then hold each chromosome's level with its
+    mappability deficit whatever the genome's sex, so that the deficit cancels for a member: shifting a male's X by its own
+    median instead would erase the deficit for males only, and a male-heavy panel would read every female's X as a loss."""
+    for c, n_min in (("chrX", 20), ("chrY", 3)):
+        v = [x for (cc, _), x in lrr.items() if cc == c]
+        if len(v) >= n_min and float(np.median(v)) < -0.5:
             for key in list(lrr):
-                if key[0] == "chrX":
-                    lrr[key] -= xmed
-    ys = [v for (c, _), v in lrr.items() if c == "chrY"]
-    if len(ys) >= 3 and float(np.median(ys)) < -0.5:
-        for key in list(lrr):
-            if key[0] == "chrY":
-                lrr[key] += 1.0
+                if key[0] == c:
+                    lrr[key] += 1.0
     return lrr
 
 
 def sample_profile(sites_by_chrom, genome, bin_size, member=0, min_sites=20, min_dp=8, min_gq=20, min_het=5):
-    """One sample's self-normalised bin LRR (log2 of the bin's median depth over the autosomal median), the X and Y on the
+    """One sample's self-normalised bin LRR (log2 of the bin's trimmed-mean depth over the autosomal median), the X and Y on the
     diploid scale (align_sex_chromosomes), its band deviation per bin (the median |BAF - 1/2| at heterozygous sites) and its
     heterozygosity rate per bin (heterozygous over confident calls):
     ({(chrom, start): lrr}, {(chrom, start): bdev}, {(chrom, start): het_rate})."""
@@ -48,7 +43,7 @@ def sample_profile(sites_by_chrom, genome, bin_size, member=0, min_sites=20, min
         for b in np.unique(idx):
             sel = (idx == b) & (dp > 0) & ~s.par
             if sel.sum() >= min_sites:
-                depth[(chrom, int(b) * bin_size)] = float(np.median(dp[sel]))
+                depth[(chrom, int(b) * bin_size)] = trimmed_mean(dp[sel])
             h = (idx == b) & het & ~s.par
             if h.sum() >= min_het:
                 bdev[(chrom, int(b) * bin_size)] = float(np.median(np.abs(alt[h] / dp[h] - 0.5)))
@@ -64,9 +59,11 @@ def sample_profile(sites_by_chrom, genome, bin_size, member=0, min_sites=20, min
     return align_sex_chromosomes(out), bdev, hetr
 
 
-def build_panel(genome, bin_size, vcfs=(), samples=None, runs=(), log=None, thin=1):
-    """Per bin: n genomes, the median LRR and its robust SD. vcfs: VCF paths (every sample of each unless `samples` names
-    them); runs: directories of earlier runs (bins.tsv + summary.tsv)."""
+def build_panel(genome, bin_size, vcfs=(), samples=None, runs=(), log=None, thin=1, roles=None):
+    """Per bin: n genomes, the median LRR and its robust SD, the median band deviation and heterozygosity rate. vcfs: VCF paths
+    (every sample of each unless `samples` names them); runs: directories of earlier runs (bins.tsv + summary.tsv), taking the
+    members named in `roles` (default all three). Returns (rows, sample names, genomes with Y rows). The Y rows come from the
+    genomes with a Y (the males), so a cohort's fathers and sons are the Y reference for a father without a son."""
     profiles = []
     for v in vcfs:
         import pysam
@@ -88,7 +85,7 @@ def build_panel(genome, bin_size, vcfs=(), samples=None, runs=(), log=None, thin
         if int(summ.get("bin_size", bin_size)) != bin_size:
             continue
         rows = list(csv.DictReader(open(bpath), delimiter="\t"))
-        for role in ("child", "father", "mother"):
+        for role in (roles or ("child", "father", "mother")):
             name = summ.get(role, role)
             prof, bd, hr = {}, {}, {}
             for r in rows:
@@ -121,7 +118,8 @@ def build_panel(genome, bin_size, vcfs=(), samples=None, runs=(), log=None, thin
         rsd = float(1.4826 * np.median(np.abs(v - med))) if len(v) > 1 else NA
         out.append(dict(chrom=key[0], start=key[1], end=min(key[1] + bin_size, genome.length[key[0]]), n=int(len(v)), lrr_median=med, lrr_rsd=rsd,
                         n_bdev=int(len(b)), bdev_median=float(np.median(b)) if len(b) else NA, n_het=int(len(h)), het_rate_median=float(np.median(h)) if len(h) else NA))
-    return out, [n for n, _, _, _ in profiles]
+    n_y = sum(1 for _, p, _, _ in profiles if sum(1 for k in p if k[0] == "chrY") >= 3)
+    return out, [n for n, _, _, _ in profiles], n_y
 
 
 def write_panel(path, rows, samples, bin_size):
