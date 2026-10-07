@@ -179,8 +179,9 @@ none.
 
 `triokaryo cohort --runs 'out/*' --events ...` gathers many runs into a cohort report: counts, a landscape figure
 (events per chromosome; one row per trio), a sortable table of every event linked to its trio's page and figure,
-per-trio quality metrics, concordance with the supplied events, and the rejected phased segments by region; with
-`events.all.tsv`, `summary.all.tsv`, `concordance.tsv`, `flags.tsv` and `rejected.all.tsv`. `triokaryo report
+per-trio quality metrics with karyotype strings, a sex-chromosome aneuploidy table with counts by complement, parent
+of origin and meiotic stage, concordance with the supplied events, and the rejected phased segments by region; with
+`events.all.tsv`, `summary.all.tsv`, `sex_aneuploidies.tsv`, `concordance.tsv`, `flags.tsv` and `rejected.all.tsv`. `triokaryo report
 --runs 'out/*'` rebuilds a run's page, sidecars, legends and guide from its tables without the VCF.
 
 ## Supplied events (`--events`)

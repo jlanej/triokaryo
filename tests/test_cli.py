@@ -58,3 +58,23 @@ def test_cohort_report_guide_and_rebuild(mock, run, tmp_path):
     assert "keys: depth,step,baf,phased," in sc
     g = tmp_path / "guide.html"
     assert main(["guide", "--out", str(g)]) == 0 and g.stat().st_size > 100_000
+
+
+def test_cohort_lists_sex_chromosome_aneuploidies(mock, run, tmp_path):
+    """A cohort of the default run and a 47,XXY run: the aneuploidy table and counts name the 47,XXY with its parent of origin and
+    stage, and the karyotype strings are in the trios table."""
+    from triokaryo.mock import write_mock
+    from triokaryo.pedigree import read_trios
+    from triokaryo.pipeline import run_trio
+    m = write_mock(str(tmp_path / "xxy"), seed=5, no_events=True, xxy=True, prefix="K_")
+    xxy = run_trio(m["vcf"], read_trios(m["trios"])[0], str(tmp_path / "K_KID"), gc_track=m["gc"], figures=False, log=lambda s: None)
+    assert xxy["summary"]["child_karyotype"] == "47,XXY(mat,MI)"
+    out = tmp_path / "cohort"
+    assert main(["cohort", "--runs", run["out"], str(tmp_path / "K_KID"), "--out", str(out)]) == 0
+    rows = [l.split("\t") for l in (out / "sex_aneuploidies.tsv").read_text().splitlines()]
+    assert len(rows) == 2 and rows[0][:6] == ["trio", "sample", "role", "complement", "karyotype", "label"]
+    r = dict(zip(rows[0], rows[1]))
+    assert r["trio"] == "K_KID" and r["complement"] == "XXY" and r["karyotype"] == "47,XXY(mat,MI)" and r["label"] == "47,XXY" and r["origin"] == "extra copy maternal" and r["stage"] == "meiosis I"
+    page = (out / "index.html").read_text()
+    assert "47,XXY: 1 (1 maternal, 0 paternal; meiosis I 1, meiosis II 0" in page and "sex-chromosome aneuploidies" in page and "47,XXY(mat,MI)" in page
+    assert "sex_aneuploidies.tsv" in page and "K_KID" in page

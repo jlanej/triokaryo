@@ -79,15 +79,17 @@ mitotic trisomy), calling rule and column. Also `triokaryo guide --out guide.htm
 ## cohort/ (`triokaryo cohort`)
 
 `index.html`: counts (trios, events by type, member and source, de novo and inherited, phased-scan events,
-depth calls doubted by the phased track, runs of homozygosity, X copy numbers disagreeing with the pedigree,
-concordance), `figures/landscape.*` (events per chromosome by type; one row per trio with each event a bar coloured
+depth calls doubted by the phased track, runs of homozygosity, sex-chromosome aneuploidies, complements disagreeing
+with the pedigree sex, concordance), `figures/landscape.*` (events per chromosome by type; one row per trio with each event a bar coloured
 by type, the child's thick, a parent's thin above or below, a black line over a bar for a matched event), a sortable
 and filterable table of every event linked to its trio's page and chromosome figure, per-trio quality metrics,
-the concordance with the supplied events, and the rejected phased segments by region. Tables: `events.all.tsv`,
+a sex-chromosome aneuploidy section (one row per whole-X or whole-Y event with the member's complement, karyotype
+string, cell fraction, parent of origin, stage and crossovers, and counts by complement, origin and stage), the
+concordance with the supplied events, and the rejected phased segments by region. Tables: `events.all.tsv`,
 `summary.all.tsv` (per trio: members, sexes, sites, Mendelian-error rate, X copy numbers, sex-chromosome complements
 and checks, each member's karyotype string, the father/son Y ratio, depths, phased sites, shared windows, rejected
 segments, events, flagged events, run time, run directory), `concordance.tsv`,
-`flags.tsv` (every event with a note), `rejected.all.tsv`; plus `guide.html` and `figures/patterns_*.*`.
+`flags.tsv` (every event with a note), `sex_aneuploidies.tsv`, `rejected.all.tsv`; plus `guide.html` and `figures/patterns_*.*`.
 
 ## triokaryo report --runs
 

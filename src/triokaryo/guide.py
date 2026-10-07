@@ -156,8 +156,9 @@ def write_guide(out_html, figures_dir=None):
                  "source; de novo and inherited; phased-scan events; depth calls doubted by the phased track; X copy numbers disagreeing with the pedigree); the "
                  "landscape figure (events per chromosome, and one row per trio with each event a bar coloured by type: the child's thick, a parent's thin above "
                  "or below, a black line over a bar for an event matched by a supplied one); a table of every event (click a heading to sort, type in the box to "
-                 "filter) linked to its trio's page and chromosome figure; per-trio quality metrics; the concordance with the supplied events; the rejected phased "
-                 "segments by region; and this guide.</p>")
+                 "filter) linked to its trio's page and chromosome figure; per-trio quality metrics with each member's karyotype string; the sex-chromosome "
+                 "aneuploidies (one row per whole-X or whole-Y event, with counts by complement, parent of origin and stage; sex_aneuploidies.tsv); the "
+                 "concordance with the supplied events; the rejected phased segments by region; and this guide.</p>")
         w.append("<p style=\"color:#666;font-size:12px\">triokaryo %s</p></body></html>" % html.escape(__version__))
         with open(out_html, "w") as fh:
             fh.write("\n".join(w))

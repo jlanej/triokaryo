@@ -22,6 +22,8 @@ ordered by expected value; "done" items are kept for the record with the commit 
   karyotype string per member.
 - Without a panel, the X level is corrected within the trio (the median deviation of the members' X from their expected
   copy number), so the X's mappability deficit no longer reads as a mosaic X loss in every female.
+- The cohort report lists the sex-chromosome aneuploidies with counts by complement, parent of origin and stage
+  (`sex_aneuploidies.tsv`).
 
 ## Method
 

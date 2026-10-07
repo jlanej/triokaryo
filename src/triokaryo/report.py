@@ -405,6 +405,20 @@ def write_cohort(out, run_dirs, events_path=None, genome_name="grch38", log=None
     write_tsv(os.path.join(out, "rejected.all.tsv"), ["trio", "sample", "role", "chrom", "start", "end", "shift", "windows", "reason"], rejected)
     flags = [dict(trio=t, sample=e.sample, role=e.role, chrom=e.chrom, start=e.start, end=e.end, type=e.type, source=e.source, f=e.f, note=e.note) for t, e in events if e.note]
     write_tsv(os.path.join(out, "flags.tsv"), ["trio", "sample", "role", "chrom", "start", "end", "type", "source", "f", "note"], flags)
+    # the sex-chromosome aneuploidies: one row per whole-X or whole-Y event, with the member's complement and karyotype string
+    import re
+    kar_by_trio = {s["trio"]: karyotypes_of(s["events_obj"], s["tsv"], G) for s in summaries}
+    comp_by_trio = {s["trio"]: {r: s["tsv"].get("%s_sex_karyotype" % r, "") for r in MEMBERS} for s in summaries}
+    sex_ane = []
+    for t, e in events:
+        if e.chrom not in ("chrX", "chrY") or e.span != "whole":
+            continue
+        m = re.search(r"\(([^)]*)\)", e.note)
+        sex_ane.append(dict(trio=t, sample=e.sample, role=e.role, complement=comp_by_trio[t].get(e.role, ""), karyotype=kar_by_trio[t].get(e.role, ""),
+                            label=m.group(1) if m else "%s %s" % (e.chrom, e.type), chrom=e.chrom, type=e.type, f=e.f, origin=e.origin_phase or e.origin, stage=e.stage,
+                            centromere=e.centromere, n_crossovers=e.n_crossovers, crossovers=e.crossovers, mie_rate=e.mie_rate, note=e.note))
+    write_tsv(os.path.join(out, "sex_aneuploidies.tsv"), ["trio", "sample", "role", "complement", "karyotype", "label", "chrom", "type", "f", "origin", "stage", "centromere",
+                                                           "n_crossovers", "crossovers", "mie_rate", "note"], sex_ane)
     # the figure and the guide
     fdir = os.path.join(out, "figures")
     os.makedirs(fdir, exist_ok=True)
@@ -434,7 +448,7 @@ def write_cohort(out, run_dirs, events_path=None, genome_name="grch38", log=None
     tiles = [(len(summaries), "trios (%d without an event)" % quiet), (len(events), "events"), (by_type["gain"], "gains"), (by_type["loss"], "losses"),
              (by_type["LOH"], "copy-neutral LOH"), (by_type["UPD"], "heterodisomies"), (by_role["child"], "in children (%d de novo, %d inherited)" % (new, inh)),
              (by_role["father"] + by_role["mother"], "in parents"), (by_src["phased"], "from the phased scan alone"), (doubted, "depth calls doubted by the phased track"),
-             (roh, "runs of homozygosity"), (len(xbad), "sex-chromosome complements disagreeing with the pedigree sex")]
+             (roh, "runs of homozygosity"), (len(sex_ane), "sex-chromosome aneuploidies"), (len(xbad), "sex-chromosome complements disagreeing with the pedigree sex")]
     if conc:
         tiles.append((conc["matched"], "of %d supplied events matched" % conc["external"]))
     for n, label in tiles:
@@ -468,6 +482,26 @@ def write_cohort(out, run_dirs, events_path=None, genome_name="grch38", log=None
             r["y_father_son_log2"], fmt(s["mie_rate_genome"], 3), s["sites_used"], "%s, %s, %s" % (r["child_depth"], r["father_depth"], r["mother_depth"]), r["child_phased_sites"],
             r["rejected"])) + '<td><a href="%s">page</a></td></tr>' % html.escape(os.path.relpath(os.path.join(s["run"], "index.html"), out)))
     w.append("</tbody></table>")
+    w.append("<h2>Sex-chromosome aneuploidies</h2>")
+    if sex_ane:
+        by_label = {}
+        for r in sex_ane:
+            by_label.setdefault(r["label"], []).append(r)
+        parts = []
+        for label, rs in sorted(by_label.items(), key=lambda kv: -len(kv[1])):
+            o = {k: sum(1 for r in rs if k in (r["origin"] or "")) for k in ("maternal", "paternal")}
+            stg = {k: sum(1 for r in rs if (r["stage"] or "").startswith(k)) for k in ("meiosis I ", "meiosis I", "meiosis II", "mitotic")}
+            detail = []
+            if o["maternal"] or o["paternal"]:
+                detail.append("%d maternal, %d paternal" % (o["maternal"], o["paternal"]))
+            mi = sum(1 for r in rs if (r["stage"] or "").startswith("meiosis I") and not (r["stage"] or "").startswith("meiosis II"))
+            if mi or stg["meiosis II"] or stg["mitotic"]:
+                detail.append("meiosis I %d, meiosis II %d, mitotic or meiosis II without a crossover %d" % (mi, stg["meiosis II"], stg["mitotic"]))
+            parts.append("%s: %d%s" % (label, len(rs), " (%s)" % "; ".join(detail) if detail else ""))
+        w.append("<p>%d whole-X or whole-Y events in %d members (sex_aneuploidies.tsv). %s.</p>" % (len(sex_ane), len({(r["trio"], r["role"]) for r in sex_ane}), html.escape("; ".join(parts))))
+        w.append(_table(["trio", "sample", "role", "complement", "karyotype", "label", "type", "f", "origin", "stage", "crossovers", "mie_rate", "note"], sex_ane))
+    else:
+        w.append("<p>None: every whole X and Y matches the complement the pedigree sex implies (sex_aneuploidies.tsv is empty).</p>")
     if conc:
         w.append("<h2>Concordance with the supplied events</h2><p>%d supplied events, %d matched by a triokaryo event of the same sample and chromosome whose "
                  "intersection covers at least half of the shorter segment; %d triokaryo gains or losses without a supplied event; %d copy-neutral events, which a "
