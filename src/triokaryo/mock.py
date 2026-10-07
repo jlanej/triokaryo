@@ -73,11 +73,12 @@ def _gt(alt, dp):
 
 
 def write_mock(out_dir, seed=1, sites_per_mb=60, no_events=False, xxy=False, depth=(30.0, 32.0, 28.0), gc_beta=(-0.8, -0.5, -1.0), bin_size=1_000_000,
-               events=None, prefix="", contigs=None, child_sex="M", xxx=False):
+               events=None, prefix="", contigs=None, child_sex="M", xxx=False, sex_deficit=(1.0, 1.0)):
     """prefix: a tag before the sample names (KID, DAD, MOM), so that several mock trios can sit in one cohort.
     contigs: only these chromosomes (a dense small mock), else all. child_sex: M (one maternal X, the father's Y) or F (one X
     from each parent, no Y). xxy: a son with both maternal X homologues (a maternal meiosis I 47,XXY); xxx: a daughter with
-    both maternal X homologues and the paternal X (a maternal meiosis I 47,XXX)."""
+    both maternal X homologues and the paternal X (a maternal meiosis I 47,XXX). sex_deficit: depth factors on the X and
+    the Y, imitating the mappability deficit of real data (e.g. 0.93, 0.90)."""
     os.makedirs(out_dir, exist_ok=True)
     nm = {KID: prefix + KID, DAD: prefix + DAD, MOM: prefix + MOM}
     son = child_sex.upper().startswith("M")
@@ -161,7 +162,7 @@ def write_mock(out_dir, seed=1, sites_per_mb=60, no_events=False, xxy=False, dep
                 alt_mean = f_site * alt_ev + (1 - f_site) * (alt_base if isinstance(alt_base, np.ndarray) else float(alt_base))
                 p_alt = np.where(tot > 0, alt_mean / np.maximum(tot, 1e-9), 0.0)
                 p_alt = p_alt * (1 - 0.003) + (1 - p_alt) * 0.003
-                mean_dp = depth[mi] * np.exp(gc_beta[mi] * (gcs - 0.41)) * tot / 2.0
+                mean_dp = depth[mi] * np.exp(gc_beta[mi] * (gcs - 0.41)) * tot / 2.0 * (sex_deficit[0] if c == "chrX" else sex_deficit[1] if c == "chrY" else 1.0)
                 dp = rng.poisson(mean_dp)
                 alt = rng.binomial(dp, p_alt)
                 gq = np.where(rng.random(n) < 0.08, rng.integers(2, 20, n), 99)

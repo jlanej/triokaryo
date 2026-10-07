@@ -20,6 +20,8 @@ ordered by expected value; "done" items are kept for the record with the commit 
 - 47,XXX (maternal, staged from the centromere; paternal, the father's single X twice), 45,X, a cell-fraction-aware
   two-homologue criterion for mosaic maternal XXY, the sex implied by the Y when the pedigree lacks it, and an ISCN-like
   karyotype string per member.
+- Without a panel, the X level is corrected within the trio (the median deviation of the members' X from their expected
+  copy number), so the X's mappability deficit no longer reads as a mosaic X loss in every female.
 
 ## Method
 

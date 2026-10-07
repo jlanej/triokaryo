@@ -52,7 +52,7 @@ values `x_copies_raw`, `y_copies_raw`), the sex-chromosome complement (`sex_kary
 pedigree sex (`sex_check`; `x_check` the X-only wording), the median autosomal depth, the phased-site count, the
 window size, the reference bias, the number of phased-scan events and of shared windows, and the ISCN-like karyotype
 string (`karyotype`; grammar in METHODS); the father/son Y depth ratio (`y_father_son_log2`, `y_father_son_sites`)
-and whether the panel carried Y rows (`y_panel`); the parameters.
+and whether the panel carried Y rows (`y_panel`); the within-trio X correction applied without a panel (`x_offset_trio`, log2); the parameters.
 `summary.json` also holds every event, every supplied event and the per-member sex-chromosome state.
 
 ## figures/

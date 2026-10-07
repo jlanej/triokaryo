@@ -111,3 +111,21 @@ def test_whole_x_event_without_pedigree_sex(tmp_path):
     (e,) = res["events"]
     assert e.chrom == "chrX" and e.type == "gain" and abs(e.f - 1.0) < 0.1 and "implied by the Y" in e.note and e.origin == "extra copy maternal" and e.stage == "meiosis I"
     assert res["summary"]["child_sex_check"] == "" and res["summary"]["child_sex_karyotype"] == "XXY" and res["summary"]["child_karyotype"] == "47,XXY(mat,MI)"
+
+
+def test_x_level_corrected_within_the_trio_without_a_panel(tmp_path):
+    """Without a panel, a mappability deficit on the X (7% here) would read as a mosaic X loss in every female; the median deviation
+    of the members' X levels from their pedigree expectation corrects it, the Y (not corrected) still rounds to one copy, and a
+    47,XXY under the same deficit is still a whole-X gain of one copy."""
+    m = write_mock(str(tmp_path / "deficit"), seed=12, no_events=True, sex_deficit=(0.93, 0.90))
+    trio = read_trios(m["trios"])[0]
+    res = run_trio(m["vcf"], trio, str(tmp_path / "out"), gc_track=m["gc"], figures=False, log=lambda s: None)
+    s = res["summary"]
+    assert res["events"] == [], [(e.sample, e.chrom, e.type, e.f) for e in res["events"]]
+    assert abs(s["x_offset_trio"] - np.log2(0.93)) < 0.03, s["x_offset_trio"]
+    assert abs(s["mother_x_copies_raw"] - 2) < 0.06 and abs(s["child_x_copies_raw"] - 1) < 0.03 and abs(s["father_x_copies_raw"] - 1) < 0.03
+    assert abs(s["father_y_copies_raw"] - 0.90) < 0.05 and s["father_y_copies"] == 1 and abs(s["y_father_son_log2"]) < 0.1
+    m2 = write_mock(str(tmp_path / "xxy_deficit"), seed=12, no_events=True, xxy=True, sex_deficit=(0.93, 0.90))
+    res2 = run_trio(m2["vcf"], read_trios(m2["trios"])[0], str(tmp_path / "out2"), gc_track=m2["gc"], figures=False, log=lambda s: None)
+    (e,) = res2["events"]
+    assert e.chrom == "chrX" and e.type == "gain" and abs(e.f - 1.0) < 0.08 and res2["summary"]["child_karyotype"] == "47,XXY(mat,MI)", (e.f, res2["summary"]["child_karyotype"])

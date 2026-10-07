@@ -95,7 +95,13 @@ normal male is slightly under 1. A reference panel corrects it: `triokaryo panel
 diploid scale (a male's X shifted up by its own median; a Y with depth shifted up by exactly one unit, so that the
 panel's Y rows hold the male level with its deficit, which then cancels for a member as the X deficit does). A panel
 written before this convention holds its Y rows at the one-copy level and is lifted by one unit when loaded. Y bins
-need three panel genomes rather than five, since only males contribute. The Y is not segmented.
+need three panel genomes rather than five, since only males contribute. The Y is not segmented. Without a panel, the
+X is corrected within the trio: the median, over the members with a pedigree or Y-implied sex, of the deviation of
+their X level (log2 of raw copies over 2) from its expectation (one copy for a male, two for a female) is subtracted
+from every member's X (`x_offset_trio`). This removes the X's mappability deficit of about 5–10% relative to the
+autosomes, which would otherwise read as a mosaic X loss in every female; it is robust to one aneuploid member among
+three and is not applied beyond 0.3 in log2. The Y is not corrected this way; its deficit is handled by the panel or
+by the father/son ratio.
 
 **Whole-chromosome events.** With the pedigree sex given, the expected complement is XY or XX. An X whose raw copy
 number deviates from the expectation by at least `min_f` is reported as a whole-X gain or loss with cell fraction

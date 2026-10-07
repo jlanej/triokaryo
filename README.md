@@ -136,7 +136,9 @@ are the same sequence, so mapping cancels). These events receive the parent of o
 meiotic stage: a paternal extra X in a male is a paternal meiosis I error, a paternal extra X in a female is the
 father's single X twice (meiosis II or post-zygotic), and a maternal extra X is staged from the centromere like an
 autosomal trisomy. Segmental X events are called relative to the member's own X level. A male's X uses a hemizygous
-baseline for the parent-of-origin likelihood and for Mendelian errors. Without a pedigree sex, the Y implies it. Each
+baseline for the parent-of-origin likelihood and for Mendelian errors. Without a pedigree sex, the Y implies it; without
+a panel, the X level is corrected within the trio by the median deviation of the members' X from their expected copy
+number, which removes the X's mappability deficit. Each
 member also receives an ISCN-like karyotype string, e.g. `47,XXY(mat,MI)`, `mos 47,XXY(pat)[0.40]/46,XY`,
 `47,XY,+21mat(MI)`, `mos 46,XX,del(2)(140.7-173.2Mb)pat[0.67]/46,XX`.
 

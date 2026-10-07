@@ -23,6 +23,7 @@ from .model import NA, MEMBERS, chrom_level
 from .segment import Event
 
 Y_MIN_BINS = 3                 # usable Y bins for a Y copy number
+X_OFFSET_MAX = 0.3             # the largest within-trio X correction applied (log2); beyond it the members' X levels contradict the pedigree
 Y_EVENT_FLOOR_NO_REF = 0.25    # a whole-Y deviation this large is reported without a panel or a father/son comparison
 Y_FATHER_SON_MIN_SITES = 200   # Y sites with depth in both for the father/son ratio
 EXPECTED = {"M": (1, 1), "F": (2, 0)}
@@ -94,6 +95,33 @@ def sex_check(sex, st):
     else:
         name = KARYOTYPE_NAME.get(k, k)
     return "%s in a reported %s (%s)" % (k, "male" if sex == "M" else "female", name)
+
+
+def x_offset_within_trio(bins, scan, sexes, min_sites=20, min_bins=5):
+    """Without a panel, the X read against the autosomes carries a mappability deficit of about 5-10%, which would read as a
+    mosaic X loss in every female. The correction is the median, over the members with a pedigree or Y-implied sex, of the
+    deviation of the X level (log2 of raw copies over 2) from its expectation (log2(1/2) for a male, 0 for a female): robust to
+    one aneuploid member among three, and not applied beyond X_OFFSET_MAX. Returns (offset, {role: deviation})."""
+    devs = {}
+    for m, role in enumerate(MEMBERS):
+        st = sex_state(bins, scan, m, min_sites, min_bins)
+        sex, _ = implied_sex(sexes[m], st)
+        if not sex or not np.isfinite(st["x_copies_raw"]) or st["x_copies_raw"] <= 0:
+            continue
+        devs[role] = float(np.log2(st["x_copies_raw"] / 2.0) - np.log2(EXPECTED[sex][0] / 2.0))
+    if not devs:
+        return 0.0, devs
+    off = float(np.median(list(devs.values())))
+    return (off if abs(off) <= X_OFFSET_MAX else 0.0), devs
+
+
+def apply_x_offset(bins, offset):
+    """Subtract the within-trio X offset from every member's corrected X LRR, in place."""
+    sl = bins.of("chrX")
+    if sl.start < sl.stop and offset:
+        for m in range(bins.lrr_gc.shape[0]):
+            v = bins.lrr_gc[m, sl]
+            bins.lrr_gc[m, sl] = np.where(np.isfinite(v), v - offset, v)
 
 
 def y_father_son(scan, bins, min_sites=Y_FATHER_SON_MIN_SITES):

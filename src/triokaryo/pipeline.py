@@ -35,6 +35,14 @@ def run_trio(vcf, trio, out, gc_track=None, events_path=None, bin_size=1_000_000
     if pan is not None:
         from .model import PANEL_MAX_RSD, PANEL_MIN_N
         log("panel: %d bins masked (fewer than %d genomes, or robust SD above %.2f)" % (int(bins.masked.sum()), PANEL_MIN_N, PANEL_MAX_RSD))
+    x_off, x_devs = 0.0, {}
+    if pan is None:                                              # no panel: the X's mappability deficit is estimated within the trio
+        from .sexchrom import apply_x_offset, x_offset_within_trio
+        x_off, x_devs = x_offset_within_trio(bins, scan, trio.sexes, P["min_sites"], P["min_len"])
+        if x_off:
+            apply_x_offset(bins, x_off)
+            log("X level corrected within the trio by %+.3f (log2; the members' X deviations from their expected copy number: %s)" % (
+                -x_off, ", ".join("%s %+.3f" % kv for kv in x_devs.items())))
     events, x_copies = [], {}
     for m, role in enumerate(MEMBERS):
         ev, xc = call_member(bins, scan, m, trio.members[m], G, P, trio.sexes[m])
@@ -49,7 +57,7 @@ def run_trio(vcf, trio, out, gc_track=None, events_path=None, bin_size=1_000_000
         states[role]["x_check"] = x_check(trio.sexes[m], states[role])
         states[role]["sex_check"] = sex_check(trio.sexes[m], states[role])
         events += sex_chromosome_events(m, trio.members[m], states, trio.sexes, bins, G, P["min_f"], y_ref=y_ref, y_ratio=y_ratio)
-    sex_info = dict(states=states, y_father_son_log2=y_ratio, y_father_son_sites=y_ratio_n, y_panel=y_ref)
+    sex_info = dict(states=states, y_father_son_log2=y_ratio, y_father_son_sites=y_ratio_n, y_panel=y_ref, x_offset_trio=x_off)
     log("sex chromosomes: %s; Y father/son log2 ratio %s" % ("; ".join("%s %s (%s)" % (role, states[role]["sex_check"] and (("X" * int(states[role]["x_copies"]) if np.isfinite(states[role]["x_copies"]) else "?") +
                                                                       ("Y" * int(states[role]["y_copies"]) if np.isfinite(states[role]["y_copies"]) else "")) or "unknown", states[role]["sex_check"] or "no pedigree sex")
                                                                       for role in MEMBERS), "%.3f over %d sites" % (y_ratio, y_ratio_n) if np.isfinite(y_ratio) else "NA"))
@@ -104,7 +112,7 @@ def run_trio(vcf, trio, out, gc_track=None, events_path=None, bin_size=1_000_000
         json.dump(dict(trio=trio.name, members=list(trio.members), sexes=list(trio.sexes), x_copies=x_copies, mie_rate_genome=base_mie, phasing=phase_info,
                        sex_chromosomes={role: {k: v for k, v in states[role].items() if k != "y_in_vcf"} for role in MEMBERS},
                        karyotypes={role: summ.get("%s_karyotype" % role, "") for role in MEMBERS},
-                       y_father_son=dict(log2=y_ratio, sites=y_ratio_n), genome=genome_name, mock_note=mock_note,
+                       y_father_son=dict(log2=y_ratio, sites=y_ratio_n), x_offset_trio=x_off, genome=genome_name, mock_note=mock_note,
                        events=[e.as_dict() for e in events], external=[dict(sample=x.sample, chrom=x.chrom, start=x.start, end=x.end, label=x.note, match=x.inheritance) for x in external],
                        sites_used=scan.n_used, records=scan.n_records, skipped=scan.skipped, seconds=round(time.time() - t0, 1)),
                   fh, indent=1, default=lambda o: None if (isinstance(o, float) and not np.isfinite(o)) else str(o))

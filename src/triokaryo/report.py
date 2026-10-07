@@ -120,6 +120,7 @@ def write_tables(out, trio, bins, events, x_copies, scan, base_mie, params, trac
         summ["y_father_son_log2"] = sex_info.get("y_father_son_log2", NA)
         summ["y_father_son_sites"] = sex_info.get("y_father_son_sites", 0)
         summ["y_panel"] = bool(sex_info.get("y_panel", False))
+        summ["x_offset_trio"] = sex_info.get("x_offset_trio", 0.0)
     if genome is not None:
         for role, k in karyotypes_of(events, summ, genome).items():
             summ["%s_karyotype" % role] = k
