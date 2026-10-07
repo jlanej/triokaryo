@@ -1,9 +1,9 @@
-"""A reference panel: the depth structure every genome shares along the reference - centromere flanks, segmental
-duplications, the acrocentric short arms, the caller's own depth filter - as the median LRR per bin over other genomes,
-with its spread. Subtracted from each member's LRR it leaves the member's own events; bins the panel cannot pin (a
-wide spread, too few genomes) are left out of the calls. Built from any genomes counted the same way: per-sample or
-multi-sample VCFs (`triokaryo panel --vcfs`), or earlier runs' bins.tsv (`--runs`), with the cohort itself the natural
-panel when there are many trios."""
+"""A reference panel: the depth structure shared by every genome along the reference (centromere flanks, segmental
+duplications, acrocentric short arms, the caller's depth filter) as the per-bin median LRR over other genomes with its
+spread, together with the per-bin median band deviation and heterozygosity rate. Subtracted from each member's tracks
+it leaves the member's own events; bins the panel cannot characterise (wide spread, too few genomes) are excluded from
+calling. Built from any genomes processed the same way: per-sample or multi-sample VCFs (`triokaryo panel --vcfs`), or
+earlier runs' bins.tsv (`--runs`); with many trios the cohort itself is the natural panel."""
 import csv
 import os
 

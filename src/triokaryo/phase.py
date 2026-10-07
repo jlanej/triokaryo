@@ -1,33 +1,32 @@
-"""Transmission phasing, and what it makes of the B-allele fraction.
+"""Transmission phasing of the B-allele fraction.
 
-The alt-allele fraction at a heterozygous site sits at 1/2 +- d with the sign unknown, so that it can only be read
-folded (|BAF - 1/2|, biased upward by the noise: 0.07 at 30x even where d = 0). The trio gives the sign. At a site where
-the parents are opposite homozygotes, the child's two alleles have known parents whatever the child's call: the fraction
-of the mother's allele is the maternal fraction - 1/2 where the homologues are equal, 1/2 + d or 1/2 - d along an event
-by the parent of origin, 1 where no paternal copy is left (a deletion, an isodisomy, a heterodisomy). At a parent's
-heterozygous site where the child is homozygous, the allele the parent passed to the child is the child's: the fraction
-of the transmitted allele along the parent says whether an event of the parent's lies on the homologue the child got.
-These are the main tracks: unambiguous, the pooled fraction over any stretch of sites an unbiased reading of d with the
-binomial's error, a phasing error (a genotype error elsewhere in the trio) flipping a site at random and so weakening
-a reading rather than inventing one. The reference bias (the alt allele read a little under one half) is taken out by
-the member's own genome-wide median, with the sign of each site's tag.
+The alt-allele fraction at a heterozygous site is 1/2 +- d with the sign of d unknown, so BAF is conventionally read
+folded (|BAF - 1/2|), an estimator biased upward by binomial noise (0.07 at 30x when d = 0). The trio supplies the
+sign. Where the parents are opposite homozygotes, the parental origin of each of the child's alleles is known
+regardless of the child's call, and the fraction of reads carrying the maternal allele (the maternal fraction) is 1/2
+with equal homologue copy, 1/2 + d or 1/2 - d along an event according to the parent of origin, and 1 where no paternal
+copy is present (deletion, isodisomy, heterodisomy). At a parent's heterozygous site where the child is homozygous,
+the transmitted allele is known, and the fraction of reads carrying it shows whether an event in the parent lies on
+the transmitted homologue. These are the main tracks: the pooled fraction over any set of sites is an unbiased
+estimate of d with binomial error, and a phasing error (a genotype error elsewhere in the trio) flips one site's
+contribution and so attenuates a signal rather than creating one. The reference bias (alt fraction slightly under
+1/2 at heterozygous sites) is removed by the member's genome-wide median, applied with the sign of each site's tag.
 
-The sites where only one parent is homozygous phase the child too - the homozygous parent's allele is theirs, the
-other allele the other parent's - but only while each parent gave one homologue. Where the child carries two different
-homologues of one parent (a meiotic trisomy, a heterodisomy) the sites tagged by the other parent's homozygosity read
-the wrong way. So they are auxiliary tracks, pooled beside the main one: along a maternal meiotic trisomy the track
-read at the father's homozygous sites leaves the main track (1/3 against 2/3) where the two maternal copies differ
-and returns where a crossover made them identical - a map of the meiotic error and its crossovers; a parent's
-auxiliary track (the child heterozygous, the other parent homozygous) does the same from the parent's side.
+Sites where only one parent is homozygous also phase the child (the homozygous parent's allele is known, the other
+allele is the other parent's), but only while each parent contributed one homologue. Where the child carries two
+different homologues of one parent (meiotic trisomy, heterodisomy), the sites tagged by the other parent's
+homozygous genotype are misassigned. They are therefore pooled as auxiliary tracks: along a maternal meiotic trisomy
+the track read at the father's homozygous sites departs from the main track (1/3 against 2/3) where the two maternal
+copies differ and rejoins it where a crossover has made them identical, mapping the meiotic error and its crossovers;
+a parent's auxiliary track (child heterozygous, other parent homozygous) does the same from the parent's side.
 
-From the main tracks come: pooled windows (a few hundred kb) and their step fit (total-variation denoising); each
-event's phased reading (the shift, its share of cells, its parent of origin, and whether the parent's two copies in
-the child are one homologue or two); the event's edges at site resolution; the parental copies (the LRR's copies
-split by the fraction: maternal and paternal along the child, transmitted and untransmitted along a parent); and a
-scan of the track for what the depth cannot see - a gain or loss in a few per cent of cells, typed by the depth
-where it leans, and a uniparental heterodisomy, which the depth, the folded bands and the heterozygosity rate all
-miss (the child homozygous for one parent's allele wherever the parents are opposite homozygotes, heterozygous
-wherever that parent is)."""
+From the main tracks: pooled windows (a few hundred kb) and their step fit (total-variation denoising); per event the
+phased shift, cell fraction, parent of origin and homologue count; boundaries at site resolution; per-homologue copy
+number (the LRR-derived copy number split by the fraction: maternal and paternal along the child, transmitted and
+untransmitted along a parent); and a scan of the track for events below the depth detection limit (a gain or loss in
+a few per cent of cells, typed by the depth where it deviates) and for uniparental heterodisomy, which depth, folded
+BAF and heterozygosity rate all miss (the child homozygous for one parent's allele at every informative site yet
+heterozygous wherever that parent is)."""
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -49,15 +48,15 @@ ORIGIN_MIN_SITES = 40        # phased sites a parent-of-origin reading needs ...
 ORIGIN_MIN_Z = 3.0           # ... and the shift's size in standard errors
 HOMOLOGUE_MIN_WINDOWS = 4    # windows an event needs for the one-or-two-homologues reading ...
 HOMOLOGUE_MIN_SHIFT = 0.05   # ... and the shift it needs (a gain in a fifth of the cells): below it the auxiliary tracks' signs are noise
-SHARED_SHIFT = 0.05          # a window shifted this far in two or more members - each at least half the other's - is parted in everyone (paralogy): no member's event
-DISAGREE_SITES = 500         # phased sites an event needs before its phased share is set against the depth's
+SHARED_SHIFT = 0.05          # a window deviating this far from 1/2 in two or more members at once (the other's at least half of this member's) is shared (paralogy): no member's event
+DISAGREE_SITES = 500         # minimum phased sites before an event's phased cell fraction is compared with the depth's
 SCAN = dict(min_len=8,       # windows per segment of the phased scan
             min_bp=2_000_000,  # a phased find spans at least this (a dense cluster of sites makes many windows of a few hundred kb)
             z=5.0,           # the split statistic (binary segmentation, as the depth's)
             min_shift=0.015, # the smallest shift reported: a gain or loss in about 6% of cells ...
             min_shift_loh=0.025,  # ... and, where the depth is flat and the bands are the only evidence, a copy-neutral LOH in 5%
             min_z=5.0,       # the segment's shift in standard errors (the empirical, not the binomial, error)
-            agree=0.75,      # the share of a segment's windows shifted the way of its mean (a few parted windows do not make an event)
+            agree=0.75,      # minimum share of a segment's windows with the sign of its mean (a few deviating windows do not make an event)
             lrr_z=3.0,       # the depth's lean, in standard errors, that types a phased find as a gain or loss
             upd_shift=0.4,   # a flat-depth shift this large (both copies from one parent) ...
             upd_het=0.5)     # ... with the heterozygosity rate at least this share of the member's own: a heterodisomy, not an LOH
@@ -83,8 +82,8 @@ class PhasedTrack:
     w_copies_other: np.ndarray
     aux: dict = field(default_factory=dict)   # name -> (per-window pooled fraction, per-window sites): the auxiliary tracks
     aux_sites: dict = field(default_factory=dict)   # name -> (idx, frac) per site
-    w_shared: np.ndarray = None   # windows parted in two or more members (set across the trio): left out of the scan and the fits
-    w_rejected: np.ndarray = None # windows inside a segment the scan set aside (paralogy, a dense cluster): no copies drawn there
+    w_shared: np.ndarray = None   # windows deviating in two or more members (set across the trio): excluded from the scan and the fits
+    w_rejected: np.ndarray = None # windows inside a segment the scan rejected (paralogy, a dense cluster): no copy number drawn there
 
 
 def phase_classes(sites, m, min_dp, min_gq):
@@ -204,7 +203,7 @@ def phased_tracks(scan, bins, genome, m, min_dp, min_gq, sex=""):
         keep = np.ones(s.n, dtype=bool)
         if c in genome.par or c == "chrX":
             keep &= ~s.par
-        if bins.masked_bands is not None:                                   # bands parted in everyone: paralogy, not phase
+        if bins.masked_bands is not None:                                   # bands split in every genome: paralogy, not phase
             a0 = bins.index[c][0]
             bi = a0 + np.minimum(s.pos // bins.bin_size, bins.index[c][1] - a0 - 1)
             keep &= ~bins.masked_bands[bi]
@@ -250,9 +249,10 @@ def phased_tracks(scan, bins, genome, m, min_dp, min_gq, sex=""):
 
 
 def fit_tracks(tracks, bins, m):
-    """The step fits of the member's windows (one penalty for the genome; shared windows left out) and the copies from them:
-    the LRR's step fit's copies split by the fraction's, each over a running median of five first (a dip of a bin or two,
-    a parted window or two, is not a large event), and no copies where the scan set a segment aside."""
+    """The step fits of the member's windows (one penalty per genome; shared windows excluded) and the per-homologue copy
+    number from them: the LRR step fit's copy number split by the fraction's step fit, each over a running median of five
+    points first (a dip of a bin or two, or a deviating window or two, is not a large event); no copy number where the
+    scan rejected a segment."""
     allw = [t.w_frac[np.isfinite(t.w_frac) & ~(t.w_shared if t.w_shared is not None else np.zeros(len(t.w_frac), dtype=bool))] for t in tracks.values()]
     allw = [v for v in allw if len(v)]
     lam = tv_lambda(np.concatenate(allw), TV_K) if allw else 0.0
@@ -271,7 +271,7 @@ def fit_tracks(tracks, bins, m):
 
 
 def mask_rejected(tracks_by_member, bins, rejected):
-    """The windows inside the segments the scan set aside carry no copies: the fits redone."""
+    """Windows inside segments the scan rejected carry no copy number; the fits are redone."""
     for m, tracks in enumerate(tracks_by_member):
         for c, t in tracks.items():
             rej = np.zeros(len(t.w_mid), dtype=bool)
@@ -283,8 +283,8 @@ def mask_rejected(tracks_by_member, bins, rejected):
 
 
 def mask_shared(tracks_by_member, bins):
-    """Windows parted (|fraction - 1/2| >= SHARED_SHIFT) in two or more members at once are parted in everyone - paralogous
-    sequence, or an imbalance the family shares - and no member's event: marked on every member's track, and the fits redone."""
+    """Windows deviating from 1/2 by SHARED_SHIFT or more in two or more members at once indicate paralogous sequence or an
+    imbalance shared by the family, not a member's event: marked as shared on each member's track, and the fits redone."""
     for m, tracks in enumerate(tracks_by_member):
         for c, t in tracks.items():
             mine = np.abs(t.w_frac - 0.5)
@@ -307,7 +307,7 @@ def mask_shared(tracks_by_member, bins):
 
 
 def phased_reading(ev, track, sites, m):
-    """The event's phased reading: the pooled fraction's shift from one half, its binomial error, and the sites."""
+    """The event's phased statistics: the pooled fraction's shift from 1/2, its binomial error, and the site count."""
     if track is None:
         return NA, NA, 0
     pos = sites.pos[track.idx]
@@ -340,8 +340,8 @@ def origin_from_shift(role, kind, shift):
 
 def homologues_reading(ev, track):
     """For a child's gain, LOH or heterodisomy with a parent named: are the parent's two copies in the child one homologue (the
-    auxiliary track read at the other parent's homozygous sites follows the main one) or two (it leaves it: 1/3 against 2/3
-    along a trisomy)? Returns (text, share of the event's windows where the copies differ)."""
+    auxiliary track read at the other parent's homozygous sites follows the main one) or two (it departs: 1/3 against 2/3
+    along a trisomy)? Returns (text, share of the event's windows in which the copies differ)."""
     if ev.role != "child" or ev.type not in ("gain", "LOH", "UPD") or not np.isfinite(ev.phase_shift) or track is None or abs(ev.phase_shift) < HOMOLOGUE_MIN_SHIFT:
         return "", NA
     name = "father_hom" if ev.phase_shift > 0 else "mother_hom"          # a maternal event: the sites tagged by the father's homozygosity
@@ -368,8 +368,8 @@ def homologues_reading(ev, track):
 
 def refine_edges(ev, track, sites, bins, genome):
     """The event's start and end at site resolution: within EDGE_BINS bins of each bin edge, the split of the phased sites
-    (signed by the event's shift) that best parts an outside at one half from an inside away from it. (NA, NA, 0) where the
-    event runs to the chromosome's end, or the sites are too few."""
+    (signed by the event's shift) that best separates an outside at 1/2 from an inside away from it. (NA, NA, 0) where the
+    event runs to the chromosome end, or the sites are too few."""
     if track is None or not np.isfinite(ev.phase_shift) or ev.phase_shift == 0:
         return NA, NA, 0
     pos = sites.pos[track.idx]
@@ -434,11 +434,11 @@ def annotate_events(events, tracks_by_member, scan, bins, genome):
 
 
 def phased_scan(tracks, bins, scan, m, sample, genome, events, params, min_dp, min_gq, sex="", base_het=NA, rejected=None):
-    """Events in the phased track the depth did not call: segments of the pooled windows shifted from one half, typed by
-    the depth's lean over the same bins (a gain or loss); where the depth is flat, a copy-neutral loss of heterozygosity
-    at a share of 2 d, or - the shift near one half with the heterozygosity kept - a uniparental heterodisomy. Windows
-    parted in two or more members are left out first. A segment under min_bp, or whose windows do not agree with its
-    mean, is set aside (rejected: a list of dicts, for the record)."""
+    """Events in the phased track not called by the depth: segments of the pooled windows shifted from 1/2, typed by the
+    depth's deviation over the same bins (gain or loss); with flat depth, copy-neutral LOH at a cell fraction of 2d or,
+    with a shift near 1/2 and heterozygosity retained, uniparental heterodisomy. Windows shared by two or more members
+    are excluded first. A segment under min_bp, or whose windows are inconsistent with its mean, is rejected (appended
+    to `rejected`, a list of dicts)."""
     S = dict(SCAN, **(params or {}))
     role = MEMBERS[m]
     out = []

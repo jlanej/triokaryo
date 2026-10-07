@@ -1,6 +1,7 @@
-"""Events from elsewhere (another caller, a depth tool such as NGS-DOSE's karyotype, a clinical karyotype) to draw beside
-the trio's and to check against. A TSV with sample, chrom, start, end and a label; or NGS-DOSE's karyotype/events.tsv
-(sample, chrom, span, start_mb, end_mb, label, kind), read by its columns."""
+"""Events supplied from another method (a CNV caller, a depth-based karyotype such as NGS-DOSE's, a clinical karyotype),
+drawn beside the trio's events and matched to them. A TSV with sample, chrom, start, end and a label (optionally a
+type); or NGS-DOSE's karyotype/events.tsv (sample, chrom, span, start_mb, end_mb, label, kind), recognised by its
+columns."""
 import csv
 
 from .segment import Event
@@ -44,8 +45,9 @@ def read_events(path, genome):
 
 
 def match_external(events, external, min_overlap=0.5):
-    """Each of the trio's events gets the labels of the external events it overlaps (same sample); each external event is
-    marked matched / unmatched. Returns the external list with .inheritance used as the match flag."""
+    """Each of the trio's events receives the labels of the supplied events of the same sample and chromosome whose
+    intersection covers at least min_overlap of the shorter segment; each supplied event is marked matched or unmatched.
+    Returns the supplied list with .inheritance used as the match flag."""
     for e in events:
         hits = [x for x in external if x.sample == e.sample and x.chrom == e.chrom and e.overlap(x) >= min_overlap]
         e.external = "; ".join(x.note for x in hits) if hits else ""

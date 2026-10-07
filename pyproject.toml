@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "triokaryo"
 version = "0.1.0"
-description = "Large chromosomal events in a trio, read from its VCF: LRR and BAF along the genome for child, father and mother, segmentation with the mosaic fraction from depth and from the B-allele bands, parent of origin from informative sites, inheritance, and publication figures."
+description = "Large chromosomal events in a parent-offspring trio from its VCF: LRR, BAF and transmission phasing per member; gains, losses, copy-neutral LOH and uniparental disomy with cell fraction, parent of origin, homologue count and inheritance; publication figures."
 readme = "README.md"
 requires-python = ">=3.9"
 license = { text = "MIT" }
@@ -27,7 +27,7 @@ triokaryo = "triokaryo.cli:main"
 [tool.setuptools.packages.find]
 where = ["src"]
 
-# a reference panel of twelve public 1000 Genomes genomes (Illumina's DRAGEN 3.7.6 re-analysis, hg38 graph-based), 1-Mb bins:
-# `--panel 1kg-dragen` resolves to it, for data called the same way
+# reference panel of twelve public 1000 Genomes genomes (Illumina's DRAGEN 3.7.6 re-analysis, hg38 graph-based), 1-Mb bins;
+# `--panel 1kg-dragen` resolves to it
 [tool.setuptools.package-data]
 triokaryo = ["data/*.tsv"]

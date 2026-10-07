@@ -11,10 +11,10 @@ venv:                     ## a virtualenv with the package and the test deps
 	$(PIP) install --upgrade pip
 	$(PIP) install -e '.[test]'
 
-test: venv                ## the test suite (writes its mock trio under the test's temp dir)
+test: venv                ## the test suite (writes its simulated trio under pytest's temp dir)
 	$(PY) -m pytest -q
 
-demo: venv                ## the mock trio, run end to end into ./mock_out
+demo: venv                ## the simulated trio, run end to end into ./mock_out
 	$(PY) -m triokaryo.cli mock --out mock_out/mock
 	$(PY) -m triokaryo.cli run --vcf mock_out/mock/mock.vcf.gz --pedigree mock_out/mock/mock.trios.tsv --child KID \
 	  --gc-track mock_out/mock/gc.tsv --events mock_out/mock/events.external.tsv --out mock_out/KID
@@ -24,7 +24,7 @@ demo: venv                ## the mock trio, run end to end into ./mock_out
 docker:                   ## the container image
 	docker build -t $(IMAGE) .
 
-docker-test: docker       ## the mock, inside the image
+docker-test: docker       ## the simulated trio, inside the image
 	docker run --rm -v "$$PWD:/data" -w /data $(IMAGE) mock --out /data/ci_out/mock
 	docker run --rm -v "$$PWD:/data" -w /data $(IMAGE) run --vcf /data/ci_out/mock/mock.vcf.gz --pedigree /data/ci_out/mock/mock.trios.tsv \
 	  --child KID --gc-track /data/ci_out/mock/gc.tsv --out /data/ci_out/KID --no-figures

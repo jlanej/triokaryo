@@ -10,7 +10,7 @@ ARG PY=3.12-slim
 FROM python:${PY} AS runtime
 
 LABEL org.opencontainers.image.title="triokaryo" \
-      org.opencontainers.image.description="Large chromosomal events in a trio from its VCF: LRR/BAF, mosaic fraction, parent of origin, inheritance" \
+      org.opencontainers.image.description="Large chromosomal events in a parent-offspring trio from its VCF: LRR, BAF and transmission phasing; cell fraction, parent of origin, inheritance" \
       org.opencontainers.image.licenses="MIT"
 
 RUN apt-get update && apt-get install -y --no-install-recommends bcftools tabix && rm -rf /var/lib/apt/lists/*

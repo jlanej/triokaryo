@@ -1,6 +1,6 @@
-"""The guide: how to read every figure, colour, call and column triokaryo writes - one self-contained page, with the
-pattern cards (what each kind of event looks like) drawn from idealised tracks. Written beside every trio's page and
-the cohort report (guide.html), and by `triokaryo guide --out`."""
+"""The guide: the meaning of every figure row, colour, call and column, as one self-contained page with pattern cards
+(the expected appearance of each event type) drawn from idealised tracks. Written beside every trio page and the
+cohort report (guide.html), and by `triokaryo guide --out`."""
 import base64
 import html
 import os
@@ -14,60 +14,60 @@ SITE = "https://jlanej.github.io/triokaryo/"
 
 COLUMN_DOCS = [
     ("sample, role", "the member: child, father or mother"),
-    ("chrom, start, end", "the event's segment in bp: the start is the first bin's left edge, the end the last bin's right edge (a phased find: its windows' first and last sites)"),
-    ("start_fine, end_fine, edge_sites", "the edges at site resolution, from the phased sites either side of each bin edge (NA where the event runs to the chromosome's end, or the sites are too few); the sites the narrower edge used"),
-    ("span", "whole (90% of the chromosome's usable bins), p or q (90% of an arm and under half of the other), else stretch"),
-    ("type", "gain, loss, LOH (a copy-neutral loss of heterozygosity), UPD (a uniparental heterodisomy: both copies from one parent, two different homologues, the heterozygosity kept)"),
-    ("source", "depth (the LRR called it), bands (the folded bands or the heterozygosity rate called it), phased (the phased scan: what the depth did not call)"),
-    ("f", "the share of cells: the depth's for a gain or loss called by the depth, else the bands' (2 d for an LOH; 1 where the heterozygosity rate says in every cell)"),
-    ("f_lrr, f_baf, f_phase", "the share from the depth (gain 2(2^LRR - 1), loss 2(1 - 2^LRR)), from the folded bands' deviation d (gain 4d/(1 - 2d), loss 4d/(1 + 2d), LOH 2d) and from the phased shift (the same formulas on |shift|)"),
-    ("lrr, lrr_se, n_bins", "the segment's mean LRR, its standard error from the chromosome's noise, its bins"),
-    ("d_hat, llr_baf", "the folded bands' deviation from one half at the segment's heterozygous sites (a depth-aware maximum likelihood) and its log-likelihood ratio against zero"),
-    ("phase_shift, phase_se, n_phased", "the phased fraction's shift from one half over the event - the maternal allele's in the child, the transmitted allele's in a parent - its binomial error, and the sites"),
-    ("origin, origin_llr, origin_n", "the child's parent of origin from the opposite-homozygote sites by a likelihood ratio (maternal over paternal for a gain or LOH; paternal-lost over maternal-lost for a loss), and the sites"),
-    ("origin_phase", "what the phased shift's sign says: for the child the extra, lost or retained copy's parent (or, for a UPD, whose both copies are); for a parent whether the duplicated, lost or retained homologue is the one passed to the child. Needs 40 sites and 3 standard errors"),
-    ("homologues, hetero_share", "a child's gain, LOH or UPD with a parent named and a shift of 0.05 or more: whether that parent's two copies are one homologue (the auxiliary track follows the main one) or two (it parts: 1/3 against 2/3 along a trisomy), and the share of the event's windows where they differ"),
-    ("het_rate, het_rate_rel, n_het, n_called", "the heterozygosity rate in the segment, its ratio to the member's own (or to the panel's), and the counts"),
-    ("mie_rate", "Mendelian errors among the segment's confident sites: a deletion or an isodisomy breaks Mendel at every opposite-homozygote site, a heterodisomy too, a trisomy or a mosaic does not, a run of homozygosity has none"),
-    ("inheritance", "the child's: inherited from the father / the mother (the same event in that parent; 'in a share of the parent's cells' when mosaic there), or new; a parent's: passed to the child or not"),
-    ("external", "the labels of the given events (--events) the segment overlaps by half or more"),
-    ("note", "the flags: 'a run of homozygosity ... not a uniparental disomy' (an LOH in every cell with no Mendelian errors); 'Mendelian errors at the informative sites: a uniparental isodisomy'; 'no heterozygous calls: in every cell'; 'joined across n bin(s) the panel left out'; 'the phased bands read a share of x% against the depth's y%: the depth's call may be an artefact'; 'from the phased bands: the depth leans the same way but under its own threshold' / 'the depth is flat'; 'a uniparental heterodisomy ...'; 'the phased bands and the opposite-homozygote sites name different parents'; 'a loss on a single X'"),
+    ("chrom, start, end", "the event in bp: the first bin's start (0-based) and the last bin's end; for a phased-scan event, its first and last window sites"),
+    ("start_fine, end_fine, edge_sites", "boundaries at site resolution from the phased sites on either side of each bin edge (NA at a chromosome end or with too few sites), and the smaller of the two site counts used"),
+    ("span", "whole (90% of the chromosome's usable bins), p or q (90% of the arm's bins and under half of the other arm's), else stretch"),
+    ("type", "gain, loss, LOH (copy-neutral loss of heterozygosity), UPD (uniparental heterodisomy: both copies from one parent as two different homologues, heterozygosity retained)"),
+    ("source", "depth (LRR segmentation), bands (band deviation or heterozygosity rate), phased (the phased scan: events the depth did not call)"),
+    ("f", "cell fraction: f_lrr for a depth-called gain or loss, otherwise f_baf (2d for LOH; 1 where the heterozygosity rate indicates a constitutional event)"),
+    ("f_lrr, f_baf, f_phase", "cell fraction from the depth (gain 2(2^LRR - 1), loss 2(1 - 2^LRR)), from the folded band deviation d (gain 4d/(1 - 2d), loss 4d/(1 + 2d), LOH 2d) and from the phased shift (the same formulas on |shift|)"),
+    ("lrr, lrr_se, n_bins", "the segment's mean LRR, its standard error from the chromosome's noise scale, and its bin count"),
+    ("d_hat, llr_baf", "band deviation at the segment's heterozygous sites (depth-aware maximum likelihood) and its log-likelihood ratio against d = 0"),
+    ("phase_shift, phase_se, n_phased", "the phased fraction's shift from 1/2 over the event (maternal allele in the child; transmitted allele in a parent), its binomial error, and the site count"),
+    ("origin, origin_llr, origin_n", "the child's parent of origin from the informative sites by likelihood ratio (maternal over paternal for a gain or LOH; paternal-lost over maternal-lost for a loss), and the site count"),
+    ("origin_phase", "from the sign of the phased shift: for the child the parent of the extra, lost or retained copy (for UPD, of both copies); for a parent whether the duplicated, lost or retained homologue is the transmitted one. Requires 40 sites and 3 standard errors"),
+    ("homologues, hetero_share", "for a child's gain, LOH or UPD with a parent named and |shift| of 0.05 or more: whether that parent's two copies are one homologue (the auxiliary track follows the main one) or two (it departs: 1/3 against 2/3 along a trisomy), and the share of the event's windows in which they differ"),
+    ("het_rate, het_rate_rel, n_het, n_called", "heterozygosity rate in the segment, its ratio to the member's own (or to the panel's), and the counts"),
+    ("mie_rate", "Mendelian-error rate among the segment's confident sites: a constitutional deletion, an isodisomy or a heterodisomy produces errors at the informative sites; a trisomy or a mosaic event does not; a run of homozygosity has none"),
+    ("inheritance", "child: inherited from the father / the mother (an event of the same type in that parent; 'in a share of the parent's cells' when mosaic there), or new; parent: passed to the child or not"),
+    ("external", "labels of the supplied events (--events) whose intersection with the segment covers at least half of the shorter of the two"),
+    ("note", "annotations: 'a run of homozygosity ... not a uniparental disomy' (constitutional LOH without Mendelian errors); 'Mendelian errors at the informative sites: a uniparental isodisomy'; 'no heterozygous calls: in every cell'; 'joined across n bin(s) ...'; 'the phased bands read a share of x% against the depth's y%: the depth's call may be an artefact'; 'from the phased bands: ...' (how a phased-scan event was typed); 'a uniparental heterodisomy ...'; 'the phased bands and the opposite-homozygote sites name different parents'; 'a loss on a single X'"),
 ]
 
 ROWS = [
-    ("1 · LRR", "log2 of each bin's median depth over the member's autosomal median, GC- and panel-corrected, with its step fit (black) and the calls as lines: a gain at the segment's mean (vermillion), a loss (blue), a copy-neutral LOH or heterodisomy drawn at zero (reddish purple). Brackets above: events given from elsewhere.",
-     "a plateau away from zero over several bins; log2(1 + f/2) for a gain, log2(1 - f/2) for a loss; a flat LRR under a parted band is copy-neutral"),
-    ("2 · BAF", "the raw alt-allele fraction at the member's heterozygous sites (a sample). In the child, the sites where the parents are opposite homozygotes are coloured by the parent of the alt allele (pink the mother's, orange the father's).",
-     "two bands parting from one half; under a gain the duplicated parent's alleles sit on the upper band; under a loss the retained parent's at the top; an empty stretch is a loss of heterozygosity in every cell"),
-    ("3 · phased fraction", "the maternal allele's fraction along the child, the transmitted allele's along a parent: every phased site (faint grey), the pooled windows (green; hollow where parted in two or more members) and the step fit (black); the thin pink and orange lines are the auxiliary tracks.",
-     "one band, not two: %s A thin line leaving the main track means the child carries two different homologues of that parent there (a meiotic error, a heterodisomy), returning at each crossover." % DIRECTION),
-    ("4 · copies", "the LRR step fit's copies (2 x 2^LRR) split by the fraction's step fit: maternal (pink) and paternal (orange) along the child, passed to the child (vermillion) and not passed (sky blue) along a parent.",
-     "a trisomy reads 2 and 1 with its parent named; a deletion 1 and 0; an isodisomy or heterodisomy 2 and 0; a mosaic event the fractional copies; a run of homozygosity is blank (no phased sites)"),
-    ("5 · het rate", "heterozygous calls per confident call, per bin.", "zero under a loss of heterozygosity in every cell (an isodisomy, a run of homozygosity, a deletion); raised where the child carries two different homologues of one parent"),
+    ("1 · LRR", "log2 of each bin's median depth over the member's autosomal median, GC- and panel-corrected where applicable, with its step fit (black) and the calls as lines: gain at the segment's mean LRR (vermillion), loss (blue), copy-neutral LOH or heterodisomy at 0 (reddish purple). Brackets above: supplied events.",
+     "a plateau away from 0 over several bins: log2(1 + f/2) for a gain, log2(1 - f/2) for a loss; a flat LRR under split bands indicates a copy-neutral event"),
+    ("2 · BAF", "alt-allele read fraction at the member's heterozygous sites (subsampled). In the child, informative sites (parents opposite homozygotes) are coloured by the parent of the alt allele (pink maternal, orange paternal).",
+     "two bands splitting from 1/2; under a gain the duplicated parent's alleles lie on the upper band, under a loss the retained parent's; an empty interval is a constitutional loss of heterozygosity"),
+    ("3 · phased fraction", "the maternal-allele fraction along the child, the transmitted-allele fraction along a parent: each phased site (faint grey), the pooled windows (green; hollow where shared by two or more members) and the step fit (black); thin pink and orange lines are the auxiliary tracks.",
+     "one band rather than two. %s A thin line departing from the main track means the child carries two different homologues of that parent there (meiotic error, heterodisomy); it rejoins at each crossover." % DIRECTION),
+    ("4 · copies", "the LRR step fit's copy number (2 x 2^LRR) split by the fraction's step fit: maternal (pink) and paternal (orange) along the child; transmitted (vermillion) and untransmitted (sky blue) along a parent.",
+     "a trisomy reads 2 and 1 with its parent named; a deletion 1 and 0; an isodisomy or heterodisomy 2 and 0; a mosaic event fractional values; a run of homozygosity is blank (no phased sites)"),
+    ("5 · het rate", "heterozygous calls per confident call, per bin.", "zero under a constitutional loss of heterozygosity (isodisomy, run of homozygosity, deletion); raised where the child carries two different homologues of one parent"),
 ]
 
 KINDS = [
-    ("gain (one homologue duplicated), share f", "up by log2(1 + f/2)", "1/(2 + f) and (1 + f)/(2 + f)", "on the duplicated parent's band: (1 + f)/(2 + f) maternal, 1/(2 + f) paternal", "the parent's copies 1 + f, the other's 1", "unchanged", "none", "the extra copy's parent"),
-    ("loss of one copy, share f", "down by log2(1 - f/2)", "(1 - f)/(2 - f) and 1/(2 - f)", "on the retained parent's band: 1/(2 - f) maternal if the paternal copy is lost", "the lost parent's copies 1 - f", "unchanged (f < 1); zero at f = 1", "at f = 1, at every opposite-homozygote site", "the lost copy's parent"),
-    ("copy-neutral LOH, share f", "flat", "(1 - f)/2 and (1 + f)/2", "(1 + f)/2 on the retained parent's side", "retained 1 + f, replaced 1 - f", "unchanged (f < 1)", "none (f < 1)", "the retained copy's parent"),
-    ("uniparental isodisomy (one homologue twice)", "flat", "none: no heterozygous calls", "1 (the child homozygous for that parent's allele)", "2 and 0", "zero", "at every opposite-homozygote site", "whose two copies"),
-    ("uniparental heterodisomy (two different homologues)", "flat", "one band at one half: the heterozygosity kept", "1 on the main track; the auxiliary track at one half", "2 and 0", "unchanged or raised", "at every opposite-homozygote site", "whose two copies; found by the phased scan alone"),
-    ("run of homozygosity (identical by descent)", "flat", "none", "no sites (the parents share the haplotype)", "blank", "zero", "none", "no parent: not a disomy"),
-    ("meiotic trisomy (two different homologues)", "up by log2(1.5)", "1/3 and 2/3", "2/3 on the main track; the auxiliary track at 1/3 where the two copies differ, 2/3 where a crossover made them one", "2 and 1", "raised where the copies differ", "none", "the parent of the two copies; 'two different homologues'"),
+    ("gain (one homologue duplicated), cell fraction f", "up by log2(1 + f/2)", "1/(2 + f) and (1 + f)/(2 + f)", "on the duplicated parent's band: (1 + f)/(2 + f) if maternal, 1/(2 + f) if paternal", "duplicated parent 1 + f, other parent 1", "unchanged", "none", "the parent of the extra copy"),
+    ("loss of one copy, cell fraction f", "down by log2(1 - f/2)", "(1 - f)/(2 - f) and 1/(2 - f)", "on the retained parent's band: 1/(2 - f) if the paternal copy is lost", "lost parent 1 - f, other parent 1", "unchanged (f < 1); zero at f = 1", "at f = 1, at every informative site", "the parent of the lost copy"),
+    ("copy-neutral LOH, cell fraction f", "flat", "(1 - f)/2 and (1 + f)/2", "(1 + f)/2 on the retained parent's side", "retained 1 + f, replaced 1 - f", "unchanged (f < 1)", "none (f < 1)", "the parent of the retained copy"),
+    ("uniparental isodisomy (one homologue twice)", "flat", "none: no heterozygous calls", "1 (the child homozygous for that parent's allele)", "2 and 0", "zero", "at every informative site", "the parent of both copies"),
+    ("uniparental heterodisomy (two different homologues)", "flat", "one band at 1/2: heterozygosity retained", "1 on the main track; the auxiliary track at 1/2", "2 and 0", "unchanged or raised", "at every informative site", "the parent of both copies; detected by the phased scan alone"),
+    ("run of homozygosity (identical by descent)", "flat", "none", "no sites (the parents share the haplotype)", "blank", "zero", "none", "no parent of origin: not a disomy"),
+    ("meiotic trisomy (two different homologues)", "up by log2(1.5)", "1/3 and 2/3", "2/3 on the main track; the auxiliary track at 1/3 where the two copies differ and 2/3 where a crossover has made them identical", "2 and 1", "raised where the copies differ", "none", "the parent of the two copies; 'two different homologues'"),
     ("mitotic or meiosis II trisomy (one homologue twice)", "up by log2(1.5)", "1/3 and 2/3", "2/3 on both tracks", "2 and 1", "unchanged", "none", "'one homologue throughout'"),
 ]
 
 RULES = [
-    ("The depth's calls", "a segment of at least five bins whose mean LRR is at least 0.07 in size (a gain or loss in 10% of cells) and three standard errors from zero; bins the panel cannot pin are left out; pieces parted by a masked gap or a small step are joined."),
-    ("The bands' calls", "a copy-neutral LOH where the bands part (d at least 0.04 with a likelihood ratio of 10: a share of about 8%) or the heterozygosity rate falls to 0.35 of the member's own (in every cell), over bins the depth did not call; the heterozygosity rate takes precedence over a d from a few sites."),
-    ("The phased scan", "on the main phased track's windows not already inside an event: a segment of eight windows (or a whole short chromosome) shifted by at least 0.015 (a gain or loss in 6% of cells; 0.025, 5%, where the depth is flat and the bands are the only evidence), five empirical standard errors, three quarters of its windows and its median the same way, spanning at least 2 Mb; typed by the depth's lean (three standard errors) or read as a copy-neutral LOH; a shift of 0.4 or more with the heterozygosity kept is a heterodisomy. Windows parted in two or more members are left out first. Segments set aside are in phased_rejected.tsv with the reason."),
-    ("The direction", DIRECTION),
-    ("The share of cells three ways", "from the depth, from the folded bands and from the phased shift (the formulas under the columns below). They should agree; a phased share under half the depth's, over 500 sites, flags the depth's call as a likely artefact (GC, the panel's edge)."),
-    ("The parent of origin two ways", "the likelihood ratio over the opposite-homozygote sites (origin, origin_llr) and the phased sign (origin_phase, over three to four times the sites). A disagreement is noted."),
-    ("One homologue or two", "for a child's gain, LOH or UPD with its parent named: the auxiliary track read at the other parent's homozygous sites follows the main one where the two copies are one homologue and parts from it where they are two; the share of windows where it parts is hetero_share."),
-    ("A run of homozygosity against a disomy", "an LOH in every cell with no Mendelian errors is a run of homozygosity (both copies identical by descent: the parents share the haplotype); with errors at the opposite-homozygote sites it is a uniparental isodisomy. A heterodisomy keeps the heterozygosity and has the errors."),
-    ("The X", "read against the member's own X median, so a 47,XXY's X is 'two copies' and the check against the pedigree's sex says so; a single X has no heterozygous sites to phase; the pseudoautosomal bins are left out."),
-    ("Parents' events", "a parent's gain, loss or LOH is read the same way; 'passed to the child' when the child carries the same event; the phased sign says whether it lies on the homologue the child received."),
+    ("Depth calls", "a segment of at least five bins with |mean LRR| of at least max(0.07, 3 SE), that is a gain or loss in about 10% of cells or more; bins the panel cannot characterise are excluded; adjacent pieces separated by at most three bins and differing in LRR by at most 0.08 are joined."),
+    ("Band calls", "copy-neutral LOH where the bands split (d of at least 0.04 with a log-likelihood ratio of at least 10: about 8% of cells or more) or the heterozygosity rate falls to 0.35 of the member's own or below (constitutional), in bins the depth did not call; the heterozygosity-rate criterion takes precedence over a d estimated from few sites."),
+    ("Phased scan", "on the main phased track's windows outside the called events: a segment of eight windows (or a whole short chromosome) with a mean shift of at least 0.015 (a gain or loss in about 6% of cells; 0.025, about 5%, for a copy-neutral event with flat depth) and five empirical standard errors, whose median shift and at least three quarters of whose windows have the same sign, spanning at least 2 Mb; typed as a gain or loss by the depth (three standard errors), otherwise as copy-neutral LOH; a shift of 0.4 or more with heterozygosity retained is a heterodisomy. Windows shared by two or more members are excluded first. Rejected segments are listed in phased_rejected.tsv with the reason."),
+    ("Sign convention", DIRECTION),
+    ("Three estimates of the cell fraction", "from the depth, from the folded bands and from the phased shift (formulas under the columns below). They should agree; a phased estimate under half the depth's, over 500 or more sites, flags the depth call as a possible artefact (GC, a panel edge)."),
+    ("Two estimates of the parent of origin", "the likelihood ratio over the informative sites (origin, origin_llr) and the sign of the phased shift (origin_phase, over three to four times as many sites). A disagreement is noted."),
+    ("One homologue or two", "for a child's gain, LOH or UPD with its parent named: the auxiliary track read at the other parent's homozygous sites follows the main track where the two copies are one homologue and departs from it where they are two; the share of windows in which it departs is hetero_share."),
+    ("Run of homozygosity versus disomy", "a constitutional LOH without Mendelian errors is a run of homozygosity (both copies identical by descent; the parents share the haplotype); with errors at the informative sites it is a uniparental isodisomy. A heterodisomy retains heterozygosity and shows the errors."),
+    ("The X", "analysed relative to the member's own X median, so a 47,XXY X reads as two copies and the check against the pedigree sex reports it; a single X has no heterozygous sites to phase; pseudoautosomal bins are excluded."),
+    ("Parents' events", "a parent's gain, loss or LOH is analysed the same way; 'passed to the child' when the child carries an event of the same type there; the sign of the phased shift shows whether it lies on the transmitted homologue."),
 ]
 
 
@@ -111,22 +111,22 @@ def write_guide(out_html, figures_dir=None):
         figs = fig_patterns(figures_dir)
         w = ['<!doctype html><html><head><meta charset="utf-8"><title>triokaryo: how to read it</title><style>%s</style></head><body>' % CSS,
              "<h1>How to read triokaryo's output</h1>",
-             "<p class=\"lead\">triokaryo reads a trio's VCF for large chromosomal events with three signals: the <b>depth</b> at each site (the LRR per bin, the copy "
-             "state), the <b>B-allele bands</b> at heterozygous sites (the share of cells a second time, and the copy-neutral events the depth cannot see) and "
-             "<b>transmission phasing</b> (which parent each allele came from: a signed track that names the parent of origin, tells one homologue from two, "
-             "finds what the depth misses, and gives the edges at site resolution). This page says what every row, colour, call and column means. Worked examples "
-             "on two public trios: <a href=\"%s\">%s</a>.</p>" % (SITE, SITE),
+             "<p class=\"lead\">triokaryo detects large chromosomal events in a trio's VCF from three signals: <b>depth</b> (the LRR per bin; copy number), the "
+             "<b>B-allele bands</b> at heterozygous sites (a second estimate of the cell fraction, and the copy-neutral events depth cannot show) and "
+             "<b>transmission phasing</b> (the parental origin of each allele, giving a signed track that names the parent of origin, distinguishes one "
+             "homologue from two, detects events below the depth limit and places boundaries at site resolution). This page defines every figure row, colour, "
+             "call and column. Worked examples on two public trios: <a href=\"%s\">%s</a>.</p>" % (SITE, SITE),
              "<p class=\"toc\"><a href=\"#rows\">The rows</a><a href=\"#colours\">The colours</a><a href=\"#kinds\">What each event looks like</a><a href=\"#rules\">The rules</a>"
              "<a href=\"#columns\">The columns</a><a href=\"#cohort\">The cohort report</a></p>",
              "<h2 id=\"rows\">The rows of a figure</h2>",
-             "<p>A chromosome figure has three columns (child, father, mother) and five rows. The genome figure has, per member, the first two rows (the phased "
-             "fraction's pooled windows drawn over the raw B-allele fraction), then the child's depth over the parents' mean (the within-family difference: zero "
-             "where the child inherited what the parents carry) and the child's maternal and paternal copies along the genome.</p>",
+             "<p>A chromosome figure has three columns (child, father, mother) and five rows. The genome figure has, per member, the first two rows (the pooled "
+             "phased fraction drawn over the raw BAF), then the child's depth over the parents' mean (zero where the child's copy number equals the parental "
+             "mean) and the child's maternal and paternal copy number along the genome.</p>",
              "<table><tr><th>row</th><th>what is drawn</th><th>what to look for</th></tr>"]
         for r, what, look in ROWS:
             w.append("<tr><td><b>%s</b></td><td>%s</td><td>%s</td></tr>" % (html.escape(r), html.escape(what), html.escape(look)))
         w.append("</table>")
-        w.append("<h2 id=\"colours\">The colours</h2><p>Okabe-Ito throughout; the same colour means the same thing in every figure. The image carries no legend: "
+        w.append("<h2 id=\"colours\">The colours</h2><p>Okabe-Ito throughout; a colour has the same meaning in every figure. The image carries no legend: "
                  "each figure's sidecar (<code>&lt;name&gt;.txt</code>) and legend image (<code>legends/</code>) hold its key.</p>")
         w.append(key_table(list(dict.fromkeys(GENOME_KEYS + CHROM_KEYS))))
         w.append("<h2 id=\"kinds\">What each kind of event looks like</h2>")
@@ -144,17 +144,18 @@ def write_guide(out_html, figures_dir=None):
         for c, text in COLUMN_DOCS:
             w.append("<tr><td><code>%s</code></td><td>%s</td></tr>" % (html.escape(c), html.escape(text)))
         w.append("</table>")
-        w.append("<p><code>summary.tsv</code>: the trio, the records and sites used, the genome's Mendelian-error rate, per member the events by type, the X copies and "
-                 "the check against the pedigree's sex, the median depth, the phased sites, the windows parted in everyone, the phased finds; the parameters. "
-                 "<code>bins.tsv</code>: every bin's depth, LRR, calls, heterozygosity and band deviation per member, with the panel's values and masks. "
-                 "<code>phased.tsv</code>: every window of the phased tracks (the fraction, its error, the step fit, the copies, the auxiliary tracks). "
-                 "<code>phased_rejected.tsv</code>: the phased scan's segments set aside, with the reason. <code>external.tsv</code>: the given events and their matches.</p>")
-        w.append("<h2 id=\"cohort\">The cohort report</h2><p>Written by <code>triokaryo cohort</code> over every trio's run: the counts (trios, events by type, by "
-                 "member, by source, new and inherited, the phased finds, the depth calls the bands doubt, the X readings against the pedigree); the landscape "
-                 "figure (events per chromosome, and one row per trio with each event a bar coloured by type - the child's thick, a parent's thin above or below, "
-                 "a black line over a bar for an event matched from elsewhere); the table of every event (click a heading to sort, type in the box to filter), "
-                 "each with links to its trio's page and chromosome figure; the trios with their quality readings; the concordance with the given events; the "
-                 "segments the phased scan set aside, by region; and this guide.</p>")
+        w.append("<p><code>summary.tsv</code>: the trio, records and sites used, the genome-wide Mendelian-error rate, per member the event counts by type, the X "
+                 "copy number with the check against the pedigree sex, the median depth, the phased-site count, the shared windows and the phased-scan events; "
+                 "the parameters. <code>bins.tsv</code>: every bin's depth, LRR, call counts, heterozygosity rate and band deviation per member, with the panel's "
+                 "values and masks. <code>phased.tsv</code>: every window of the phased tracks (fraction, error, step fit, per-homologue copy number, auxiliary "
+                 "tracks). <code>phased_rejected.tsv</code>: the phased scan's rejected segments, with the reason. <code>external.tsv</code>: the supplied events "
+                 "and their matches.</p>")
+        w.append("<h2 id=\"cohort\">The cohort report</h2><p>Written by <code>triokaryo cohort</code> over many runs: counts (trios; events by type, member and "
+                 "source; de novo and inherited; phased-scan events; depth calls doubted by the phased track; X copy numbers disagreeing with the pedigree); the "
+                 "landscape figure (events per chromosome, and one row per trio with each event a bar coloured by type: the child's thick, a parent's thin above "
+                 "or below, a black line over a bar for an event matched by a supplied one); a table of every event (click a heading to sort, type in the box to "
+                 "filter) linked to its trio's page and chromosome figure; per-trio quality metrics; the concordance with the supplied events; the rejected phased "
+                 "segments by region; and this guide.</p>")
         w.append("<p style=\"color:#666;font-size:12px\">triokaryo %s</p></body></html>" % html.escape(__version__))
         with open(out_html, "w") as fh:
             fh.write("\n".join(w))

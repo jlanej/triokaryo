@@ -45,14 +45,14 @@ def test_cohort_report_guide_and_rebuild(mock, run, tmp_path):
     page = open(os.path.join(str(out), "index.html")).read()
     assert "sortTable" in page and 'id="filter"' in page and "guide.html" in page and "heterodisomies" in page and "chrom_chr21.png" in page
     guide = open(os.path.join(str(out), "guide.html")).read()
-    assert "below one half the paternal homologue" in guide and "Pattern cards 2" in guide and "<code>origin_phase</code>" in guide
+    assert "below 1/2 means the paternal homologue is in excess" in guide and "Pattern cards 2" in guide and "<code>origin_phase</code>" in guide
     head = open(os.path.join(str(out), "events.all.tsv")).readline().split("\t")
     assert "homologues" in head and "source" in head and "start_fine" in head
     # the run's page again, from its tables
     before = open(os.path.join(run["out"], "index.html")).read()
     assert main(["report", "--runs", run["out"]]) == 0
     after = open(os.path.join(run["out"], "index.html")).read()
-    assert "guide.html" in after and "below one half the paternal homologue" in after and after.count("<figure>") == before.count("<figure>")
+    assert "guide.html" in after and "below 1/2 means the paternal homologue is in excess" in after and after.count("<figure>") == before.count("<figure>")
     assert os.path.exists(os.path.join(run["out"], "guide.html"))
     sc = open(os.path.join(run["out"], "figures", "genome.txt")).read()
     assert "keys: depth,step,baf,phased," in sc

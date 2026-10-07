@@ -1,22 +1,22 @@
-"""Segmentation of a member's tracks along each chromosome, and the calls: gains and losses from the LRR, copy-neutral loss
-of heterozygosity from the B-allele bands and the heterozygosity rate; each with the share of cells from the depth and,
-independently, from the bands; whole chromosome, arm or stretch."""
+"""Segmentation of a member's tracks along each chromosome and the calls: gains and losses from the LRR, copy-neutral
+loss of heterozygosity from the B-allele band deviation and the heterozygosity rate; each with the cell fraction
+estimated from the depth and, independently, from the bands; classified as whole chromosome, arm or stretch."""
 from dataclasses import dataclass, field, asdict
 
 import numpy as np
 
 from .model import NA, MEMBERS, f_from_d, f_from_lrr, site_stats
 
-PARAMS = dict(min_abs=0.07,      # |LRR| a gain or loss needs: log2(1 + 0.10/2) - a share of cells of about 10%
-              z=5.0,             # the split statistic a segment boundary needs (binary segmentation)
-              min_len=5,         # bins per segment
-              min_sites=20,      # sites a bin needs to carry a depth
-              loh_d=0.04,        # the band deviation a copy-neutral LOH needs (a share of cells of about 8%) ...
-              loh_llr=10.0,      # ... and its evidence against d = 0
-              het_rel=0.35,      # a heterozygosity rate this far under the member's own: a loss of heterozygosity in every cell
-              bdev_excess=0.03,  # a bin's band deviation this far above the member's own median starts an LOH candidate
-              min_f=0.10,        # the smallest share of cells reported
-              span_frac=0.90)    # a segment covering this much of a chromosome (arm) is called whole (p or q)
+PARAMS = dict(min_abs=0.07,      # minimum |mean LRR| of a gain or loss: log2(1 + 0.10/2), a cell fraction of about 10%
+              z=5.0,             # minimum split statistic for a segment boundary (binary segmentation)
+              min_len=5,         # minimum bins per segment
+              min_sites=20,      # minimum sites per bin for a depth value
+              loh_d=0.04,        # minimum band deviation of a copy-neutral LOH (a cell fraction of about 8%) ...
+              loh_llr=10.0,      # ... and its minimum log-likelihood ratio against d = 0
+              het_rel=0.35,      # heterozygosity rate at or below this fraction of the member's own: a constitutional loss of heterozygosity
+              bdev_excess=0.03,  # a segment's mean band deviation this far above the member's median is an LOH candidate
+              min_f=0.10,        # minimum cell fraction reported
+              span_frac=0.90)    # a segment covering this fraction of a chromosome (arm) is classified whole (p or q)
 
 
 @dataclass
@@ -50,7 +50,7 @@ class Event:
     phase_shift: float = NA     # the phased fraction's shift from one half over the event (child: maternal allele; parent: transmitted allele)
     phase_se: float = NA
     n_phased: int = 0
-    f_phase: float = NA         # the share of cells from the phased shift
+    f_phase: float = NA         # the cell fraction from the phased shift
     origin_phase: str = ""      # what the sign says
     start_fine: float = NA      # the edges at site resolution, from the phased sites
     end_fine: float = NA
@@ -60,7 +60,7 @@ class Event:
 
     @property
     def f(self):
-        """The share of cells: the depth's where there is one, else the bands'."""
+        """The cell fraction: from the depth for a depth-called gain or loss, else from the bands."""
         return self.f_lrr if np.isfinite(self.f_lrr) and self.type in ("gain", "loss") else self.f_baf
 
     def overlap(self, other):
@@ -118,9 +118,9 @@ def binary_segmentation(y, min_len=5, z=5.0, sd=None, max_segments=20):
 
 
 def refine_boundaries(y, segs, max_shift=4):
-    """Each boundary moved within +-max_shift bins to where the two segments' squared deviations from their means are least:
-    the recursive split lands a bin or two off an edge where a segment is short, and a stray bin left outside reads as a
-    weak event of its own otherwise."""
+    """Each boundary moved within +-max_shift bins to the position minimising the two segments' squared deviations from their
+    means: the recursive split lands a bin or two off an edge where a segment is short, and a stray bin left outside would
+    otherwise form a weak event of its own."""
     segs = [list(s) for s in segs]
     for i in range(len(segs) - 1):
         a0, b1 = segs[i][0], segs[i + 1][1]
@@ -168,9 +168,9 @@ def span_of(chrom, start, end, valid_starts, genome, frac):
 
 
 def join_pieces(events, bins, genome, max_gap_bins=3, max_dlrr=0.08, frac=0.90):
-    """Adjacent events of one member, chromosome and type - parted by bins the panel left out (a centromere) or by a small step
-    in level - are one event: the LRR re-averaged over the pieces, the span re-read. The pieces' site statistics are
-    summed where they add (sites, heterozygotes); d_hat and the bands' share are the larger piece's."""
+    """Adjacent events of one member, chromosome and type, separated by at most max_gap_bins bins (e.g. a masked centromere)
+    and differing in level by at most max_dlrr, are joined into one event: the LRR re-averaged over the pieces, the span
+    re-classified. Site counts are summed; d_hat and the bands' cell fraction are taken from the larger piece."""
     out = []
     by = {}
     for e in events:
@@ -266,7 +266,7 @@ def call_member(bins, scan, m, sample, genome, params=None, sex=""):
                 ev.note = "a loss on a single X: a mosaic loss of the one X"
             events.append(ev)
             covered[a:b] = True
-        # copy-neutral loss of heterozygosity: the bands parted (bdev above the member's own) or no heterozygotes at all,
+        # copy-neutral loss of heterozygosity: bands split (bdev above the member's own) or no heterozygous calls,
         # over bins the depth did not call
         if chrom == "chrX" and x_copies == 1:
             continue                                           # a single X has no heterozygous sites to read

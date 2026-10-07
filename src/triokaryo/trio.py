@@ -1,12 +1,13 @@
-"""The trio's reading of each event: inherited or new (the same event in a parent), the parent of origin of the child's
-events from the sites where the parents are opposite homozygotes, and the Mendelian-error rate within the event.
+"""Trio analysis of each event: inheritance (an event of the same type in a parent), the parent of origin of the child's
+events from the informative sites, and the Mendelian-error rate within the event.
 
-At a site where the father is 0/0 and the mother 1/1 (or the reverse) the child's two alleles have known parents. The
-child's alt-allele fraction then says which parental copy is in excess, missing, or doubled:
-  gain  (share f)   the extra copy from the parent who gave the alt allele: alt fraction (1 + f) / (2 + f), else 1 / (2 + f)
-  loss  (share f)   the parent's copy that is lost: alt fraction (1 - f) / (2 - f) if the lost copy carried alt, else 1 / (2 - f)
-  LOH   (share f)   the retained parent's copy doubled: alt fraction (1 + f) / 2 if alt is from that parent, else (1 - f) / 2
-The log-likelihood ratio of the two assignments over the event's informative sites names the parent and says how sure."""
+At a site where the father is 0/0 and the mother 1/1 (or the reverse), the parental origin of each of the child's
+alleles is known, and the child's alt-allele fraction indicates which parental copy is in excess, missing or doubled:
+  gain  (cell fraction f)   alt fraction (1 + f) / (2 + f) if the duplicated copy carries the alt allele, else 1 / (2 + f)
+  loss  (cell fraction f)   alt fraction (1 - f) / (2 - f) if the lost copy carries the alt allele, else 1 / (2 - f)
+  LOH   (cell fraction f)   alt fraction (1 + f) / 2 if the retained copy carries the alt allele, else (1 - f) / 2
+The log-likelihood ratio of the two parental assignments over the event's informative sites names the parent and
+quantifies the support."""
 import numpy as np
 
 from .model import NA

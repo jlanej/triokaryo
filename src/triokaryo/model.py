@@ -1,14 +1,14 @@
-"""From the sites to the tracks: bins of fixed width along each chromosome; per member the depth (the median over the
-bin's sites), the LRR (log2 of the depth over the member's autosomal median; GC-corrected where a GC track is given), the
-heterozygosity rate, and the B-allele band deviation at heterozygous sites; and the within-trio tracks, the child over
-the parents' mean and the father over the mother, site by site. Also the band-deviation estimator the calls use.
+"""From sites to tracks: fixed-width bins along each chromosome; per member the depth (median over the bin's sites), the
+LRR (log2 of the depth over the member's autosomal median; GC- and panel-corrected where given), the heterozygosity
+rate and the B-allele band deviation at heterozygous sites; the within-trio depth tracks (child over the parents' mean,
+father over mother, per site); and the band-deviation estimator used by the calls.
 
-Why these three signals, and what each shows:
-  depth (LRR)   a gain of one copy in a share f of the cells reads log2(1 + f/2); a loss, log2(1 - f/2)
-  BAF bands     at a heterozygous site the alt-allele fraction sits at 1/2 +- d: a gain gives d = f / (2 (2 + f)) (one third
-                and two thirds when f = 1), a loss d = f / (2 (2 - f)), a copy-neutral loss of heterozygosity d = f / 2
-  het rate      copy-neutral LOH in every cell (a uniparental disomy, a deletion) leaves no heterozygous call at all
-The depth gives the copy state, the bands an independent estimate of f, the het rate what the bands cannot see.
+Expected values under an event in a cell fraction f:
+  depth (LRR)   one-copy gain: log2(1 + f/2); one-copy loss: log2(1 - f/2)
+  BAF bands     at a heterozygous site the alt fraction is 1/2 +- d: gain d = f / (2 (2 + f)) (1/3 and 2/3 at f = 1),
+                loss d = f / (2 (2 - f)), copy-neutral LOH d = f / 2
+  het rate      a constitutional loss of heterozygosity (isodisomy, deletion, run of homozygosity) leaves no heterozygous calls
+The depth gives the copy number, the bands an independent estimate of f, the heterozygosity rate the constitutional case.
 """
 from dataclasses import dataclass
 
@@ -42,9 +42,9 @@ class Bins:
     par: np.ndarray             # per bin: mostly pseudoautosomal (X, Y)
     panel_median: np.ndarray = None   # the reference panel's LRR per bin (NaN without a panel)
     panel_rsd: np.ndarray = None
-    masked: np.ndarray = None         # bins the panel cannot pin: left out of the calls
+    masked: np.ndarray = None         # bins the panel cannot characterise: excluded from calling
     panel_bdev: np.ndarray = None     # the panel's band deviation per bin
-    masked_bands: np.ndarray = None   # bins whose bands are parted in the panel's genomes too (paralogy): no LOH sought there
+    masked_bands: np.ndarray = None   # bins whose bands are split across the panel's genomes (paralogy): excluded from the LOH search
     bdev_adj: np.ndarray = None       # (3, B) the band deviation net of the panel's regional excess (the bands track the LOH search segments)
     het_rel: np.ndarray = None        # (3, B) the heterozygosity rate over the panel's (the rate track the LOH search segments)
 
@@ -76,10 +76,10 @@ def _median_or_nan(v):
     return float(np.median(v)) if len(v) else NA
 
 
-PANEL_MAX_RSD = 0.25        # a bin whose LRR spreads more than this across the panel's genomes is not called
-PANEL_MIN_N = 5             # genomes a bin's reference needs: a median over fewer follows one genome's own event
-PANEL_BDEV_EXCESS = 0.03    # a bin whose bands are parted in the panel's genomes too (this far above the panel's typical bin: paralogous
-                            # sequence, where the alleles of two loci are counted as one) is left out of the loss-of-heterozygosity search
+PANEL_MAX_RSD = 0.25        # a bin whose LRR robust SD across the panel's genomes exceeds this is not called
+PANEL_MIN_N = 5             # minimum genomes per bin: a median over fewer follows one genome's own event
+PANEL_BDEV_EXCESS = 0.03    # a bin whose panel band deviation exceeds the panel's genome-wide median by this much (paralogous sequence,
+                            # where the alleles of two loci are counted as one) is excluded from the loss-of-heterozygosity search
 
 
 def make_bins(scan, genome, bin_size=1_000_000, min_dp=8, min_gq=20, gc_track=None, min_het=5, panel=None):
@@ -174,14 +174,14 @@ def make_bins(scan, genome, bin_size=1_000_000, min_dp=8, min_gq=20, gc_track=No
             lrr[m] = np.where(np.isfinite(depth[m]) & (depth[m] > 0), np.log2(depth[m] / med), NA)
         base = lrr[m].copy()
         if panel:
-            base = np.where(np.isfinite(pmed) & ~masked, base - pmed, NA)       # the shared structure out; unpinned bins out of the calls
+            base = np.where(np.isfinite(pmed) & ~masked, base - pmed, NA)       # the shared structure removed; masked bins excluded from calling
             fit = autosomal & (n_dp[m] >= 20) & np.isfinite(base)
             if fit.any():                                                      # re-centred: the panel's zero is not this genome's
                 base[np.isfinite(base)] -= float(np.median(base[fit]))
         lrr_gc[m] = gc_correct(base, gc, autosomal & (n_dp[m] >= 20)) if np.isfinite(gc).any() else base
     bdev_adj, het_rel = bdev.copy(), het_rate.copy()
-    if panel:                                                      # bands parted in everyone: not a member's loss of heterozygosity;
-        bdev[:, masked_bands] = NA                                 # the regional excess of the bands and the regional heterozygosity taken out
+    if panel:                                                      # bands split in every genome: not a member's loss of heterozygosity;
+        bdev[:, masked_bands] = NA                                 # the panel's regional band excess and regional heterozygosity removed
         with np.errstate(invalid="ignore", divide="ignore"):
             reg = np.where(np.isfinite(pbdev), pbdev - (typical if np.isfinite(typical) else 0.0), 0.0)
             bdev_adj = np.where(np.isfinite(bdev), bdev - reg[None, :], NA)
@@ -218,8 +218,8 @@ def d_grid():
 
 def d_hat(alt, dp):
     """The band deviation d at heterozygous sites: the maximum-likelihood d of alt ~ Binomial(dp, 1/2 +- d), each side with
-    probability one half; with the log-likelihood ratio against d = 0 (the evidence that the bands are parted at all).
-    Depth-aware: a shallow site cannot push d as a deep one can, so this does not inflate at low depth as |BAF - 1/2| does."""
+    probability 1/2; with the log-likelihood ratio against d = 0 (the evidence that the bands are split at all). Each site
+    is weighted by its depth through the binomial, so the estimate does not inflate at low depth as the mean of |BAF - 1/2| does."""
     alt = np.asarray(alt, float)
     dp = np.asarray(dp, float)
     ok = dp > 0
@@ -240,13 +240,13 @@ def d_hat(alt, dp):
 
 
 def f_from_lrr(lrr, kind):
-    """The share of cells from the depth: gain 2^lrr = 1 + f/2, loss 2^lrr = 1 - f/2."""
+    """The cell fraction from the depth: gain 2^lrr = 1 + f/2, loss 2^lrr = 1 - f/2."""
     r = 2.0 ** lrr
     return float(np.clip(2 * (r - 1), 0, 2)) if kind == "gain" else float(np.clip(2 * (1 - r), 0, 1))
 
 
 def f_from_d(d, kind):
-    """The share of cells from the band deviation: gain d = f/(2(2+f)); loss d = f/(2(2-f)); LOH d = f/2."""
+    """The cell fraction from the band deviation: gain d = f/(2(2+f)); loss d = f/(2(2-f)); LOH d = f/2."""
     if not np.isfinite(d):
         return NA
     if kind == "gain":

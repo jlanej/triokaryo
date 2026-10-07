@@ -1,10 +1,11 @@
-"""A mock trio VCF with planted events, for the tests and for a demonstration: no real data anywhere in this package.
+"""A simulated trio VCF with planted events, for the tests and the demo: no real data anywhere in this package.
 
-The genome is GRCh38 (the real lengths, a sparse site density). Each parent has two homologues per chromosome drawn from a
-population allele frequency; the child inherits one from each. Events are written as changes to the copies of named
-homologues in a share f of the cells, so that the depth, the B-allele bands, the heterozygosity rate, the parent of origin
-and the inheritance all follow from one model. Depth is Poisson with a GC bias per sample (a synthetic GC track is written
-beside the VCF); genotypes are called as a caller would (het where the alt fraction lies between 0.15 and 0.85)."""
+The genome is GRCh38 (real chromosome lengths, a sparse site density). Each parent has two homologues per chromosome
+drawn from a population allele frequency; the child inherits one from each. Events are specified as copy changes of
+named homologues in a cell fraction f, so that depth, B-allele bands, heterozygosity rate, parent of origin and
+inheritance all follow from one model. Depth is Poisson with a per-sample GC bias (a matching synthetic GC track is
+written beside the VCF); genotypes are called from the simulated read counts (heterozygous where the alt fraction lies
+between 0.15 and 0.85 with at least two alt reads)."""
 import json
 import os
 

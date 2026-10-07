@@ -1,85 +1,90 @@
 # Output
 
-## events.tsv (per trio) / events.all.tsv (cohort)
+## events.tsv (per trio) and events.all.tsv (cohort)
 
 | column | meaning |
 | --- | --- |
-| sample, role | the member (child, father, mother) |
-| chrom, start, end | the segment (bp; start 0-based bin start, end the bin end) |
-| span | whole, p, q, stretch |
-| type | gain, loss, LOH (copy-neutral loss of heterozygosity), UPD (a uniparental heterodisomy) |
-| source | depth (the LRR), bands (the folded bands or the heterozygosity rate), phased (the phased scan: what the depth did not call) |
-| f | the share of cells: `f_lrr` for a gain or loss, else `f_baf` |
-| f_lrr, f_baf | from the depth; from the B-allele bands |
-| lrr, lrr_se, n_bins | the segment's mean LRR, its standard error, its bins |
-| d_hat, llr_baf | the band deviation at the segment's heterozygous sites and its evidence against zero |
-| het_rate, het_rate_rel, n_het, n_called | the heterozygosity rate in the segment, relative to the member's own, and the counts |
-| mie_rate | Mendelian errors among the segment's confident sites (summary: the genome's baseline) |
-| origin, origin_llr, origin_n | the child's parent of origin from the opposite-homozygote sites (see METHODS), its log-likelihood ratio, the sites |
-| phase_shift, phase_se, n_phased | the phased fraction's shift from one half over the event (child: the maternal allele; parent: the allele passed to the child), its binomial error, the sites |
-| f_phase, origin_phase | the share of cells from the shift; what its sign says (the child: the extra, lost or retained copy's parent; a parent: whether the event lies on the homologue passed to the child) |
-| homologues, hetero_share | a child's gain, LOH or heterodisomy: the named parent's two copies one homologue or two, and the share of the event's windows where they differ |
-| start_fine, end_fine, edge_sites | the edges at site resolution from the phased sites (NA at a chromosome's end), and the sites the narrower edge used |
-| inheritance | the child's: inherited from whom, or new; a parent's: passed to the child or not |
-| external | the labels of the given events (`--events`) the segment overlaps |
-| note | a single X, no heterozygous calls (in every cell), ... |
+| sample, role | the member (child, father, mother); the cohort table adds `trio` |
+| chrom, start, end | the event in bp: the first bin's start (0-based) and the last bin's end; for a phased-scan event, its first and last window sites |
+| start_fine, end_fine, edge_sites | boundaries at site resolution from the phased sites (NA at a chromosome end or with too few sites), and the smaller of the two site counts used |
+| span | whole, p, q or stretch |
+| type | gain, loss, LOH (copy-neutral loss of heterozygosity), UPD (uniparental heterodisomy) |
+| source | depth (LRR segmentation), bands (band deviation or heterozygosity rate), phased (the phased scan) |
+| f | cell fraction: f_lrr for a depth-called gain or loss, otherwise f_baf |
+| f_lrr, f_baf, f_phase | cell fraction from depth, from the folded band deviation and from the phased shift |
+| lrr, lrr_se, n_bins | the segment's mean LRR, its standard error from the chromosome's noise scale, and its bin count |
+| d_hat, llr_baf | band deviation at the segment's heterozygous sites (maximum likelihood) and its log-likelihood ratio against d = 0; for a phased-scan event d_hat is the absolute phased shift and llr_baf is NA |
+| phase_shift, phase_se, n_phased | the phased fraction's shift from 1/2 over the event (maternal allele in the child, transmitted allele in a parent), its binomial error, and the site count |
+| origin, origin_llr, origin_n | parent of origin from the informative sites (child, autosomes), the log-likelihood ratio and the site count |
+| origin_phase | from the sign of the phased shift: the parent of the extra, lost or retained copy (child), or whether the event lies on the transmitted homologue (parent) |
+| homologues, hetero_share | for a child's gain, LOH or UPD with a parent named: whether that parent's two copies are one homologue or two, and the share of the event's windows in which they differ |
+| het_rate, het_rate_rel, n_het, n_called | heterozygosity rate in the segment, its ratio to the member's own (or to the panel's), and the counts |
+| mie_rate | Mendelian-error rate among the segment's confident sites (the genome-wide rate is in the summary) |
+| inheritance | child: inherited from the father / the mother, or new; parent: passed to the child or not |
+| external | labels of the supplied events (`--events`) overlapping the segment |
+| note | annotations: run of homozygosity; isodisomy; no heterozygous calls; pieces joined; phased-versus-depth disagreement; phased-scan typing; heterodisomy; parent-of-origin disagreement; loss on a single X |
 
 ## phased.tsv
 
-The pooled windows of each member's main phased track: role, chrom, start, end, mid, n_sites, depth (the summed
-depth), frac (the pooled fraction), se, shared (parted in two or more members), step (the step fit), lrr (the bin's),
-copies_tagged, copies_other (from the step fits), and the auxiliary tracks' pooled fractions and sites per window
-(`aux_mother_hom`, `aux_father_hom` for the child; `aux_child_het` for a parent).
+One row per pooled window of each member's main phased track: role, chrom, start, end, mid (the first, last and
+median site positions), n_sites, depth (summed), frac (the pooled fraction), se, shared (deviating in two or more
+members), step (the step fit), lrr (the window's bin), copies_tagged and copies_other (per-homologue copy number),
+and the auxiliary tracks' pooled fraction and site count per window (`aux_mother_hom`, `aux_father_hom` for the
+child; `aux_child_het` for a parent).
 
 ## phased_rejected.tsv
 
-Segments of the phased scan set aside, with the reason (under the 2-Mb floor; the windows not agreeing with the mean).
+Segments of the phased scan that were not reported, with the reason: span under 2 Mb; windows inconsistent with the
+segment mean; or, with flat depth, a shift under the bands-only floor of 0.025.
 
 ## bins.tsv
 
-chrom, start, end, gc; per member `n_sites`, `depth`, `lrr`, `lrr_gc`, `n_called`, `n_het`, `het_rate`, `bdev`;
-`child_vs_mid`, `father_vs_mother`.
+Per bin: chrom, start, end, gc; the panel's median LRR and robust SD, the mask, the panel's band deviation and the
+band mask; per member `n_sites`, `depth`, `lrr`, `lrr_gc` (GC- and panel-corrected), `n_called`, `n_het`, `het_rate`,
+`bdev`, `het_rel` (relative to the panel); `child_vs_mid` and `father_vs_mother`.
 
-## summary.tsv / summary.json
+## summary.tsv and summary.json
 
-The trio and its members and sexes; records and sites used, the skipped records by reason; the genome's
-Mendelian-error rate; per member the events by type, the X copies and the check against the pedigree's sex, the
-median autosomal depth; the parameters.
+The trio, its members and their sexes; records read, sites used and records skipped by reason; the genome-wide
+Mendelian-error rate; per member the event counts by type, the X copy number with the check against the pedigree
+sex, the median autosomal depth, the phased-site count, the window size, the reference bias, the number of
+phased-scan events and of shared windows; the parameters. `summary.json` also holds every event and every supplied
+event.
 
 ## figures/
 
-`genome.{png,svg,pdf}` (eight rows: LRR with its step fit and BAF with the pooled phased fraction per member, the
-child over the parents' mean, the child's maternal and paternal copies) and `chrom_<chrom>.{png,svg,pdf}` (five rows
-per member: LRR with its step fit and calls, the BAF with the informative sites coloured, the phased fraction - sites,
-windows, step fit, auxiliary tracks - the two homologues' copies, the heterozygosity rate), each with `<name>.txt`
-(title, caption, key with hex colours) and `legends/<name>_legend.{png,svg,pdf}`. Colours (Okabe-Ito): LRR points
-dark grey; BAF light grey; the pooled phased fraction bluish green `#009E73` (hollow where parted in everyone); step
-fits black; gain vermillion `#D55E00`; loss blue `#0072B2`; LOH and UPD reddish purple `#CC79A7`; in the child's
-panels the mother's alleles `#CC79A7`, the father's `#E69F00` (the informative sites; the copies; the auxiliary track
-that parts where the child carries two different homologues of that parent); a parent's copies passed `#D55E00` and
-not passed `#56B4E9`; given events black brackets; references dotted grey.
+`genome.{png,svg,pdf}`: eight rows; per member the LRR with its step fit and calls and the BAF with the pooled
+phased fraction, then the child's depth over the parents' mean, and the child's maternal and paternal copy number.
+`chrom_<chrom>.{png,svg,pdf}`: five rows per member; LRR with step fit and calls, BAF with the child's informative
+sites coloured by parent, the phased fraction (sites, windows, step fit, auxiliary tracks), per-homologue copy
+number, and heterozygosity rate. Each figure has a sidecar `<name>.txt` (title, caption, key with hex colours) and a
+legend image `legends/<name>_legend.{png,svg,pdf}`; the image itself carries no legend or title.
+
+Colours (Okabe–Ito): LRR points dark grey; BAF light grey; pooled phased fraction bluish green `#009E73` (hollow where
+shared); step fits black; gain vermillion `#D55E00`; loss blue `#0072B2`; LOH and UPD reddish purple `#CC79A7`. In the
+child's panels, maternal alleles, copies and the auxiliary track that departs under two maternal homologues are
+`#CC79A7` and the paternal equivalents `#E69F00`; a parent's transmitted-homologue copies are `#D55E00` and the
+untransmitted `#56B4E9`; supplied events are black brackets; reference lines dotted grey.
 
 ## guide.html
 
-Beside every trio's page and the cohort report: how to read every row of the figures, every colour, every kind of
-event (pattern cards drawn from idealised tracks: gain, loss, copy-neutral LOH, isodisomy, heterodisomy, a run of
-homozygosity, a meiotic and a mitotic trisomy), the rules the calls follow, and every column. Also
-`triokaryo guide --out guide.html [--figures dir]`.
+Written beside every trio page and the cohort report: the meaning of every figure row, colour, event type (pattern
+cards drawn from idealised tracks: gain, loss, CN-LOH, isodisomy, heterodisomy, run of homozygosity, meiotic and
+mitotic trisomy), calling rule and column. Also `triokaryo guide --out guide.html [--figures dir]`.
 
 ## cohort/ (`triokaryo cohort`)
 
-`index.html`: the report - the counts (trios, events by type, by member, by source, new and inherited, the phased
-finds, the depth calls the bands doubt, the runs of homozygosity, the X readings against the pedigree's sex, the
-concordance), `figures/landscape.*` (events per chromosome by type; one row per trio, each event a bar coloured by
-type, the child's thick, a parent's thin above or below, a black line over a bar for a matched event), the table of
-every event (sortable, filterable; links to each trio's page and chromosome figure), the trios with their quality
-readings, the concordance with the given events, the phased scan's segments set aside by region, the colours.
-`events.all.tsv` (every event with its trio), `summary.all.tsv` (per trio: members, sexes, sites, Mendelian-error
-rate, X copies and checks, depths, phased sites, windows parted in everyone, segments set aside, events, flagged
-events, seconds, run), `concordance.tsv` (each given event with its match), `flags.tsv` (every event with a note),
-`rejected.all.tsv`, `guide.html`, `figures/patterns_*.*`.
+`index.html`: counts (trios, events by type, member and source, de novo and inherited, phased-scan events,
+depth calls doubted by the phased track, runs of homozygosity, X copy numbers disagreeing with the pedigree,
+concordance), `figures/landscape.*` (events per chromosome by type; one row per trio with each event a bar coloured
+by type, the child's thick, a parent's thin above or below, a black line over a bar for a matched event), a sortable
+and filterable table of every event linked to its trio's page and chromosome figure, per-trio quality metrics,
+the concordance with the supplied events, and the rejected phased segments by region. Tables: `events.all.tsv`,
+`summary.all.tsv` (per trio: members, sexes, sites, Mendelian-error rate, X copy numbers and checks, depths, phased
+sites, shared windows, rejected segments, events, flagged events, run time, run directory), `concordance.tsv`,
+`flags.tsv` (every event with a note), `rejected.all.tsv`; plus `guide.html` and `figures/patterns_*.*`.
 
 ## triokaryo report --runs
 
-A run's page, figure sidecars, legends and guide again from its tables and figures (no VCF): after a change to the
-page or the key, or to add the guide to an older run.
+Rebuilds a run's page, figure sidecars, legend images and guide from its tables and existing figures, without the
+VCF: after a change to the page or the key, or to add the guide to an older run.

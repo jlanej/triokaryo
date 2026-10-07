@@ -1,14 +1,13 @@
-"""triokaryo: large chromosomal events in a trio, from its VCF.
+"""triokaryo: large chromosomal events in a trio from its VCF.
 
-  triokaryo run --vcf trio.vcf.gz --pedigree trios.tsv --child KID --out out/KID [--gc-track gc.tsv] [--events other_calls.tsv]
+  triokaryo run --vcf trio.vcf.gz --pedigree trios.tsv --child KID --out out/KID [--gc-track gc.tsv] [--panel panel.tsv] [--events other_calls.tsv]
   triokaryo run --vcf trio.vcf.gz --child KID --father DAD --mother MOM --sex M,M,F --out out/KID
   triokaryo panel --vcfs a.vcf.gz b.vcf.gz ... --out panel.tsv        # or --runs 'out/*' from earlier runs
-  triokaryo run ... --panel panel.tsv
   triokaryo gc-track --fasta ref.fa --out gc.tsv [--bin 1000000]
   triokaryo mock --out mock_dir [--seed 1] [--no-events] [--xxy] [--contigs chr15,chr16,chr17 --sites-per-mb 1000 --low-share]
-  triokaryo cohort --runs 'out/*' --out cohort [--events other_calls.tsv]   # the cohort report + guide
-  triokaryo report --runs 'out/*'                   # a run's page again from its tables (after a change to the page)
-  triokaryo guide --out guide.html                  # how to read every figure, colour and column
+  triokaryo cohort --runs 'out/*' --out cohort [--events other_calls.tsv]   # cohort report and guide
+  triokaryo report --runs 'out/*'                   # rebuild a run's page from its tables (no VCF needed)
+  triokaryo guide --out guide.html                  # the meaning of every figure row, colour and column
 """
 import argparse
 import glob
@@ -69,7 +68,7 @@ def cmd_panel(a):
     unp = sum(1 for r in rows if r["n"] < PANEL_MIN_N or (np.isfinite(r["lrr_rsd"]) and r["lrr_rsd"] > PANEL_MAX_RSD))
     if len(samples) < PANEL_MIN_N:
         _log("WARNING: %d genomes: a panel needs %d or more, or every bin is left out of the calls" % (len(samples), PANEL_MIN_N))
-    _log("panel of %d genomes, %d bins (%d unpinned) -> %s" % (len(samples), len(rows), unp, a.out))
+    _log("panel of %d genomes, %d bins (%d masked) -> %s" % (len(samples), len(rows), unp, a.out))
     return 0
 
 
@@ -123,31 +122,31 @@ def main(argv=None):
     ap = argparse.ArgumentParser(prog="triokaryo", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--version", action="version", version="triokaryo " + __version__)
     sub = ap.add_subparsers(dest="cmd", required=True)
-    r = sub.add_parser("run", help="one trio: scan, bin, call, read, figures, page")
+    r = sub.add_parser("run", help="analyse one trio: scan the VCF, bin, segment, call, phase, write tables, figures and the page")
     r.add_argument("--vcf", required=True)
-    r.add_argument("--pedigree", help="a trios file (#kid dad mom [kid_sex dad_sex mom_sex]) or a PED")
+    r.add_argument("--pedigree", help="a trios file (#kid dad mom [kid_sex dad_sex mom_sex]) or a PED file")
     r.add_argument("--child")
     r.add_argument("--father")
     r.add_argument("--mother")
-    r.add_argument("--sex", default="", help="child,father,mother as M/F when given outright, e.g. M,M,F")
+    r.add_argument("--sex", default="", help="sexes of child,father,mother as M/F when the members are named directly, e.g. M,M,F")
     r.add_argument("--out", required=True)
-    r.add_argument("--gc-track", help="bin GC (triokaryo gc-track): the LRR is corrected with it")
-    r.add_argument("--panel", help="a reference panel (triokaryo panel): the depth, band and heterozygosity structure every genome shares, taken "
-                                   "out of each member's tracks; needed on real data, where centromere flanks and segmental duplications read as "
-                                   "events otherwise. A file, or '1kg-dragen' (twelve public 1000 Genomes genomes called by DRAGEN 3.7.6, 1-Mb bins)")
-    r.add_argument("--events", help="events from elsewhere to draw and compare (sample chrom start end label; or NGS-DOSE's karyotype/events.tsv)")
-    r.add_argument("--bin", type=int, default=1_000_000)
-    r.add_argument("--min-dp", type=int, default=8)
-    r.add_argument("--min-gq", type=int, default=20)
-    r.add_argument("--thin", type=int, default=1, help="keep every n-th usable site (speed; 1 = all)")
+    r.add_argument("--gc-track", help="per-bin GC fraction (triokaryo gc-track); the LRR is GC-corrected against it")
+    r.add_argument("--panel", help="reference panel (triokaryo panel): per-bin median LRR, band deviation and heterozygosity rate of other genomes, "
+                                   "subtracted from each member's tracks; recommended on real data, where centromere flanks and segmental duplications "
+                                   "are otherwise called as events. A file, or '1kg-dragen' (twelve public 1000 Genomes genomes called by DRAGEN 3.7.6, 1-Mb bins)")
+    r.add_argument("--events", help="events from another method to draw and match (sample chrom start end label [type]; or NGS-DOSE's karyotype/events.tsv)")
+    r.add_argument("--bin", type=int, default=1_000_000, help="bin width in bp")
+    r.add_argument("--min-dp", type=int, default=8, help="minimum depth of a confident call")
+    r.add_argument("--min-gq", type=int, default=20, help="minimum GQ of a confident call")
+    r.add_argument("--thin", type=int, default=1, help="use every n-th usable site (faster; 1 = all)")
     r.add_argument("--genome", default="grch38")
-    r.add_argument("--min-abs", type=float, default=0.07, help="|LRR| a gain or loss needs (0.07: a share of cells of about 10%%)")
-    r.add_argument("--z", type=float, default=5.0, help="the split statistic a segment boundary needs")
-    r.add_argument("--min-len", type=int, default=5, help="bins per segment")
-    r.add_argument("--min-f", type=float, default=0.10, help="the smallest share of cells reported")
+    r.add_argument("--min-abs", type=float, default=0.07, help="minimum |mean LRR| of a gain or loss (0.07: a cell fraction of about 10%%)")
+    r.add_argument("--z", type=float, default=5.0, help="minimum split statistic for a segment boundary (binary segmentation)")
+    r.add_argument("--min-len", type=int, default=5, help="minimum bins per segment")
+    r.add_argument("--min-f", type=float, default=0.10, help="minimum cell fraction reported")
     r.add_argument("--no-figures", action="store_true")
     r.set_defaults(fn=cmd_run)
-    pn = sub.add_parser("panel", help="a reference panel: the median LRR per bin over other genomes (per-sample or multi-sample VCFs, or earlier runs)")
+    pn = sub.add_parser("panel", help="build a reference panel: per-bin median LRR, band deviation and heterozygosity rate over other genomes (VCFs or earlier runs)")
     pn.add_argument("--vcfs", nargs="*", help="VCFs to read (every sample of each unless --samples)")
     pn.add_argument("--samples", help="comma-separated sample names to take from the VCFs")
     pn.add_argument("--runs", nargs="*", help="earlier run directories (bins.tsv + summary.tsv), e.g. 'out/*'")
@@ -156,33 +155,33 @@ def main(argv=None):
     pn.add_argument("--thin", type=int, default=1)
     pn.add_argument("--genome", default="grch38")
     pn.set_defaults(fn=cmd_panel)
-    g = sub.add_parser("gc-track", help="bin GC from a reference FASTA")
+    g = sub.add_parser("gc-track", help="per-bin GC fraction from a reference FASTA")
     g.add_argument("--fasta", required=True)
     g.add_argument("--out", required=True)
     g.add_argument("--bin", type=int, default=1_000_000)
     g.add_argument("--genome", default="grch38")
     g.set_defaults(fn=cmd_gc_track)
-    m = sub.add_parser("mock", help="a mock trio VCF with planted events (no real data)")
+    m = sub.add_parser("mock", help="a simulated trio VCF with planted events (no real data)")
     m.add_argument("--out", required=True)
     m.add_argument("--seed", type=int, default=1)
     m.add_argument("--sites-per-mb", type=int, default=60)
     m.add_argument("--no-events", action="store_true")
-    m.add_argument("--xxy", action="store_true", help="the child 47,XXY (two X copies, a male)")
-    m.add_argument("--prefix", default="", help="a tag before the sample names KID, DAD, MOM (several mock trios in one cohort)")
-    m.add_argument("--contigs", default="", help="only these chromosomes, comma-separated (a dense small mock)")
-    m.add_argument("--low-share", action="store_true", help="plant the low-share events (under the depth's threshold) instead of the default ones")
+    m.add_argument("--xxy", action="store_true", help="a 47,XXY child (male with two X copies)")
+    m.add_argument("--prefix", default="", help="prefix for the sample names KID, DAD, MOM (several simulated trios in one cohort)")
+    m.add_argument("--contigs", default="", help="restrict to these chromosomes, comma-separated (a small dense simulation)")
+    m.add_argument("--low-share", action="store_true", help="plant the low-cell-fraction events (below the depth threshold) instead of the default set")
     m.set_defaults(fn=cmd_mock)
-    c = sub.add_parser("cohort", help="the cohort report over many trios' runs: counts, the landscape figure, every event, the trios, the concordance, the guide")
+    c = sub.add_parser("cohort", help="cohort report over many runs: counts, landscape figure, every event, per-trio metrics, concordance, guide")
     c.add_argument("--runs", nargs="+", required=True, help="run directories (globs)")
     c.add_argument("--out", required=True)
-    c.add_argument("--events", help="events from elsewhere to match (as for run)")
+    c.add_argument("--events", help="events from another method to match (as for run)")
     c.add_argument("--genome", default="grch38")
     c.set_defaults(fn=cmd_cohort)
-    g = sub.add_parser("guide", help="the guide: how to read every figure, colour, call and column (one self-contained page with pattern cards)")
-    g.add_argument("--out", required=True, help="the HTML to write")
+    g = sub.add_parser("guide", help="the guide: the meaning of every figure row, colour, call and column, with pattern cards (one self-contained page)")
+    g.add_argument("--out", required=True, help="the HTML file to write")
     g.add_argument("--figures", help="keep the pattern figures (PNG, SVG, PDF, sidecars, legends) in this directory")
     g.set_defaults(fn=cmd_guide)
-    rp = sub.add_parser("report", help="a run's page, sidecars, legends and guide again from its tables and figures (no VCF needed)")
+    rp = sub.add_parser("report", help="rebuild a run's page, sidecars, legends and guide from its tables and figures (no VCF needed)")
     rp.add_argument("--runs", nargs="+", required=True, help="run directories (globs)")
     rp.set_defaults(fn=cmd_report)
     a = ap.parse_args(argv)

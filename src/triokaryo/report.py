@@ -1,4 +1,5 @@
-"""Tables and the per-trio page. Every number of the figures is in a table; the page embeds the figures and their keys."""
+"""Tables, the per-trio page and the cohort report. Every quantity drawn in a figure is in a table; the pages embed the
+figures with their captions and keys."""
 import base64
 import html
 import json
@@ -131,8 +132,8 @@ def write_html(out, trio, figs, events, summ, external, mock_note=""):
     else:
         w.append("<p>No event called.</p>")
     if external:
-        w.append("<h3>Events given from elsewhere</h3>")
-        w.append(_table(["sample", "chrom", "start", "end", "note", "inheritance"], [dict(sample=x.sample, chrom=x.chrom, start=x.start, end=x.end, note=x.note, inheritance=x.inheritance) for x in external]))
+        w.append("<h3>Supplied events (--events)</h3>")
+        w.append(_table(["sample", "chrom", "start", "end", "label", "match"], [dict(sample=x.sample, chrom=x.chrom, start=x.start, end=x.end, label=x.note, match=x.inheritance) for x in external]))
     for n, fg in enumerate(figs, 1):
         w.append('<figure><img src="%s" alt="%s"><figcaption><b>Figure %d. %s.</b> %s</figcaption><div class="key">%s</div></figure>' % (
             _img(fg["png"]), html.escape(fg["name"]), n, html.escape(fg["title"]), html.escape(fg["caption"]),
@@ -143,35 +144,26 @@ def write_html(out, trio, figs, events, summ, external, mock_note=""):
     w.append("<h2>How to read it</h2>")
     from .guide import key_table
     from .plots import DIRECTION
-    w.append("<p><b>The rows.</b> LRR: log2 of the bin's median depth over the member's autosomal median, with its step fit and the calls (a gain in a share f of cells "
-             "reads log2(1 + f/2), a loss log2(1 - f/2); a copy-neutral event is drawn at zero). BAF: the raw alt-allele fraction at heterozygous sites, the child's "
-             "opposite-homozygote sites coloured by the parent of the alt allele. The phased fraction: the maternal allele's along the child, the transmitted allele's "
-             "along a parent - sites, pooled windows and step fit; the thin lines the auxiliary tracks, which part from the main one where the child carries two "
-             "different homologues of one parent. Copies: the LRR step fit's copies split by the fraction's. Het rate: heterozygous calls per confident call.</p>")
-    w.append("<p><b>The direction.</b> %s</p>" % html.escape(DIRECTION))
-    w.append("<p><b>The calls.</b> source: depth (the LRR), bands (the folded bands or the heterozygosity rate), phased (a shift of the phased track the depth did not "
-             "call: a gain or loss in a few per cent of cells, or a uniparental heterodisomy). f: the share of cells, from the depth where it called the event, else from "
-             "the bands; f_lrr, f_baf and f_phase are the three readings side by side. origin: the parent of origin from the opposite-homozygote sites; origin_phase "
-             "from the phased sign; homologues: one or two. An LOH in every cell with no Mendelian errors is a run of homozygosity, with them a uniparental isodisomy. "
-             "Every number is in events.tsv, bins.tsv and phased.tsv beside this page; the full guide with pattern cards is <a href=\"guide.html\">guide.html</a>.</p>")
+    w.append("<p><b>Rows.</b> LRR: log2 of the bin's median depth over the member's autosomal median, with its step fit and the calls (a gain in a cell fraction f "
+             "reads log2(1 + f/2), a loss log2(1 - f/2); copy-neutral events are drawn at 0). BAF: the alt-allele read fraction at heterozygous sites, with the "
+             "child's informative sites coloured by the parent of the alt allele. Phased fraction: the maternal-allele fraction along the child, the "
+             "transmitted-allele fraction along a parent (sites, pooled windows, step fit); thin lines are the auxiliary tracks, which depart from the main track "
+             "where the child carries two different homologues of one parent. Copies: the LRR step fit's copy number split by the fraction's step fit. Het rate: "
+             "heterozygous calls per confident call.</p>")
+    w.append("<p><b>Sign convention.</b> %s</p>" % html.escape(DIRECTION))
+    w.append("<p><b>Calls.</b> source: depth (LRR segmentation), bands (band deviation or heterozygosity rate), phased (a shift of the phased track the depth did not "
+             "call: a gain or loss in a few per cent of cells, or a uniparental heterodisomy). f: the cell fraction, from the depth for a depth-called gain or loss, "
+             "otherwise from the bands; f_lrr, f_baf and f_phase are the three estimates side by side. origin: the parent of origin from the informative sites; "
+             "origin_phase: from the sign of the phased shift; homologues: one or two. A constitutional LOH without Mendelian errors is a run of homozygosity, "
+             "with them a uniparental isodisomy. Every quantity is in events.tsv, bins.tsv and phased.tsv beside this page; the full guide with pattern cards is "
+             "<a href=\"guide.html\">guide.html</a>.</p>")
     used = []
     for fg in figs:
         for k in fg["keys"]:
             if k not in used:
                 used.append(k)
     if used:
-        w.append("<p><b>The colours.</b></p>" + key_table(used))
-    w.append("<p style=\"display:none\">LRR: log2 of the bin's median depth over the member's autosomal median; a gain of one copy in a share f of the cells "
-             "reads log2(1 + f/2), a loss log2(1 - f/2). BAF: the alt-allele fraction at heterozygous sites; a gain parts the bands to 1/(2+f) and (1+f)/(2+f), "
-             "a loss to (1-f)/(2-f) and 1/(2-f), a copy-neutral loss of heterozygosity to (1-f)/2 and (1+f)/2 - f estimated from the bands independently "
-             "of the depth (f_baf beside f_lrr). The heterozygosity rate falls to zero under a loss of heterozygosity in every cell. Parent of origin: at "
-             "sites where the parents are opposite homozygotes the child's alleles have known parents, and the alt fraction says whose copy is extra, lost "
-             "or doubled. Phased: at every heterozygous site where at least one parent is homozygous the child's alleles have known parents (and at a parent's, "
-             "where the child or the other parent is, the allele passed to the child is known); the fraction of the maternal allele along the child, of the "
-             "transmitted allele along a parent, sits at 1/2 + d or 1/2 - d along an event - the sign is the parent of origin (phase_shift, f_phase, origin_phase), "
-             "the pooled sites give the edges at site resolution (start_fine, end_fine), and the LRR's copies split by the fraction are the maternal and "
-             "paternal copies. Source: depth (the LRR), bands (the folded bands or the heterozygosity rate), phased (a shift of the phased track the depth did "
-             "not call: a few per cent of cells). Inheritance: the same event in a parent. Every number is in events.tsv, bins.tsv and phased.tsv beside this page.</p>")
+        w.append("<p><b>Colours.</b></p>" + key_table(used))
     w.append("</body></html>")
     with open(os.path.join(out, "index.html"), "w") as fh:
         fh.write("\n".join(w))
@@ -211,7 +203,7 @@ def _read_summary_tsv(path):
 
 
 def _externals_of(path):
-    """The given events of a run back from external.tsv (sample, chrom, start, end, label, match)."""
+    """The supplied events of a run, read back from external.tsv (sample, chrom, start, end, label, match)."""
     from .segment import Event
     out = []
     if not os.path.exists(path):
@@ -230,10 +222,10 @@ def _externals_of(path):
 
 
 def rebuild_run(run_dir, log=None):
-    """A run's page, sidecars, legends and guide again from its tables and figures (after a change to the page or the key), no VCF needed."""
+    """Rebuild a run's page, figure sidecars, legend images and guide from its tables and existing figures; no VCF needed."""
     from .genome import genome as load_genome
     from .guide import write_guide
-    from .plots import read_sidecar, write_legend, write_sidecar
+    from .plots import chrom_caption, genome_caption, read_sidecar, write_legend, write_sidecar
     summary = json.load(open(os.path.join(run_dir, "summary.json")))
     trio = _trio_of(summary)
     events = events_of(summary)
@@ -243,6 +235,11 @@ def rebuild_run(run_dir, log=None):
             summ[k] = float(summ.get(k, "nan"))
         except ValueError:
             summ[k] = float("nan")
+    try:
+        bin_size = int(float(summ.get("bin_size", "0") or 0))          # the captions are rebuilt from the tables when the bin size is known
+    except ValueError:
+        bin_size = 0
+    gc_corrected = str(summ.get("gc_corrected", "0")).lower() in ("1", "true")
     external = _externals_of(os.path.join(run_dir, "external.tsv"))
     G = load_genome(summary.get("genome", "grch38"))
     fdir = os.path.join(run_dir, "figures")
@@ -256,6 +253,10 @@ def rebuild_run(run_dir, log=None):
             if keys is None:
                 from .plots import CHROM_KEYS, GENOME_KEYS
                 keys = GENOME_KEYS if n == "genome" else CHROM_KEYS
+            if bin_size and n == "genome":
+                title, caption = title or "Large chromosomal events in trio %s, genome-wide" % trio.name, genome_caption(bin_size, gc_corrected)
+            elif bin_size and n.startswith("chrom_"):
+                title, caption = title or "Trio %s, %s" % (trio.name, n[6:]), chrom_caption(n[6:], trio.name, bin_size, events)
             write_sidecar(fdir, n, title, caption, keys)
             write_legend(fdir, n, keys)
             figs.append(dict(name=n, title=title, caption=caption, keys=keys, png=os.path.join(fdir, n + ".png")))
@@ -320,7 +321,7 @@ def write_cohort(out, run_dirs, events_path=None, genome_name="grch38", log=None
     if not summaries:
         raise SystemExit("no run with a summary.json under: " + " ".join(run_dirs))
     write_tsv(os.path.join(out, "events.all.tsv"), COHORT_COLS, rows)
-    # the concordance with the given events
+    # the concordance with the supplied events
     conc, ext = None, []
     if events_path:
         ext = read_events(events_path, G)
@@ -369,15 +370,15 @@ def write_cohort(out, run_dirs, events_path=None, genome_name="grch38", log=None
          'input{font-size:13px;padding:3px 6px;width:22em}.tiles{display:flex;flex-wrap:wrap;gap:10px;margin:0.8em 0}.tile{background:#f6f6f8;border:1px solid #ddd;border-radius:8px;'
          'padding:8px 12px;min-width:140px}.tile b{display:block;font-size:20px}.tile span{font-size:12px;color:#555}</style></head><body>' % CSS,
          "<h1>triokaryo: %d trios, %d events</h1>" % (len(summaries), len(events)),
-         "<p>Every trio's large chromosomal events from its VCF, read from the depth, the B-allele bands and transmission phasing. How to read every figure, colour and "
-         "column: <a href=\"guide.html\">guide.html</a>. The tables beside this page: events.all.tsv, summary.all.tsv, concordance.tsv, flags.tsv, rejected.all.tsv.</p>",
+         "<p>Large chromosomal events in each trio from its VCF, from depth, B-allele bands and transmission phasing. The meaning of every figure, colour and "
+         "column: <a href=\"guide.html\">guide.html</a>. Tables beside this page: events.all.tsv, summary.all.tsv, concordance.tsv, flags.tsv, rejected.all.tsv.</p>",
          '<div class="tiles">']
     tiles = [(len(summaries), "trios (%d without an event)" % quiet), (len(events), "events"), (by_type["gain"], "gains"), (by_type["loss"], "losses"),
-             (by_type["LOH"], "copy-neutral LOH"), (by_type["UPD"], "heterodisomies"), (by_role["child"], "in children (%d new, %d inherited)" % (new, inh)),
-             (by_role["father"] + by_role["mother"], "in parents"), (by_src["phased"], "from the phased bands alone"), (doubted, "depth calls the bands doubt"),
-             (roh, "runs of homozygosity"), (len(xbad), "X readings against the pedigree's sex")]
+             (by_type["LOH"], "copy-neutral LOH"), (by_type["UPD"], "heterodisomies"), (by_role["child"], "in children (%d de novo, %d inherited)" % (new, inh)),
+             (by_role["father"] + by_role["mother"], "in parents"), (by_src["phased"], "from the phased scan alone"), (doubted, "depth calls doubted by the phased track"),
+             (roh, "runs of homozygosity"), (len(xbad), "X copy numbers disagreeing with the pedigree sex")]
     if conc:
-        tiles.append((conc["matched"], "of %d given events matched" % conc["external"]))
+        tiles.append((conc["matched"], "of %d supplied events matched" % conc["external"]))
     for n, label in tiles:
         w.append('<div class="tile"><b>%s</b><span>%s</span></div>' % (n, html.escape(label)))
     w.append("</div>")
@@ -387,7 +388,7 @@ def write_cohort(out, run_dirs, events_path=None, genome_name="grch38", log=None
     w.append("<h2>Events</h2><p>Click a heading to sort; type to filter. <input id=\"filter\" placeholder=\"filter: a trio, a chromosome, a type, a word of a note\"> "
              "<span id=\"nshown\">%d</span> shown. %s</p>" % (len(events), html.escape(DIRECTION)))
     w.append('<table class="sortable" id="events"><thead><tr>' + "".join("<th>%s</th>" % h for h in (
-        "trio", "member", "chrom", "start (Mb)", "end (Mb)", "span", "type", "source", "f", "f depth", "f bands", "f phased", "origin", "homologues", "inheritance", "given", "flags", "page", "figure")) + "</tr></thead><tbody>")
+        "trio", "member", "chrom", "start (Mb)", "end (Mb)", "span", "type", "source", "f", "f depth", "f bands", "f phased", "origin", "homologues", "inheritance", "supplied", "notes", "page", "figure")) + "</tr></thead><tbody>")
     for s in summaries:
         page = os.path.relpath(os.path.join(s["run"], "index.html"), out)
         for e in s["events_obj"]:
@@ -399,8 +400,8 @@ def write_cohort(out, run_dirs, events_path=None, genome_name="grch38", log=None
                 html.escape(page), html.escape(figp), html.escape(e.chrom)))
     w.append("</tbody></table>")
     w.append("<h2>Trios</h2><table class=\"sortable\"><thead><tr>" + "".join("<th>%s</th>" % h for h in (
-        "trio", "members", "sexes", "events", "flagged", "X copies (child, father, mother)", "X against the pedigree", "MIE rate", "sites", "depth (child, father, mother)",
-        "phased sites (child)", "set aside", "page")) + "</tr></thead><tbody>")
+        "trio", "members", "sexes", "events", "flagged", "X copies (child, father, mother)", "X versus pedigree sex", "MIE rate", "sites", "depth (child, father, mother)",
+        "phased sites (child)", "rejected", "page")) + "</tr></thead><tbody>")
     for s, r in zip(summaries, srows):
         xc = s["x_copies"]
         xchk = "; ".join("%s: %s" % (m, r["%s_x_check" % m]) for m in MEMBERS if r["%s_x_check" % m] not in ("", "agrees")) or "agrees"
@@ -410,24 +411,24 @@ def write_cohort(out, run_dirs, events_path=None, genome_name="grch38", log=None
                  '<td><a href="%s">page</a></td></tr>' % html.escape(os.path.relpath(os.path.join(s["run"], "index.html"), out)))
     w.append("</tbody></table>")
     if conc:
-        w.append("<h2>Concordance with the given events</h2><p>%d given events, %d matched by a triokaryo event of the same sample and region (half or more of the "
-                 "shorter overlapping); %d triokaryo gains or losses without a given event; %d copy-neutral events, which a depth tool cannot see.</p>" % (
-                     conc["external"], conc["matched"], conc["new"], conc["cn"]))
+        w.append("<h2>Concordance with the supplied events</h2><p>%d supplied events, %d matched by a triokaryo event of the same sample and chromosome whose "
+                 "intersection covers at least half of the shorter segment; %d triokaryo gains or losses without a supplied event; %d copy-neutral events, which a "
+                 "depth-based method cannot detect.</p>" % (conc["external"], conc["matched"], conc["new"], conc["cn"]))
         w.append(_table(["sample", "chrom", "start", "end", "label", "match"], [dict(sample=x.sample, chrom=x.chrom, start=x.start, end=x.end, label=x.note, match=x.inheritance) for x in ext]))
     if rejected:
         by_reg = {}
         for r in rejected:
             k = (r["chrom"], int(float(r["start"]) // 5e6))
             by_reg.setdefault(k, []).append(r)
-        w.append("<h2>Segments the phased scan set aside</h2><p>%d segments in %d trios (rejected.all.tsv): under the 2-Mb floor, or windows not agreeing with their mean, "
-                 "or a bands-only shift under its floor. A region recurring across trios is paralogous sequence or a dense cluster of sites, not an event.</p>" % (
-                     len(rejected), len({r["trio"] for r in rejected})))
+        w.append("<h2>Segments rejected by the phased scan</h2><p>%d segments in %d trios (rejected.all.tsv): span under 2 Mb, windows inconsistent with the segment "
+                 "mean, or a bands-only shift under its floor. A region recurring across trios indicates paralogous sequence or a dense cluster of sites rather "
+                 "than an event.</p>" % (len(rejected), len({r["trio"] for r in rejected})))
         w.append("<table><tr><th>region</th><th>segments</th><th>trios</th><th>reasons</th></tr>")
         for (c, b), lst in sorted(by_reg.items(), key=lambda kv: (-len(kv[1]), kv[0])):
             reasons = sorted({r["reason"].split(" (")[0] for r in lst})
             w.append("<tr><td>%s:%d-%d Mb</td><td>%d</td><td>%d</td><td>%s</td></tr>" % (c, b * 5, b * 5 + 5, len(lst), len({r["trio"] for r in lst}), html.escape("; ".join(reasons))))
         w.append("</table>")
-    w.append("<h2>The colours</h2>" + key_table(["depth", "step", "baf", "phased", "gain", "loss", "loh", "mat", "pat", "cmat", "cpat", "ctrans", "cuntrans", "ext"]))
+    w.append("<h2>Colours</h2>" + key_table(["depth", "step", "baf", "phased", "gain", "loss", "loh", "mat", "pat", "cmat", "cpat", "ctrans", "cuntrans", "ext"]))
     w.append("<script>%s</script></body></html>" % JS)
     with open(os.path.join(out, "index.html"), "w") as fh:
         fh.write("\n".join(w))

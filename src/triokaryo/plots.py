@@ -1,5 +1,5 @@
-"""Figures for review. No legend and no title in the image: each figure writes a sidecar (title, caption, key) and a
-legend image of its own (PNG, SVG, PDF), so the figure can go into a manuscript as it is. Okabe-Ito colours."""
+"""Figures. The image carries no legend or title; each figure writes a sidecar (title, caption, key) and a separate
+legend image (PNG, SVG, PDF) so that it can be placed in a manuscript as it is. Okabe-Ito colours."""
 import os
 
 import numpy as np
@@ -12,33 +12,38 @@ PAL = dict(child="#D55E00", father="#E69F00", mother="#CC79A7", gain="#D55E00", 
            baf="#9C9C9C", ref="#7F7F7F", ext="#000000", mat="#CC79A7", pat="#E69F00", band="#F2F2F2", phased="#009E73", psite="#C8C8C8", step="#000000",
            trans="#D55E00", untrans="#56B4E9")
 KEY = {
-    "depth": (PAL["depth"], "point", "LRR: log2 of the bin's median depth over the member's autosomal median (GC-corrected where a GC track was given)"),
-    "baf": (PAL["baf"], "point", "BAF: the alt-allele fraction at the member's heterozygous sites (a sample of them)"),
-    "gain": (PAL["gain"], "line", "a called gain (line at the segment's mean LRR)"),
-    "loss": (PAL["loss"], "line", "a called loss"),
-    "loh": (PAL["loh"], "line", "a called copy-neutral event - a loss of heterozygosity, or a uniparental heterodisomy (drawn at zero)"),
-    "mat": (PAL["mat"], "point", "an informative site whose alt allele came from the mother (father 0/0, mother 1/1)"),
-    "pat": (PAL["pat"], "point", "an informative site whose alt allele came from the father (father 1/1, mother 0/0)"),
-    "ext": (PAL["ext"], "bracket", "an event given from elsewhere (--events), drawn above the track"),
-    "ref": (PAL["ref"], "line", "reference lines: zero LRR, BAF at 1/2, 1/3 and 2/3; the centromere"),
-    "trio": (PAL["child"], "point", "the child over the parents' mean depth, site by site, per bin (the within-family difference)"),
-    "psite": (PAL["psite"], "point", "the phased fraction at one heterozygous site: of the maternal allele (the child), of the allele passed to the child (a parent); reference bias out"),
-    "phased": (PAL["phased"], "point", "the phased fraction pooled over a window of sites (depth-weighted): at 1/2 where the homologues are equal, 1/2 + d or 1/2 - d along an event, the sign the parent of origin - in the child, below one half the paternal homologue is in excess (a paternal gain, a maternal copy lost), above one half the maternal; in a parent, below one half the event lies on the homologue not passed to the child, above one half on the one passed; hollow where the window is parted in two or more members (paralogy), which the fits and the scan leave out"),
-    "step": (PAL["step"], "line", "the step fit of the track (total-variation denoising): a piecewise-constant reading in which every jump has to earn its height"),
-    "aux_mat": (PAL["mat"], "line", "the child's maternal fraction read at the sites where the father is homozygous and the mother heterozygous: it leaves the main track where the child carries two different maternal homologues (a meiotic maternal trisomy or heterodisomy) and returns where a crossover made them one"),
-    "aux_pat": (PAL["pat"], "line", "the same at the sites where the mother is homozygous and the father heterozygous: it leaves the main track where the child carries two different paternal homologues"),
-    "aux_par": (PAL["untrans"], "line", "a parent's transmitted-allele fraction read at the sites where the child is heterozygous and the other parent homozygous: it leaves the main track where the child carries two different homologues of this parent"),
-    "cmat": (PAL["mat"], "line", "the child's maternal copies: the LRR step fit's copies (2 x 2^LRR) times the maternal fraction's step fit"),
-    "cpat": (PAL["pat"], "line", "the child's paternal copies, the same way"),
-    "ctrans": (PAL["trans"], "line", "a parent's copies of the homologue passed to the child, the same way"),
-    "cuntrans": (PAL["untrans"], "line", "a parent's copies of the other homologue"),
+    "depth": (PAL["depth"], "point", "LRR per bin: log2 of the bin's median depth over the member's autosomal median (GC- and panel-corrected where applicable)"),
+    "baf": (PAL["baf"], "point", "BAF: alt-allele read fraction at the member's heterozygous sites (subsampled)"),
+    "gain": (PAL["gain"], "line", "called gain (line at the segment's mean LRR)"),
+    "loss": (PAL["loss"], "line", "called loss"),
+    "loh": (PAL["loh"], "line", "called copy-neutral event: loss of heterozygosity or uniparental heterodisomy (drawn at LRR 0)"),
+    "mat": (PAL["mat"], "point", "informative site whose alt allele is maternal (father 0/0, mother 1/1)"),
+    "pat": (PAL["pat"], "point", "informative site whose alt allele is paternal (father 1/1, mother 0/0)"),
+    "ext": (PAL["ext"], "bracket", "event supplied with --events (bracket above the track)"),
+    "ref": (PAL["ref"], "line", "reference lines: LRR 0; BAF 1/2, 1/3 and 2/3; the centromere"),
+    "trio": (PAL["child"], "point", "child's depth over the parents' mean depth per site, median per bin (within-family difference)"),
+    "psite": (PAL["psite"], "point", "phased fraction at one site: maternal allele (child) or transmitted allele (parent), reference bias removed"),
+    "phased": (PAL["phased"], "point", "phased fraction pooled over a window of sites (depth-weighted): 1/2 with equal homologue copy, 1/2 +/- d along an event with the sign "
+                                       "giving the parent (child: below 1/2 the paternal homologue is in excess, above 1/2 the maternal; parent: below 1/2 the event lies on the "
+                                       "untransmitted homologue, above 1/2 on the transmitted one); hollow where the window deviates in two or more members (paralogy; excluded from "
+                                       "fits and scan)"),
+    "step": (PAL["step"], "line", "step fit of the track (exact total-variation denoising)"),
+    "aux_mat": (PAL["mat"], "line", "child's maternal fraction at sites where the father is homozygous and the mother heterozygous; departs from the main track where the child "
+                                    "carries two different maternal homologues (maternal meiotic trisomy or heterodisomy) and rejoins it after a crossover"),
+    "aux_pat": (PAL["pat"], "line", "the same at sites where the mother is homozygous and the father heterozygous; departs where the child carries two different paternal homologues"),
+    "aux_par": (PAL["untrans"], "line", "parent's transmitted-allele fraction at sites where the child is heterozygous and the other parent homozygous; departs from the main "
+                                        "track where the child carries two different homologues of this parent"),
+    "cmat": (PAL["mat"], "line", "child's maternal copy number: the LRR step fit's copy number (2 x 2^LRR) times the maternal fraction's step fit"),
+    "cpat": (PAL["pat"], "line", "child's paternal copy number, likewise"),
+    "ctrans": (PAL["trans"], "line", "parent's copy number of the transmitted homologue, likewise"),
+    "cuntrans": (PAL["untrans"], "line", "parent's copy number of the untransmitted homologue"),
 }
 MARK = {"point": "filled circle", "line": "line", "bracket": "bracket"}
 GENOME_KEYS = ["depth", "step", "baf", "phased", "gain", "loss", "loh", "trio", "cmat", "cpat", "ext", "ref"]
 CHROM_KEYS = ["depth", "step", "baf", "mat", "pat", "psite", "phased", "aux_mat", "aux_pat", "aux_par", "cmat", "cpat", "ctrans", "cuntrans", "gain", "loss", "loh", "ext", "ref"]
 LANDSCAPE_KEYS = ["gain", "loss", "loh", "ext"]
-DIRECTION = ("The phased fraction's band is the parent: in the child below one half the paternal homologue is in excess, above one half the maternal; "
-             "in a parent below one half the event lies on the homologue not passed to the child, above one half on the one passed.")
+DIRECTION = ("Sign convention: in the child, a phased fraction below 1/2 means the paternal homologue is in excess (paternal gain or maternal loss) and above 1/2 the "
+             "maternal homologue; in a parent, below 1/2 means the event lies on the untransmitted homologue and above 1/2 on the transmitted one.")
 MM = 1 / 25.4
 plt.rcParams.update({"font.family": "sans-serif", "font.sans-serif": ["Arial", "Helvetica", "DejaVu Sans"], "font.size": 7,
                      "axes.labelsize": 7, "xtick.labelsize": 6, "ytick.labelsize": 6, "axes.linewidth": 0.6, "axes.spines.top": False,
@@ -158,7 +163,7 @@ def _phased_points(tracks, m, chrom=None, off=None):
 
 
 def _copies_lines(ax, tracks, m, chrom=None, off=None, lw=0.9):
-    """The two homologues' copies along the member: maternal and paternal (the child), passed and not passed (a parent)."""
+    """Per-homologue copy number along the member: maternal and paternal (child), transmitted and untransmitted (parent)."""
     if not tracks or m >= len(tracks):
         return
     c1, c2 = (PAL["mat"], PAL["pat"]) if m == 0 else (PAL["trans"], PAL["untrans"])
@@ -172,9 +177,36 @@ def _copies_lines(ax, tracks, m, chrom=None, off=None, lw=0.9):
         ax.plot(x, t.w_copies_other, color=c2, lw=lw, rasterized=True)
 
 
+def genome_caption(bin_size, gc_corrected):
+    """The genome figure's caption; also used by `triokaryo report` to rebuild the sidecar from the tables."""
+    return ("Child (a, b), father (c, d) and mother (e, f): LRR per %d-kb bin (log2 of the bin's median depth over the member's autosomal median%s) with its "
+            "step fit and the called gains, losses and copy-neutral events as lines; and BAF at the member's heterozygous sites (subsampled; dotted lines at "
+            "1/2, 1/3 and 2/3) overlaid with the phased fraction pooled by window (maternal allele along the child, transmitted allele along a parent), which "
+            "is 1/2 with equal homologue copy and deviates along an event with the sign giving the parent of origin (%s). (g) The child's depth over the "
+            "parents' mean per site, median per bin: zero where the child's copy number equals the parental mean. (h) The child's maternal and paternal copy "
+            "number: the LRR-derived copy number split by the phased fraction. Brackets above the LRR: events supplied with --events."
+            % (bin_size // 1000, ", GC-corrected" if gc_corrected else "", DIRECTION))
+
+
+def chrom_caption(chrom, trio_name, bin_size, events):
+    """A chromosome figure's caption, with the chromosome's calls summarised; also used by `triokaryo report`."""
+    evs = [e for e in events if e.chrom == chrom]
+    what = "; ".join("%s: %s %s f %.2f%s" % (e.role, e.type, e.span, e.f if np.isfinite(e.f) else float("nan"), (", " + (e.origin_phase or e.origin)) if (e.origin_phase or e.origin) else "")
+                     for e in evs) or "no event called"
+    return ("%s in trio %s. Row 1: LRR per %d-kb bin per member with its step fit and calls as lines (gain, loss; copy-neutral events at 0); supplied events as "
+            "brackets. Row 2: BAF at each member's heterozygous sites; in the child, informative sites (parents opposite homozygotes) are coloured by the "
+            "parent of the alt allele. Row 3: the phased fraction (maternal allele along the child at informative sites; transmitted allele along a parent "
+            "where the child is homozygous) per site (faint), pooled by window, with its step fit: 1/2 with equal homologue copy, 1/2 +/- d along an event "
+            "with the sign giving the parent of origin (%s). Thin lines: the auxiliary tracks (child: sites where one parent is homozygous; parent: sites "
+            "where the child is heterozygous), which depart from the main track where the child carries two different homologues of one parent. Row 4: "
+            "per-homologue copy number, the LRR-derived copy number split by the phased fraction (maternal and paternal in the child; transmitted and "
+            "untransmitted in a parent). Row 5: heterozygosity rate per bin, zero under a constitutional loss of heterozygosity. Dashed line: centromere. "
+            "Calls: %s." % (chrom, trio_name, bin_size // 1000, DIRECTION, what))
+
+
 def fig_genome(trio, bins, scan, events, external, genome, out_dir, name="genome", max_points=30000, min_dp=8, min_gq=20, tracks=None):
-    """Every chromosome: LRR (with its step fit) and BAF (with the pooled phased fraction) per member, the child over the
-    parents' mean, the child's maternal and paternal copies, the calls, the events given from elsewhere."""
+    """Genome-wide figure: per member the LRR (with step fit and calls) and the BAF (with the pooled phased fraction); the
+    child's depth over the parents' mean; the child's maternal and paternal copy number; the supplied events."""
     off, total = _genome_axis(bins, genome)
     roles = ("child", "father", "mother")
     fig, axes = plt.subplots(8, 1, figsize=(180 * MM, 165 * MM), sharex=True, gridspec_kw=dict(height_ratios=[1, 0.8, 1, 0.8, 1, 0.8, 1, 1], hspace=0.12))
@@ -244,21 +276,14 @@ def fig_genome(trio, bins, scan, events, external, genome, out_dir, name="genome
     ax.set_xticks([off[c] + genome.length[c] / 2 for c in bins.index])
     ax.set_xticklabels([c[3:] for c in bins.index], fontsize=5)
     ax.set_xlabel("chromosome")
-    caption = ("For the child (a, b), the father (c, d) and the mother (e, f): the LRR of every %d-kb bin (log2 of its median depth over the member's autosomal "
-               "median%s) with its step fit and the called gains, losses and copy-neutral losses of heterozygosity as lines; and the B-allele fraction at the "
-               "member's heterozygous sites (a sample; dotted lines at 1/2, 1/3 and 2/3) with, over it, the phased fraction pooled by windows - of the maternal "
-               "allele along the child, of the allele passed to the child along a parent - which sits at one half where the homologues are equal and leaves it "
-               "along an event, upward or downward by the parent of origin (%s). (g) The child's depth over the parents' mean, site by site, per bin: the "
-               "within-family difference, zero where the child inherited what the parents carry. (h) The child's maternal and paternal copies: the LRR's copies "
-               "split by the phased fraction (a trisomy's extra copy, a deletion's missing one, a disomy's two from one parent, each with its parent named). "
-               "Events given from elsewhere are brackets above the LRR." % (bins.bin_size // 1000, ", GC-corrected" if np.isfinite(bins.gc).any() else "", DIRECTION))
+    caption = genome_caption(bins.bin_size, bool(np.isfinite(bins.gc).any()))
     return _save(fig, out_dir, name, "Large chromosomal events in trio %s, genome-wide" % trio.name, caption, GENOME_KEYS)
 
 
 def fig_chrom(trio, chrom, bins, scan, events, external, genome, out_dir, min_dp=8, min_gq=20, max_points=6000, tracks=None):
-    """One chromosome: for each member the LRR with its calls and step fit, the BAF with the informative sites coloured by the
-    parent of the alt allele (the child), the phased fraction (sites, pooled windows, step fit), the two homologues' copies,
-    and the heterozygosity rate."""
+    """One chromosome: per member the LRR with calls and step fit, the BAF (the child's informative sites coloured by the
+    parent of the alt allele), the phased fraction (sites, pooled windows, step fit, auxiliary tracks), per-homologue copy
+    number, and the heterozygosity rate."""
     sl = bins.of(chrom)
     sites = scan.sites(chrom)
     L = genome.length[chrom]
@@ -358,24 +383,13 @@ def fig_chrom(trio, chrom, bins, scan, events, external, genome, out_dir, min_dp
         ax.set_xlabel("%s (Mb)" % chrom)
         ax.text(-0.18, 1.02, letters[12 + m], transform=ax.transAxes, fontweight="bold", fontsize=8)
     axes[0, 0].set_xlim(0, L / 1e6)
-    evs = [e for e in events if e.chrom == chrom]
-    what = "; ".join("%s: %s %s f %.2f%s" % (e.role, e.type, e.span, e.f if np.isfinite(e.f) else float("nan"), (", " + (e.origin_phase or e.origin)) if (e.origin_phase or e.origin) else "")
-                     for e in evs) or "no event called"
-    caption = ("%s in trio %s. Row 1: the LRR of each %d-kb bin per member with its step fit and the calls as lines (gain, loss, or copy-neutral LOH at zero); "
-               "events given from elsewhere as brackets. Row 2: the B-allele fraction at each member's heterozygous sites; in the child, the sites where the "
-               "parents are opposite homozygotes are coloured by the parent of the alt allele. Row 3: the phased fraction - of the maternal allele along the "
-               "child (the parents opposite homozygotes), of the allele passed to the child along a parent (the child homozygous) - at every phased site "
-               "(faint), pooled by windows, and its step fit: one half where the homologues are equal, 1/2 + d or 1/2 - d along an event, the sign the parent "
-               "of origin (%s); the thin lines are the fraction read at the sites where only one parent is homozygous (the child) or where the child is "
-               "heterozygous (a parent), which leave the main track where the child carries two different homologues of one parent. Row 4: the two homologues' copies, the LRR's copies "
-               "split by the phased fraction (maternal and paternal in the child; passed to the child and not in a parent). Row 5: the heterozygosity rate per "
-               "bin, which falls to zero under a loss of heterozygosity in every cell. Dashed: the centromere. Calls: %s." % (chrom, trio.name, bins.bin_size // 1000, DIRECTION, what))
+    caption = chrom_caption(chrom, trio.name, bins.bin_size, events)
     return _save(fig, out_dir, "chrom_%s" % chrom, "Trio %s, %s" % (trio.name, chrom), caption, CHROM_KEYS)
 
 
 def fig_landscape(rows, genome, out_dir, name="landscape", max_labels=60):
-    """The cohort's events on one genome axis: (a) events per chromosome by type, (b) one row per trio, each event a bar
-    coloured by type - the child's thick, a parent's thin - with the given events as brackets. rows: [(trio, Event)]."""
+    """The cohort's events on one genome axis: (a) events per chromosome by type; (b) one row per trio, each event a bar
+    coloured by type (the child's thick, a parent's thin), matched events marked. rows: [(trio, Event)]."""
     trios = sorted({t for t, _ in rows})
     chroms = [c for c in genome.chroms if c != "chrY"]
     off, x = {}, 0
@@ -425,8 +439,8 @@ def fig_landscape(rows, genome, out_dir, name="landscape", max_labels=60):
     ax.set_xticklabels([c[3:] for c in chroms], fontsize=5)
     ax.set_xlabel("chromosome")
     ax.text(-0.06, 1.0, "b", transform=ax.transAxes, fontweight="bold", fontsize=8)
-    caption = ("(a) The cohort's events per chromosome, stacked by type (gain, loss, copy-neutral LOH or heterodisomy). (b) One row per trio: each event a "
-               "bar over its span, coloured by type, the child's thick on the row's centre line, the father's thin above it and the mother's below; a "
-               "thin black line over a bar marks an event matched by one given from elsewhere. %d trios, %d events." % (n, len(rows)))
-    return _save(fig, out_dir, name, "The cohort's large chromosomal events", caption, LANDSCAPE_KEYS)
+    caption = ("(a) Events per chromosome, stacked by type (gain, loss, copy-neutral LOH or heterodisomy). (b) One row per trio: each event a bar over its span, "
+               "coloured by type; the child's thick on the row's centre line, the father's thin above it, the mother's thin below; a thin black line over a bar "
+               "marks an event matched by a supplied event. %d trios, %d events." % (n, len(rows)))
+    return _save(fig, out_dir, name, "Large chromosomal events in the cohort", caption, LANDSCAPE_KEYS)
 

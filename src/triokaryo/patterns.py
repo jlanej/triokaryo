@@ -1,5 +1,5 @@
-"""Pattern cards for the guide: what each kind of event looks like in the five rows of a chromosome figure, drawn from
-idealised tracks with the noise a 30x genome has (no data: every point is simulated from the pattern's expected values)."""
+"""Pattern cards for the guide: the expected appearance of each event type in the five rows of a chromosome figure,
+drawn from idealised tracks with the noise of a 30x genome (no data: every point is simulated from the expected values)."""
 import os
 
 import numpy as np
@@ -145,20 +145,20 @@ def fig_patterns(out_dir):
     out = []
     rows = ("LRR", "BAF", "maternal\nfraction", "copies\nmaternal, paternal", "het rate")
     for name, sel, caption in (
-            ("patterns_copy", cards[:4], "Idealised cards (simulated, a 30x genome's noise), the child's five rows, position in Mb. A gain of the paternal homologue in 40% of "
-                                        "cells: the LRR up by log2(1 + f/2), the raw bands parted to 1/(2 + f) and (1 + f)/(2 + f), the maternal fraction on the lower band "
-                                        "(the paternal homologue in excess), the paternal copies at 1.4. A loss of the paternal copy in 60%: the LRR down by log2(1 - f/2), the "
-                                        "maternal fraction on the upper band at 1/(2 - f), the paternal copies at 0.4. A copy-neutral LOH with the maternal copy retained in 40%: "
-                                        "the LRR flat, the bands at (1 +- f)/2, the maternal fraction at (1 + f)/2, the copies 1.4 and 0.6, the heterozygosity kept. A maternal "
-                                        "isodisomy: the LRR flat, no heterozygous calls, the maternal fraction at 1 (the child homozygous for the mother's allele wherever the "
-                                        "parents are opposite homozygotes), the copies 2 and 0, Mendelian errors at every such site."),
-            ("patterns_disomy", cards[4:], "A maternal heterodisomy: the LRR flat and the heterozygosity kept (the child heterozygous wherever the mother is), yet the maternal "
-                                          "fraction at 1 and the copies 2 and 0; the track read at the father's homozygous sites (pink line) stays at one half, since both of the "
-                                          "child's alleles there are the mother's. A run of homozygosity: no heterozygous calls, no Mendelian errors, no sites for the maternal "
-                                          "fraction (the parents share the haplotype), the copies undrawn. A maternal meiotic trisomy with a crossover at 60 Mb: the LRR at "
-                                          "log2(1.5), the bands at 1/3 and 2/3, the maternal fraction at 2/3, and the pink auxiliary track at 1/3 where the two maternal copies "
-                                          "are different homologues (the heterozygosity raised there), returning to 2/3 past the crossover where they are one. A mitotic or "
-                                          "meiosis II trisomy: the same with the auxiliary track on the main one throughout.")):
+            ("patterns_copy", cards[:4], "Idealised cards (simulated with the noise of a 30x genome): the child's five rows, position in Mb. Gain of the paternal homologue in "
+                                        "40% of cells: LRR up by log2(1 + f/2), the raw bands split to 1/(2 + f) and (1 + f)/(2 + f), the maternal fraction on the lower band "
+                                        "(paternal homologue in excess), paternal copy number 1.4. Loss of the paternal copy in 60%: LRR down by log2(1 - f/2), the maternal "
+                                        "fraction on the upper band at 1/(2 - f), paternal copy number 0.4. Copy-neutral LOH with the maternal copy retained in 40%: LRR flat, "
+                                        "bands at (1 +- f)/2, maternal fraction (1 + f)/2, copy numbers 1.4 and 0.6, heterozygosity retained. Maternal isodisomy: LRR flat, no "
+                                        "heterozygous calls, maternal fraction 1 (the child homozygous for the maternal allele at every informative site), copy numbers 2 and "
+                                        "0, Mendelian errors at every informative site."),
+            ("patterns_disomy", cards[4:], "Maternal heterodisomy: LRR flat and heterozygosity retained (the child heterozygous wherever the mother is), yet the maternal "
+                                          "fraction is 1 and the copy numbers 2 and 0; the track read at the father's homozygous sites (pink line) stays at 1/2, since both of "
+                                          "the child's alleles there are maternal. Run of homozygosity: no heterozygous calls, no Mendelian errors, no sites for the maternal "
+                                          "fraction (the parents share the haplotype), copy number not drawn. Maternal meiotic trisomy with a crossover at 60 Mb: LRR at "
+                                          "log2(1.5), bands at 1/3 and 2/3, maternal fraction 2/3, and the pink auxiliary track at 1/3 where the two maternal copies are "
+                                          "different homologues (heterozygosity raised there), returning to 2/3 beyond the crossover where they are identical. Mitotic or "
+                                          "meiosis II trisomy: the same, with the auxiliary track on the main track throughout.")):
         fig, axes = plt.subplots(5, 4, figsize=(180 * MM, 120 * MM), sharex=True, gridspec_kw=dict(height_ratios=[1, 1, 1, 0.8, 0.5], hspace=0.18, wspace=0.28))
         rng = np.random.default_rng(7)
         for j, card in enumerate(sel):
@@ -170,7 +170,7 @@ def fig_patterns(out_dir):
         for ext in ("png", "svg", "pdf"):
             fig.savefig(os.path.join(out_dir, "%s.%s" % (name, ext)), bbox_inches="tight")
         plt.close(fig)
-        write_sidecar(out_dir, name, "What each kind of event looks like" + (" (copy number)" if name.endswith("copy") else " (disomies, trisomies)"), caption, PATTERN_KEYS)
+        write_sidecar(out_dir, name, "Expected appearance of each event type" + (" (copy number)" if name.endswith("copy") else " (disomies, trisomies)"), caption, PATTERN_KEYS)
         write_legend(out_dir, name, PATTERN_KEYS)
-        out.append(dict(name=name, title="What each kind of event looks like", caption=caption, keys=PATTERN_KEYS, png=os.path.join(out_dir, name + ".png")))
+        out.append(dict(name=name, title="Expected appearance of each event type", caption=caption, keys=PATTERN_KEYS, png=os.path.join(out_dir, name + ".png")))
     return out

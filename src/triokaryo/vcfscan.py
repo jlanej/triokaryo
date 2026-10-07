@@ -1,6 +1,6 @@
-"""One pass over the trio's VCF: every PASS biallelic SNV, per member the depth, the alt-allele depth, the genotype class
-and its quality, kept per chromosome as arrays. Nothing else of the record is read, so an annotated (VEP) VCF costs no
-more than a bare one beyond its size."""
+"""One pass over the trio's VCF: for every PASS biallelic SNV, per member, the depth, the alt-allele depth, the genotype
+class and the genotype quality, stored per chromosome as arrays. No other record field is read, so an annotated VCF
+costs no more than a bare one beyond its size."""
 from dataclasses import dataclass, field
 
 import numpy as np

@@ -1,9 +1,9 @@
-"""triokaryo - large chromosomal events in a trio, read from its VCF.
+"""triokaryo: large chromosomal events in a parent-offspring trio from its small-variant VCF.
 
-For child, father and mother: the depth of every PASS biallelic SNV, binned and normalised (LRR, GC-corrected where a
-GC track is given), the B-allele fraction at heterozygous sites (BAF) and the heterozygosity rate; segmentation of
-each; the copy state and the share of cells carrying each event from the depth and, independently, from the B-allele
-bands; the parent of origin of the child's events from the sites where the parents are opposite homozygotes; what is
-inherited and what is new; figures for review, and tables. No cohort is needed: every comparison is within the trio.
+For child, father and mother: binned read depth (LRR, GC- and panel-corrected where tracks are given), B-allele
+frequency at heterozygous sites and heterozygosity rate, each segmented; transmission phasing of the child's alleles,
+giving a signed allelic-imbalance track; per event the type, the cell fraction (from depth, from the folded BAF bands
+and from the phased track), the parent of origin, the homologue count, site-resolution boundaries, the Mendelian-error
+rate and the inheritance; tables and figures. All comparisons are within the trio; no cohort is required.
 """
 __version__ = "0.1.0"

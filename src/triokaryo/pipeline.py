@@ -1,4 +1,5 @@
-"""One trio, end to end: scan the VCF, bin, call each member, read the trio, write tables, figures and the page."""
+"""One trio end to end: scan the VCF, bin, segment and call each member, phase, run the trio analyses, write tables,
+figures and the page."""
 import json
 import os
 import sys
@@ -33,7 +34,7 @@ def run_trio(vcf, trio, out, gc_track=None, events_path=None, bin_size=1_000_000
     bins = make_bins(scan, G, bin_size, min_dp, min_gq, gc, panel=pan)
     if pan is not None:
         from .model import PANEL_MAX_RSD, PANEL_MIN_N
-        log("panel: %d bins left out of the calls (unpinned: fewer than %d genomes, or spread beyond %.2f)" % (int(bins.masked.sum()), PANEL_MIN_N, PANEL_MAX_RSD))
+        log("panel: %d bins masked (fewer than %d genomes, or robust SD above %.2f)" % (int(bins.masked.sum()), PANEL_MIN_N, PANEL_MAX_RSD))
     events, x_copies = [], {}
     for m, role in enumerate(MEMBERS):
         ev, xc = call_member(bins, scan, m, trio.members[m], G, P, trio.sexes[m])
@@ -54,11 +55,11 @@ def run_trio(vcf, trio, out, gc_track=None, events_path=None, bin_size=1_000_000
         base_het = float(np.nanmedian(bins.het_rate[m][auto])) if auto.any() else float("nan")
         found = phased_scan(tracks[m], bins, scan, m, trio.members[m], G, events, None, min_dp, min_gq, trio.sexes[m], base_het, rejected)
         if found:
-            log("%s: %d event(s) from the phased bands the depth did not call" % (role, len(found)))
+            log("%s: %d event(s) from the phased scan not called by the depth" % (role, len(found)))
         events += found
     mask_rejected(tracks, bins, rejected)
     if rejected:
-        log("%d phased segment(s) set aside: %s" % (len(rejected), "; ".join("%s %s %.1f-%.1f Mb (%s)" % (r["role"], r["chrom"], r["start"] / 1e6, r["end"] / 1e6, r["reason"].split(" (")[0]) for r in rejected)))
+        log("%d phased segment(s) rejected: %s" % (len(rejected), "; ".join("%s %s %.1f-%.1f Mb (%s)" % (r["role"], r["chrom"], r["start"] / 1e6, r["end"] / 1e6, r["reason"].split(" (")[0]) for r in rejected)))
     events.sort(key=lambda e: (MEMBERS.index(e.role), G.chroms.index(e.chrom), e.start))
     base_mie = read_trio(events, scan, G, min_dp, min_gq)
     annotate_events(events, tracks, scan, bins, G)

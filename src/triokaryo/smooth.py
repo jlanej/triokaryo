@@ -1,9 +1,10 @@
-"""Smoothing of a track: the step fit by total-variation denoising, pooled windows of sites, and the null expectation of
-the folded B-allele fraction.
+"""Smoothing of a track: the step fit by total-variation denoising, windows of a fixed number of sites, and the null
+expectation of the folded B-allele fraction.
 
-The step fit solves  min_x  1/2 sum (y_i - x_i)^2 + lambda sum |x_{i+1} - x_i|  (the fused lasso's spatial part, the
-taut string): a piecewise-constant reading of a noisy track in which every jump has to earn its height. Condat's direct
-algorithm (IEEE Signal Processing Letters 20, 2013) finds the exact solution in one pass."""
+The step fit solves  min_x  1/2 sum (y_i - x_i)^2 + lambda sum |x_{i+1} - x_i|  (the fused-lasso signal approximator,
+equivalent to the taut string), a piecewise-constant estimate in which a jump is retained only when it reduces the
+residual by more than its penalty. Condat's direct algorithm (IEEE Signal Processing Letters 20, 2013) gives the exact
+solution in one pass."""
 import numpy as np
 
 NA = float("nan")
@@ -82,8 +83,8 @@ def tv_denoise_nan(y, lam):
 
 
 def tv_lambda(y, k=2.5):
-    """A penalty for a track with noise sd from its first differences: k times that sd. A lone spike under 2 lambda is
-    flattened; a plateau of m points keeps its height less 2 lambda / m."""
+    """The penalty for a track: k times its robust noise SD from the first differences. An isolated spike of height under
+    2 lambda is removed; a plateau of m points is reduced in height by 2 lambda / m."""
     v = np.asarray(y, dtype=float)
     v = v[np.isfinite(v)]
     if len(v) < 5:

@@ -1,17 +1,17 @@
-title: What each kind of event looks like (copy number)
-caption: Idealised cards (simulated, a 30x genome's noise), the child's five rows, position in Mb. A gain of the paternal homologue in 40% of cells: the LRR up by log2(1 + f/2), the raw bands parted to 1/(2 + f) and (1 + f)/(2 + f), the maternal fraction on the lower band (the paternal homologue in excess), the paternal copies at 1.4. A loss of the paternal copy in 60%: the LRR down by log2(1 - f/2), the maternal fraction on the upper band at 1/(2 - f), the paternal copies at 0.4. A copy-neutral LOH with the maternal copy retained in 40%: the LRR flat, the bands at (1 +- f)/2, the maternal fraction at (1 + f)/2, the copies 1.4 and 0.6, the heterozygosity kept. A maternal isodisomy: the LRR flat, no heterozygous calls, the maternal fraction at 1 (the child homozygous for the mother's allele wherever the parents are opposite homozygotes), the copies 2 and 0, Mendelian errors at every such site.
+title: Expected appearance of each event type (copy number)
+caption: Idealised cards (simulated with the noise of a 30x genome): the child's five rows, position in Mb. Gain of the paternal homologue in 40% of cells: LRR up by log2(1 + f/2), the raw bands split to 1/(2 + f) and (1 + f)/(2 + f), the maternal fraction on the lower band (paternal homologue in excess), paternal copy number 1.4. Loss of the paternal copy in 60%: LRR down by log2(1 - f/2), the maternal fraction on the upper band at 1/(2 - f), paternal copy number 0.4. Copy-neutral LOH with the maternal copy retained in 40%: LRR flat, bands at (1 +- f)/2, maternal fraction (1 + f)/2, copy numbers 1.4 and 0.6, heterozygosity retained. Maternal isodisomy: LRR flat, no heterozygous calls, maternal fraction 1 (the child homozygous for the maternal allele at every informative site), copy numbers 2 and 0, Mendelian errors at every informative site.
 keys: depth,step,baf,psite,phased,aux_mat,aux_pat,cmat,cpat,gain,loss,loh,ref
 key:
-  #444444  filled circle  LRR: log2 of the bin's median depth over the member's autosomal median (GC-corrected where a GC track was given)
-  #000000  line  the step fit of the track (total-variation denoising): a piecewise-constant reading in which every jump has to earn its height
-  #9C9C9C  filled circle  BAF: the alt-allele fraction at the member's heterozygous sites (a sample of them)
-  #C8C8C8  filled circle  the phased fraction at one heterozygous site: of the maternal allele (the child), of the allele passed to the child (a parent); reference bias out
-  #009E73  filled circle  the phased fraction pooled over a window of sites (depth-weighted): at 1/2 where the homologues are equal, 1/2 + d or 1/2 - d along an event, the sign the parent of origin - in the child, below one half the paternal homologue is in excess (a paternal gain, a maternal copy lost), above one half the maternal; in a parent, below one half the event lies on the homologue not passed to the child, above one half on the one passed; hollow where the window is parted in two or more members (paralogy), which the fits and the scan leave out
-  #CC79A7  line  the child's maternal fraction read at the sites where the father is homozygous and the mother heterozygous: it leaves the main track where the child carries two different maternal homologues (a meiotic maternal trisomy or heterodisomy) and returns where a crossover made them one
-  #E69F00  line  the same at the sites where the mother is homozygous and the father heterozygous: it leaves the main track where the child carries two different paternal homologues
-  #CC79A7  line  the child's maternal copies: the LRR step fit's copies (2 x 2^LRR) times the maternal fraction's step fit
-  #E69F00  line  the child's paternal copies, the same way
-  #D55E00  line  a called gain (line at the segment's mean LRR)
-  #0072B2  line  a called loss
-  #CC79A7  line  a called copy-neutral event - a loss of heterozygosity, or a uniparental heterodisomy (drawn at zero)
-  #7F7F7F  line  reference lines: zero LRR, BAF at 1/2, 1/3 and 2/3; the centromere
+  #444444  filled circle  LRR per bin: log2 of the bin's median depth over the member's autosomal median (GC- and panel-corrected where applicable)
+  #000000  line  step fit of the track (exact total-variation denoising)
+  #9C9C9C  filled circle  BAF: alt-allele read fraction at the member's heterozygous sites (subsampled)
+  #C8C8C8  filled circle  phased fraction at one site: maternal allele (child) or transmitted allele (parent), reference bias removed
+  #009E73  filled circle  phased fraction pooled over a window of sites (depth-weighted): 1/2 with equal homologue copy, 1/2 +/- d along an event with the sign giving the parent (child: below 1/2 the paternal homologue is in excess, above 1/2 the maternal; parent: below 1/2 the event lies on the untransmitted homologue, above 1/2 on the transmitted one); hollow where the window deviates in two or more members (paralogy; excluded from fits and scan)
+  #CC79A7  line  child's maternal fraction at sites where the father is homozygous and the mother heterozygous; departs from the main track where the child carries two different maternal homologues (maternal meiotic trisomy or heterodisomy) and rejoins it after a crossover
+  #E69F00  line  the same at sites where the mother is homozygous and the father heterozygous; departs where the child carries two different paternal homologues
+  #CC79A7  line  child's maternal copy number: the LRR step fit's copy number (2 x 2^LRR) times the maternal fraction's step fit
+  #E69F00  line  child's paternal copy number, likewise
+  #D55E00  line  called gain (line at the segment's mean LRR)
+  #0072B2  line  called loss
+  #CC79A7  line  called copy-neutral event: loss of heterozygosity or uniparental heterodisomy (drawn at LRR 0)
+  #7F7F7F  line  reference lines: LRR 0; BAF 1/2, 1/3 and 2/3; the centromere

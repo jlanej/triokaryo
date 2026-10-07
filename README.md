@@ -1,45 +1,62 @@
 # triokaryo
 
-Large chromosomal events in a **trio**, read from its own **VCF**: for the child, the father and the mother, the
-depth along the genome (LRR), the B-allele fraction at heterozygous sites (BAF) and the heterozygosity rate;
-segmentation of each; every gain, loss and copy-neutral loss of heterozygosity with the **share of cells carrying
-it** estimated twice (from the depth and, independently, from the B-allele bands); the **parent of origin** of
-the child's events from the sites where the parents are opposite homozygotes; what is **inherited** and what is
-**new**; figures fit for a manuscript; and the match against events called elsewhere (a depth tool such as
-NGS-DOSE's karyotype, a clinical karyotype).
+Detection and characterisation of large chromosomal events in a parent–offspring trio from the trio's small-variant
+VCF: whole-chromosome and segmental gains and losses, copy-neutral loss of heterozygosity (CN-LOH) and uniparental
+disomy (UPD), constitutional or mosaic.
 
-No cohort is needed and nothing is compared across families: every normalisation and every test is within the
-trio. The VCF is the one a joint caller writes for the family (GATK genotype refinement, VQSR-filtered), with
-`GT`, `AD`, `DP` and `GQ` per member.
+For each member (child, father, mother) triokaryo computes three tracks from the PASS biallelic SNVs: a binned log R
+ratio (LRR) from read depth, the B-allele frequency (BAF) at heterozygous sites, and the heterozygosity rate. It
+segments each track and, using the pedigree, phases the child's alleles by transmission to obtain a signed
+allelic-imbalance track. Each event is reported with its type; its mosaic cell fraction *f* estimated independently
+from depth, from the folded BAF bands and from the phased track; its parent of origin; whether the two copies from
+the named parent are one homologue or two (mitotic versus meiotic origin); its boundaries at site resolution; its
+Mendelian-error rate; and whether it is inherited or de novo. Figures are written as PNG, SVG and PDF with separate
+legends, and calls from other methods (a depth-based karyotype such as NGS-DOSE, a CNV caller, a clinical
+karyotype) can be supplied for comparison.
 
-> **No real data in this repository.** The tests and the demo run on a mock trio that `triokaryo mock` writes
-> (GRCh38 lengths, simulated sites, planted events). Never commit a VCF, a pedigree, a CRAM or a sample ID.
+All normalisation and all tests are within the trio; no cohort is required. The input is any VCF holding the three
+members with per-sample `GT`, `AD`, `DP` and `GQ`: a joint-called family VCF, or per-sample VCFs merged with
+`bcftools merge -0`.
 
-## On real data: two 1000 Genomes trios
+> **No real data in this repository.** The tests and the demo use a simulated trio written by `triokaryo mock`
+> (GRCh38 chromosome lengths, simulated sites, planted events). Do not commit VCFs, pedigrees, CRAMs or sample IDs.
 
-[`docs/example/`](docs/example/README.md) runs the method on public genomes (Illumina's DRAGEN re-analysis of the
-1kGP high-coverage cohort) beside NGS-DOSE's alignment-free karyotype and DRAGEN's own CNV calls: NA12739's trisomy 12
-(the extra copy paternal, over 17,678 informative sites), a 69% mosaic gain of 13q in the father that only the VCF and
-DRAGEN see, and HG01103's loss of 2q (141 to 173 Mb in 67% of cells, the paternal copy) with a 14q loss beside it. The
-pages are [NA12739](docs/example/NA12739/index.html), [HG01103](docs/example/HG01103/index.html) and the
-[cohort](docs/example/cohort/index.html) (self-contained pages: open them from a clone, GitHub shows their
-source); the recipe reproduces them.
+## Example: two 1000 Genomes trios
 
-## The phased bands
+[`docs/example/`](docs/example/README.md) applies the method to public genomes (Illumina's DRAGEN 3.7.6 re-analysis
+of the 1000 Genomes high-coverage cohort) and compares the calls with NGS-DOSE's alignment-free karyotype and with
+DRAGEN's CNV calls. In trio NA12739: a trisomy 12 in the child (paternal extra copy, one homologue, 17,630 phased
+sites) and a mosaic gain of 13q in the father (69% of cells) that NGS-DOSE did not report. In trio HG01103: a mosaic
+loss of 2q (141–173 Mb, 67% of cells, paternal copy) with a subclonal extension to 180 Mb, and a mosaic loss of 14q.
+Pages: [NA12739](docs/example/NA12739/index.html), [HG01103](docs/example/HG01103/index.html), and the
+[cohort report](docs/example/cohort/index.html). They are self-contained HTML files; open them from a clone (GitHub
+displays their source). The fetch script in `docs/example/` reproduces them.
 
-The B-allele fraction's noise is binomial and cannot be smoothed away site by site, but the trio gives it a sign.
-Wherever the parents are opposite homozygotes the child's two alleles have known parents, and the fraction of the
-mother's allele - the maternal fraction - sits at one half along a normal chromosome, at 1/2 + d or 1/2 − d along
-an event by the parent of origin, at 1 where no paternal copy is left. Along a parent, the fraction of the allele
-passed to the child (read where the child is homozygous) says whether an event lies on the homologue the child got.
-Pooled over windows and fitted by total-variation denoising, this signed track is the clean reading the folded bands
-cannot give; the LRR's copies split by it are the maternal and paternal copies along the child's genome (a trisomy's
-extra copy, a deletion's missing one, a disomy's two from one parent, each with its parent named). The sites where
-only one parent is homozygous phase the child too, but read the wrong way wherever the child carries two different
-homologues of one parent - so they are drawn as auxiliary tracks that part from the main one along a meiotic
-trisomy or heterodisomy and return at each crossover, which tells a meiotic error from a mitotic one. A scan of the
-main track finds what the depth cannot: a gain or loss in a few per cent of cells, and a uniparental heterodisomy.
-The raw B-allele fraction stays in every figure beside it.
+## Transmission phasing
+
+The BAF at a heterozygous site is 1/2 ± d with the sign of d unknown, so BAF is conventionally read folded as
+|BAF − 1/2|, an estimator biased upward by binomial noise (expectation 0.07 at 30× when d = 0). The trio supplies the
+sign. Where the parents are opposite homozygotes (father 0/0 and mother 1/1, or the reverse), the parental origin of
+each of the child's alleles is known regardless of the child's genotype call, and the fraction of the child's reads
+carrying the maternal allele (the *maternal fraction*) can be computed directly. It is 1/2 where both homologues are
+present in equal copy, 1/2 + d or 1/2 − d along an event according to the parent of origin, and 1 where no paternal
+copy is present (paternal deletion, maternal isodisomy or heterodisomy). In a parent, at heterozygous sites where the
+child is homozygous, the transmitted allele is known, and the fraction of reads carrying it shows whether an event in
+that parent lies on the transmitted homologue.
+
+These main tracks are pooled in windows of a fixed number of sites and fitted by exact one-dimensional total-variation
+denoising. The LRR-derived copy number split by the fitted fraction gives per-homologue copy number along the child
+(maternal, paternal) and along each parent (transmitted, untransmitted). A phasing error flips one site's
+contribution and so attenuates a signal rather than creating one.
+
+Sites where only one parent is homozygous also phase the child, but only under the assumption that each parent
+contributed one homologue; where the child carries two different homologues of one parent (meiotic trisomy,
+heterodisomy), sites tagged by the other parent's homozygous genotype are misassigned. These are therefore drawn as
+auxiliary tracks: they depart from the main track where the two homologues differ and rejoin it after each crossover,
+which distinguishes meiotic from mitotic (or meiosis II) origin and maps the crossovers. A segmentation scan of the
+main track detects events below the depth detection limit (gains or losses in a few per cent of cells) and
+uniparental heterodisomy, which depth, folded BAF and heterozygosity rate all miss. The raw BAF is retained in every
+figure.
 
 ## Install
 
@@ -49,6 +66,8 @@ pip install git+https://github.com/jlanej/triokaryo         # or: make venv && m
 apptainer build triokaryo.sif docker://ghcr.io/jlanej/triokaryo:latest
 ```
 
+Python ≥ 3.9 with pysam, numpy and matplotlib.
+
 ## Quickstart
 
 ```bash
@@ -57,137 +76,144 @@ triokaryo gc-track --fasta GRCh38.fa --out gc.grch38.1mb.tsv
 
 # one trio: the VCF holds the three members; the trios file names them (#kid dad mom kid_sex dad_sex mom_sex)
 triokaryo run --vcf family.vcf.gz --pedigree trios.tsv --child KID --gc-track gc.grch38.1mb.tsv \
-              --events ngsdose/karyotype/events.tsv --out out/KID
-# or name the members outright
+              --panel 1kg-dragen --events ngsdose/karyotype/events.tsv --out out/KID
+# or name the members directly
 triokaryo run --vcf family.vcf.gz --child KID --father DAD --mother MOM --sex M,M,F --out out/KID
 
-# many trios, gathered: every event, every X reading, and the concordance with the events given from elsewhere
+# many trios: all events, per-trio quality metrics, concordance with the supplied events
 triokaryo cohort --runs 'out/*' --events ngsdose/karyotype/events.tsv --out cohort
 
-# the demo on the mock
+# the demo on the simulated trio
 make demo && open mock_out/KID/index.html
 ```
 
-A trio of a 5-million-site WGS VCF takes about a minute and under 1 GB; `--thin 3` reads every third site for a
-quick look (the bins keep hundreds of sites each).
+A trio VCF of about 5.5 million sites runs in 60–75 s in under 1 GB of memory. `--thin n` reads every n-th site for
+a quick pass (1-Mb bins still hold hundreds of sites).
 
-**On real data use a panel.** A genome read against its own median shows the reference's depth structure - centromere
-flanks, segmental duplications, the acrocentric short arms - and the bands parted by paralogous sequence as dozens of
-events. `--panel` takes out what other genomes called the same way share (the median LRR, band deviation and
-heterozygosity rate per bin), and leaves out the bins it cannot pin. Build one from any genomes counted the same way
-(`triokaryo panel --vcfs ...`, five or more), or from a first pass's `bins.tsv` files when there are many trios
-(`--runs 'out/*'`: the cohort is its own panel); `--panel 1kg-dragen` is a shipped one of twelve public 1000 Genomes
-genomes for data called by DRAGEN. Per-sample VCFs (one genome each) are merged into a trio VCF with
-`bcftools merge -0`: a sample without a record at a site is homozygous reference, which the trio reading takes as a
-confident parental call.
+**Use a reference panel on real data.** Normalised against its own median alone, a genome shows the reference's
+depth structure (centromere flanks, segmental duplications, acrocentric short arms) and BAF bands split by
+paralogous sequence, which segment into spurious events. `--panel` subtracts the per-bin median LRR, band deviation
+and heterozygosity rate of other genomes processed the same way and masks bins the panel cannot characterise.
+Build a panel from any genomes called the same way (`triokaryo panel --vcfs ...`; five or more), or, with many trios,
+from a first pass's `bins.tsv` files (`--runs 'out/*'`). `--panel 1kg-dragen` is a shipped panel of twelve public
+1000 Genomes genomes for data called by DRAGEN 3.7.6. Per-sample VCFs are merged into a trio VCF with
+`bcftools merge -0`; a sample with no record at a site is then written as homozygous reference, which the trio
+analysis accepts as a confident parental genotype.
 
-## What it finds, and how
+## Signals
 
-| signal | what it reads | what it shows |
+| signal | definition | expected value under an event in a cell fraction *f* |
 | --- | --- | --- |
-| **LRR** | log2 of the bin's median depth over the member's autosomal median; GC-corrected (a running median against the GC track) | a gain of one copy in a share *f* of the cells reads log2(1 + f/2); a loss log2(1 − f/2) |
-| **BAF** | the alt-allele fraction at the member's heterozygous sites | a gain parts the bands to 1/(2+f) and (1+f)/(2+f) (1/3 and 2/3 at f = 1); a loss to (1−f)/(2−f) and 1/(2−f); a copy-neutral LOH to (1−f)/2 and (1+f)/2 |
-| **het rate** | heterozygous calls over confident calls, per bin | zero under a loss of heterozygosity in every cell (a uniparental disomy, a deletion); unchanged under a trisomy |
-| **child over parents' mean** | log2 of the child's depth over the parents' mean, site by site, per bin | the within-family difference: zero where the child inherited what the parents carry |
+| **LRR** | log2 of the bin's median depth over the member's autosomal median, GC-corrected against a GC track by a running median | one-copy gain: log2(1 + f/2); one-copy loss: log2(1 − f/2) |
+| **BAF** | alt-allele read fraction at the member's heterozygous sites | gain: bands at 1/(2+f) and (1+f)/(2+f) (1/3, 2/3 at f = 1); loss: (1−f)/(2−f) and 1/(2−f); CN-LOH: (1−f)/2 and (1+f)/2 |
+| **heterozygosity rate** | heterozygous calls over confident calls per bin | zero under a constitutional loss of heterozygosity (isodisomy, deletion, run of homozygosity); unchanged under trisomy |
+| **phased fraction** | fraction of reads carrying the maternal allele (child) or the transmitted allele (parent), at phased sites | 1/2 ± d with the sign giving the parent of origin; 1 where only one parent's copies are present |
+| **child vs parental mean** | log2 of the child's depth over the parents' mean depth, per site, median per bin | zero where the child's copy number equals the parents' mean; drawn, not called |
 
-Each member's LRR is segmented chromosome by chromosome (binary segmentation on a robust noise scale, segments
-merged when alike); a segment is a gain or loss when its mean is beyond 0.07 (a share of cells of about 10%) and
-three standard errors. The band deviation *d* at the segment's heterozygous sites is a maximum-likelihood fit of
-alt ∼ Binomial(depth, ½ ± d), which does not inflate at low depth as |BAF − ½| does; it gives *f* a second time
-(`f_baf` beside `f_lrr`). Copy-neutral LOH is searched where the depth called nothing: the band deviation above the
-member's own, or no heterozygous calls at all. The X is read against the member's own X copy state (one or two
-copies, checked against the pedigree's sex: a 47,XXY reads "X copies 2 in a reported male"), so its events are
-mosaic changes of what the member has; the Y has too few sites in a VCF and is left to a depth tool. A segment
-covering 90% of a chromosome (arm) is `whole` (`p`, `q`), else a `stretch`.
+## Calling
 
-**Parent of origin.** At a site where the father is 0/0 and the mother 1/1 (or the reverse) the child's two
-alleles have known parents, and the child's alt fraction says whose copy is extra (a gain: the duplicated
-parent's allele at (1+f)/(2+f)), lost (a loss: the retained parent's at 1/(2−f)) or doubled (an LOH: the retained
-parent's at (1+f)/2). The log-likelihood ratio of the two assignments over the event's informative sites names the
-parent and says how sure (`origin`, `origin_llr`, `origin_n`). **Inheritance:** the same event in a parent
-(reciprocal overlap ≥ 50%, the same type), with "in a share of the parent's cells" where the parent is mosaic;
-a parent's event is "passed to the child" or not. **Mendelian errors** within each event are reported beside the
-genome's baseline: a deletion and a uniparental disomy break Mendel at the informative sites, a trisomy and a
-mosaic do not.
+Each member's LRR is segmented per chromosome by binary segmentation on a robust noise scale (median absolute
+deviation of first differences), with boundary refinement and merging of segments whose means differ by less than
+three standard errors. A segment is a gain or loss when |mean LRR| ≥ max(0.07, 3 SE), that is a cell fraction of
+about 10% or more, and spans at least five bins (5 Mb at the default bin size). The band deviation d of a segment is
+the maximum-likelihood estimate under alt ~ Binomial(depth, 1/2 ± d) over its heterozygous sites, which, unlike the
+mean of |BAF − 1/2|, is unbiased at low depth; it gives a second estimate of *f* (`f_baf` beside `f_lrr`). CN-LOH is
+sought where depth called nothing: a band deviation above the member's own baseline, or a heterozygosity rate below
+0.35 of the member's own (constitutional). The phased scan then segments the pooled phased track outside the called
+events and reports shifts of ≥ 0.015 (gain or loss in about 6% of cells) over ≥ 2 Mb, typed by the direction of the
+depth over the same bins, or as CN-LOH or heterodisomy when the depth is flat. The X is analysed relative to the
+member's own X copy number (1 or 2, compared with the pedigree sex: 47,XXY is reported as "X copies 2 in a reported
+male"), so X events are mosaic changes of that state; the Y is not analysed. A segment covering ≥ 90% of a
+chromosome (arm) is `whole` (`p`, `q`), otherwise a `stretch`.
+
+**Parent of origin** is estimated twice. (i) At informative sites (parents opposite homozygotes), the child's alt
+read count is modelled as binomial with a success probability determined by the event type, *f*, and which parent
+contributed the alt allele; the log-likelihood ratio of the two parental assignments over the event's sites gives
+`origin`, `origin_llr` and `origin_n`. (ii) The sign of the phased shift gives `origin_phase`. A disagreement is
+flagged. **Inheritance:** a child's event is inherited when a parent carries an event of the same type on the same
+chromosome whose intersection covers at least half of the shorter segment ("in a share of the parent's cells" when
+the parent's *f* < 0.8); otherwise it is de novo. A parent's event is marked transmitted or not by the same rule.
+**Mendelian errors** are counted per event and compared with the genome-wide rate: a constitutional deletion or an
+isodisomy produces errors at informative sites, a trisomy or a mosaic event does not, and a run of homozygosity has
+none.
 
 ## Output (per trio, under `--out`)
 
-- `events.tsv` — one row per event: sample, role, chrom, start, end, span, type (gain, loss, LOH, UPD), `source`
-  (depth, bands, phased), `f` (the depth's where there is one, else the bands'), `f_lrr`, `f_baf`, `f_phase`,
-  `lrr`, `d_hat`, `llr_baf`, `phase_shift`, `n_phased`, `homologues` (one or two, for a child's gain or disomy),
-  `start_fine`, `end_fine` (the edges at site resolution), `het_rate`, `het_rate_rel`, `mie_rate`, `origin`,
-  `origin_phase`, `inheritance`, `external` (the given events it overlaps), `note` (an LOH in every cell with no
-  Mendelian errors is a run of homozygosity, with them a uniparental isodisomy; pieces joined across a masked gap;
-  the phased share against the depth's).
-- `phased.tsv` — the pooled windows of each member's phased track (fraction, error, step fit, copies, the auxiliary
-  tracks); `phased_rejected.tsv` the scan's segments set aside, with the reason.
-- `bins.tsv` — every bin: GC, the panel's median, spread and masks, and per member the depth, LRR, GC- and
-  panel-corrected LRR, calls, heterozygous calls, het rate (and relative to the panel), band deviation; the two
-  within-trio tracks.
-- `summary.tsv`, `summary.json` — the trio, the sites used, the X copies per member with the sex check, the
-  genome's Mendelian-error rate, the event counts, the parameters.
-- `external.tsv` — the given events (`--events`) and whether a triokaryo event matched each.
-- `guide.html` — how to read every row, colour, call and column, with pattern cards of what each kind of event
-  looks like; beside every page, and `triokaryo guide --out`.
-- `figures/` — `genome` (LRR with its step fit and BAF with the pooled phased fraction per member, the child over
-  the parents' mean, the child's maternal and paternal copies, the calls, the given events) and `chrom_<chrom>` for
-  every chromosome with an event (per member: LRR with its step fit and calls, the raw BAF with the informative sites
-  coloured by parent, the phased fraction with its windows, step fit and auxiliary tracks, the two homologues' copies,
-  the het rate), each with a `.txt` sidecar (title, caption, key) and `legends/<name>_legend.*`.
-- `cohort/` (`triokaryo cohort --runs 'out/*' --events ...`) — the cohort report: the counts, the landscape figure
-  (events per chromosome; one row per trio), every event sortable and filterable with links to its trio's page and
-  figure, the trios with their quality readings, the concordance with the given events, the segments the phased scan
-  set aside by region, and the guide; `events.all.tsv`, `summary.all.tsv`, `concordance.tsv`, `flags.tsv`,
-  `rejected.all.tsv`. `triokaryo report --runs 'out/*'` rebuilds a run's page from its tables after a change.
-- `index.html` — self-contained: the events, the given events, every figure with its caption and key.
+- `events.tsv`: one row per event with sample, role, coordinates, span, type (gain, loss, LOH, UPD), source (depth,
+  bands, phased), `f`, `f_lrr`, `f_baf`, `f_phase`, LRR, band deviation and its likelihood ratio, phased shift and
+  site counts, homologue classification, site-resolution boundaries, heterozygosity rate, Mendelian-error rate,
+  parent of origin (both estimates), inheritance, overlapping supplied events, and notes.
+- `phased.tsv`: the pooled windows of each member's phased track (fraction, error, step fit, per-homologue copies,
+  auxiliary tracks); `phased_rejected.tsv`: segments the phased scan rejected, with the reason.
+- `bins.tsv`: per bin, GC, the panel's values and masks, and per member depth, LRR, corrected LRR, call counts,
+  heterozygosity rate and band deviation; the within-trio depth tracks.
+- `summary.tsv`, `summary.json`: the trio, the sites used, the X copy number per member with the sex check, the
+  genome-wide Mendelian-error rate, event counts, parameters.
+- `external.tsv`: the supplied events (`--events`) and whether each was matched.
+- `guide.html`: how to read every figure row, colour, call and column, with pattern cards of each event type (also
+  `triokaryo guide --out`).
+- `figures/`: `genome` (per member LRR with step fit and BAF with the pooled phased fraction; child vs parental mean;
+  the child's maternal and paternal copy number; calls; supplied events) and `chrom_<chrom>` for every chromosome
+  with an event (per member: LRR with calls, BAF with informative sites coloured by parent, phased fraction with
+  windows, step fit and auxiliary tracks, per-homologue copy number, heterozygosity rate). Each has a `.txt` sidecar
+  (title, caption, key) and a legend image under `legends/`.
+- `index.html`: a self-contained page with the events, the supplied events, and every figure with its caption.
 
-`triokaryo cohort` writes `events.all.tsv`, `summary.all.tsv`, `concordance.tsv` (each given event: matched or
-not) and an `index.html` linking the trios.
+`triokaryo cohort --runs 'out/*' --events ...` gathers many runs into a cohort report: counts, a landscape figure
+(events per chromosome; one row per trio), a sortable table of every event linked to its trio's page and figure,
+per-trio quality metrics, concordance with the supplied events, and the rejected phased segments by region; with
+`events.all.tsv`, `summary.all.tsv`, `concordance.tsv`, `flags.tsv` and `rejected.all.tsv`. `triokaryo report
+--runs 'out/*'` rebuilds a run's page, sidecars, legends and guide from its tables without the VCF.
 
-## Events given from elsewhere (`--events`)
+## Supplied events (`--events`)
 
-A TSV with `sample chrom start end label` (and optionally `type`); or NGS-DOSE's `karyotype/events.tsv`
-(`sample chrom span start_mb end_mb label kind`), recognised by its columns. They are drawn as brackets above the
-LRR and matched to triokaryo's events by sample and reciprocal overlap ≥ 50%. A depth tool cannot see a
-copy-neutral LOH, so those are never "unmatched" against it.
+A TSV with columns `sample chrom start end label` (optionally `type`), or NGS-DOSE's `karyotype/events.tsv`
+(`sample chrom span start_mb end_mb label kind`), recognised by its columns. Supplied events are drawn as brackets
+above the LRR and matched to triokaryo's events of the same sample when the intersection covers at least half of
+the shorter segment. Copy-neutral events are never counted as unmatched against a depth-based method.
 
-## The mock and the tests
+## Simulated trio and tests
 
-`triokaryo mock --out dir` writes a trio VCF (GRCh38 lengths, 60 sites per Mb, Poisson depth with a GC bias per
-sample and a synthetic GC track, genotypes called as a caller would) with ten planted events: a maternal
-trisomy 21; a mosaic +12 (30%, paternal homologue); +10q in the father, inherited; a de novo 18q deletion with the
-paternal copy lost; a maternal isodisomy 7; a mosaic copy-neutral LOH of 6p (40%); a mosaic +8 in the mother (15%),
-not passed; a 6-Mb deletion in the father, inherited. `truth.json` lists them; `events.external.tsv` lists the
-copy-number ones as another caller would. `pytest` checks every event is found with its type, share of cells
-(both estimates), parent of origin and inheritance, that nothing else is called, that a null trio calls nothing,
-that the GC correction removes the GC bias, and that a 47,XXY child reads two X copies. `--xxy` and `--no-events`
-make those mocks.
+`triokaryo mock --out dir` writes a trio VCF (GRCh38 lengths, 60 sites per Mb, Poisson depth with a per-sample GC
+bias and a matching synthetic GC track, genotypes called from the simulated read counts) with eleven planted events
+(nine lesions, two of them inherited): a maternal meiotic trisomy 21; a 30% mosaic trisomy 12 (paternal homologue
+duplicated); a constitutional gain of 10q in the father, inherited by the child; a de novo deletion of 18q (paternal
+copy); a maternal isodisomy 7; a 40% mosaic CN-LOH of 6p; a 15% mosaic trisomy 8 in the mother, not transmitted; a
+6-Mb deletion in the father, inherited; and a maternal heterodisomy 15. `truth.json` lists them and
+`events.external.tsv` lists the copy-number ones as an external caller would. `pytest` verifies that every planted
+event is detected with its type, cell fraction (all three estimates), parent of origin, homologue classification and
+inheritance; that nothing else is called; that a null trio yields no calls; that the GC correction removes the GC
+bias; that a 47,XXY child reads two X copies; that the step fit equals the exact total-variation solution; and that
+8% events planted in a dense simulation are recovered by the phased scan. `--xxy`, `--no-events` and `--low-share`
+produce those variants.
 
-## Limits
+## Limitations
 
-- Sites only where the caller wrote a PASS biallelic SNV: a region without calls (centromeres, large gaps) has no
-  bins. Bins are 1 Mb; events under about 5 Mb are not sought (`--min-len`, `--bin`). Without a panel the reference's
-  own structure reads as events; a panel of fewer than five genomes, or built from the trio alone, follows the trio's
-  own events (an inherited event sits in two of three genomes and vanishes).
-- A gain in a share of cells under about 10% is below the reporting floor (`--min-f`); the band deviation needs
-  depth to see it.
-- The Y is not read. A 46,XY/47,XXY mosaic in a male reads as an X gain in a share of the cells; the parent of
-  origin is read on autosomes only.
-- A deletion in all cells has no heterozygous sites, so `f_baf` is undefined there (the depth gives `f`); its
-  Mendelian-error rate is the tell.
-- The parent-of-origin models assume one event per region; a trisomy from a meiosis II or mitotic error (one
-  homologue doubled) still reads its parent, since the opposite-homozygote sites see the parent, not the homologue.
+- Only PASS biallelic SNVs are used; regions without calls (centromeres, large gaps) have no bins. Depth-based calls
+  need at least five 1-Mb bins (`--min-len`, `--bin`) and a cell fraction of about 10% (`--min-f`); the phased scan
+  extends this to 2 Mb and about 6% where the phased site density allows.
+- Without a reference panel the reference's own depth structure is called as events. A panel of fewer than five
+  genomes masks every bin; a panel built from the trio alone follows the trio's own events.
+- The Y chromosome is not analysed. A 46,XY/47,XXY mosaic is reported as a mosaic X gain. Parent of origin is estimated on
+  autosomes only.
+- A constitutional deletion has no heterozygous sites, so `f_baf` is undefined there (`f` comes from depth); its
+  Mendelian-error rate and phased fraction of 1 identify it.
+- The parent-of-origin likelihood assumes one event per region and is conditional on an event being present; it does
+  not test for the event. A trisomy from a meiosis II or mitotic error (one homologue duplicated) still yields its
+  parent, since informative sites resolve the parent, not the homologue.
+- Events are matched by intersection over the shorter segment, not by reciprocal overlap; a small parental event
+  inside a large event of the child is sufficient for "inherited".
 
 ## Development
 
 ```bash
-make venv && make test        # pytest on the mock (about 30 s)
-make demo                     # the mock end to end into mock_out/
-make docker-test              # the image, run on the mock
+make venv && make test        # pytest on the simulated trio (a few minutes; figures are rendered)
+make demo                     # the simulated trio end to end into mock_out/
+make docker-test              # the image, run on the simulated trio
 ```
 
-CI runs the tests on two Pythons, builds the image, runs the mock inside it, and pushes to GHCR on `main` and
-tags. See `docs/METHODS.md` and `docs/OUTPUT.md`.
+CI runs the tests on two Python versions, builds the image, runs the simulated trio inside it, and pushes to GHCR on
+`main` and tags. See `docs/METHODS.md` and `docs/OUTPUT.md`.
 
 ## License
 

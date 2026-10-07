@@ -1,23 +1,23 @@
 title: Trio HG01103, chr10
-caption: chr10 in trio HG01103. Row 1: the LRR of each 1000-kb bin per member with its step fit and the calls as lines (gain, loss, or copy-neutral LOH at zero); events given from elsewhere as brackets. Row 2: the B-allele fraction at each member's heterozygous sites; in the child, the sites where the parents are opposite homozygotes are coloured by the parent of the alt allele. Row 3: the phased fraction - of the maternal allele along the child (the parents opposite homozygotes), of the allele passed to the child along a parent (the child homozygous) - at every phased site (faint), pooled by windows, and its step fit: one half where the homologues are equal, 1/2 + d or 1/2 - d along an event, the sign the parent of origin; the thin lines are the fraction read at the sites where only one parent is homozygous (the child) or where the child is heterozygous (a parent), which leave the main track where the child carries two different homologues of one parent. Row 4: the two homologues' copies, the LRR's copies split by the phased fraction (maternal and paternal in the child; passed to the child and not in a parent). Row 5: the heterozygosity rate per bin, which falls to zero under a loss of heterozygosity in every cell. Dashed: the centromere. Calls: child: LOH stretch f 1.00.
+caption: chr10 in trio HG01103. Row 1: LRR per 1000-kb bin per member with its step fit and calls as lines (gain, loss; copy-neutral events at 0); supplied events as brackets. Row 2: BAF at each member's heterozygous sites; in the child, informative sites (parents opposite homozygotes) are coloured by the parent of the alt allele. Row 3: the phased fraction (maternal allele along the child at informative sites; transmitted allele along a parent where the child is homozygous) per site (faint), pooled by window, with its step fit: 1/2 with equal homologue copy, 1/2 +/- d along an event with the sign giving the parent of origin (Sign convention: in the child, a phased fraction below 1/2 means the paternal homologue is in excess (paternal gain or maternal loss) and above 1/2 the maternal homologue; in a parent, below 1/2 means the event lies on the untransmitted homologue and above 1/2 on the transmitted one.). Thin lines: the auxiliary tracks (child: sites where one parent is homozygous; parent: sites where the child is heterozygous), which depart from the main track where the child carries two different homologues of one parent. Row 4: per-homologue copy number, the LRR-derived copy number split by the phased fraction (maternal and paternal in the child; transmitted and untransmitted in a parent). Row 5: heterozygosity rate per bin, zero under a constitutional loss of heterozygosity. Dashed line: centromere. Calls: child: LOH stretch f 1.00.
 keys: depth,step,baf,mat,pat,psite,phased,aux_mat,aux_pat,aux_par,cmat,cpat,ctrans,cuntrans,gain,loss,loh,ext,ref
 key:
-  #444444  filled circle  LRR: log2 of the bin's median depth over the member's autosomal median (GC-corrected where a GC track was given)
-  #000000  line  the step fit of the track (total-variation denoising): a piecewise-constant reading in which every jump has to earn its height
-  #9C9C9C  filled circle  BAF: the alt-allele fraction at the member's heterozygous sites (a sample of them)
-  #CC79A7  filled circle  an informative site whose alt allele came from the mother (father 0/0, mother 1/1)
-  #E69F00  filled circle  an informative site whose alt allele came from the father (father 1/1, mother 0/0)
-  #C8C8C8  filled circle  the phased fraction at one heterozygous site: of the maternal allele (the child), of the allele passed to the child (a parent); reference bias out
-  #009E73  filled circle  the phased fraction pooled over a window of sites (depth-weighted): at 1/2 where the homologues are equal, 1/2 + d or 1/2 - d along an event, the sign the parent of origin - in the child, below one half the paternal homologue is in excess (a paternal gain, a maternal copy lost), above one half the maternal; in a parent, below one half the event lies on the homologue not passed to the child, above one half on the one passed; hollow where the window is parted in two or more members (paralogy), which the fits and the scan leave out
-  #CC79A7  line  the child's maternal fraction read at the sites where the father is homozygous and the mother heterozygous: it leaves the main track where the child carries two different maternal homologues (a meiotic maternal trisomy or heterodisomy) and returns where a crossover made them one
-  #E69F00  line  the same at the sites where the mother is homozygous and the father heterozygous: it leaves the main track where the child carries two different paternal homologues
-  #56B4E9  line  a parent's transmitted-allele fraction read at the sites where the child is heterozygous and the other parent homozygous: it leaves the main track where the child carries two different homologues of this parent
-  #CC79A7  line  the child's maternal copies: the LRR step fit's copies (2 x 2^LRR) times the maternal fraction's step fit
-  #E69F00  line  the child's paternal copies, the same way
-  #D55E00  line  a parent's copies of the homologue passed to the child, the same way
-  #56B4E9  line  a parent's copies of the other homologue
-  #D55E00  line  a called gain (line at the segment's mean LRR)
-  #0072B2  line  a called loss
-  #CC79A7  line  a called copy-neutral event - a loss of heterozygosity, or a uniparental heterodisomy (drawn at zero)
-  #000000  bracket  an event given from elsewhere (--events), drawn above the track
-  #7F7F7F  line  reference lines: zero LRR, BAF at 1/2, 1/3 and 2/3; the centromere
+  #444444  filled circle  LRR per bin: log2 of the bin's median depth over the member's autosomal median (GC- and panel-corrected where applicable)
+  #000000  line  step fit of the track (exact total-variation denoising)
+  #9C9C9C  filled circle  BAF: alt-allele read fraction at the member's heterozygous sites (subsampled)
+  #CC79A7  filled circle  informative site whose alt allele is maternal (father 0/0, mother 1/1)
+  #E69F00  filled circle  informative site whose alt allele is paternal (father 1/1, mother 0/0)
+  #C8C8C8  filled circle  phased fraction at one site: maternal allele (child) or transmitted allele (parent), reference bias removed
+  #009E73  filled circle  phased fraction pooled over a window of sites (depth-weighted): 1/2 with equal homologue copy, 1/2 +/- d along an event with the sign giving the parent (child: below 1/2 the paternal homologue is in excess, above 1/2 the maternal; parent: below 1/2 the event lies on the untransmitted homologue, above 1/2 on the transmitted one); hollow where the window deviates in two or more members (paralogy; excluded from fits and scan)
+  #CC79A7  line  child's maternal fraction at sites where the father is homozygous and the mother heterozygous; departs from the main track where the child carries two different maternal homologues (maternal meiotic trisomy or heterodisomy) and rejoins it after a crossover
+  #E69F00  line  the same at sites where the mother is homozygous and the father heterozygous; departs where the child carries two different paternal homologues
+  #56B4E9  line  parent's transmitted-allele fraction at sites where the child is heterozygous and the other parent homozygous; departs from the main track where the child carries two different homologues of this parent
+  #CC79A7  line  child's maternal copy number: the LRR step fit's copy number (2 x 2^LRR) times the maternal fraction's step fit
+  #E69F00  line  child's paternal copy number, likewise
+  #D55E00  line  parent's copy number of the transmitted homologue, likewise
+  #56B4E9  line  parent's copy number of the untransmitted homologue
+  #D55E00  line  called gain (line at the segment's mean LRR)
+  #0072B2  line  called loss
+  #CC79A7  line  called copy-neutral event: loss of heterozygosity or uniparental heterodisomy (drawn at LRR 0)
+  #000000  bracket  event supplied with --events (bracket above the track)
+  #7F7F7F  line  reference lines: LRR 0; BAF 1/2, 1/3 and 2/3; the centromere
