@@ -1,0 +1,233 @@
+{
+ "trio": "NA12739",
+ "members": [
+  "NA12739",
+  "NA12748",
+  "NA12749"
+ ],
+ "sexes": [
+  "M",
+  "M",
+  "F"
+ ],
+ "x_copies": {
+  "child": 1,
+  "father": 1,
+  "mother": 2
+ },
+ "mie_rate_genome": 0.010414329684585395,
+ "events": [
+  {
+   "sample": "NA12739",
+   "role": "child",
+   "chrom": "chr1",
+   "start": 0,
+   "end": 5000000,
+   "span": "stretch",
+   "type": "gain",
+   "lrr": 0.08436079537703292,
+   "lrr_se": 0.014453184575903886,
+   "n_bins": 5,
+   "f_lrr": 0.12043578818806155,
+   "d_hat": 0.04,
+   "llr_baf": 104.75912395276828,
+   "f_baf": 0.17391304347826086,
+   "het_rate": 0.6094712525667351,
+   "het_rate_rel": 0.9863456222401917,
+   "n_het": 4749,
+   "n_called": 7792,
+   "mie_rate": 0.02328696548171046,
+   "origin": "extra copy maternal",
+   "origin_llr": 75.7359923458739,
+   "origin_n": 1039,
+   "inheritance": "new (neither parent carries it)",
+   "external": "",
+   "note": "",
+   "f": 0.12043578818806155
+  },
+  {
+   "sample": "NA12739",
+   "role": "child",
+   "chrom": "chr12",
+   "start": 0,
+   "end": 133275309,
+   "span": "whole",
+   "type": "gain",
+   "lrr": 0.5640817246893616,
+   "lrr_se": 0.001746161151422175,
+   "n_bins": 132,
+   "f_lrr": 0.9568923575887327,
+   "d_hat": 0.16,
+   "llr_baf": 93852.37612945586,
+   "f_baf": 0.9411764705882354,
+   "het_rate": 0.594652524991223,
+   "het_rate_rel": 0.9623635443165478,
+   "n_het": 101519,
+   "n_called": 171124,
+   "mie_rate": 0.00875848669417338,
+   "origin": "extra copy paternal",
+   "origin_llr": -183312.87265894422,
+   "origin_n": 17678,
+   "inheritance": "new (neither parent carries it)",
+   "external": "NGS-DOSE: +12 (2.99 copies, every cell); DRAGEN CNV: CNV CN 3; DRAGEN CNV: CNV CN 3; DRAGEN CNV: CNV CN 3; DRAGEN CNV: CNV CN 3; DRAGEN CNV: CNV CN 3; DRAGEN CNV: CNV CN 3; DRAGEN CNV: CNV CN 3; DRAGEN CNV: CNV CN 3; DRAGEN CNV: CNV CN 3; DRAGEN CNV: CNV CN 3; DRAGEN CNV: CNV CN 3; DRAGEN CNV: CNV CN 3",
+   "note": "joined across 2 bin(s) the panel left out",
+   "f": 0.9568923575887327
+  },
+  {
+   "sample": "NA12748",
+   "role": "father",
+   "chrom": "chr13",
+   "start": 88000000,
+   "end": 114364328,
+   "span": "stretch",
+   "type": "gain",
+   "lrr": 0.42920884448775803,
+   "lrr_se": 0.005568474022063852,
+   "n_bins": 27,
+   "f_lrr": 0.6929899474767778,
+   "d_hat": 0.125,
+   "llr_baf": 19405.434807579964,
+   "f_baf": 0.6666666666666666,
+   "het_rate": 0.5966038012052602,
+   "het_rate_rel": 0.9601707697461318,
+   "n_het": 24453,
+   "n_called": 40987,
+   "mie_rate": 0.009178596447110807,
+   "origin": "",
+   "origin_llr": NaN,
+   "origin_n": 0,
+   "inheritance": "not passed to the child",
+   "external": "DRAGEN CNV: CNV CN 3; DRAGEN CNV: CNV CN 3",
+   "note": "",
+   "f": 0.6929899474767778
+  }
+ ],
+ "external": [
+  {
+   "sample": "NA12739",
+   "chrom": "chr12",
+   "start": 0,
+   "end": 133275309,
+   "label": "NGS-DOSE: +12 (2.99 copies, every cell)",
+   "match": "matched: gain whole chr12 f 0.96"
+  },
+  {
+   "sample": "NA12739",
+   "chrom": "chr12",
+   "start": 78305,
+   "end": 8381457,
+   "label": "DRAGEN CNV: CNV CN 3",
+   "match": "matched: gain whole chr12 f 0.96"
+  },
+  {
+   "sample": "NA12739",
+   "chrom": "chr12",
+   "start": 11415257,
+   "end": 30324660,
+   "label": "DRAGEN CNV: CNV CN 3",
+   "match": "matched: gain whole chr12 f 0.96"
+  },
+  {
+   "sample": "NA12739",
+   "chrom": "chr12",
+   "start": 37624996,
+   "end": 45508891,
+   "label": "DRAGEN CNV: CNV CN 3",
+   "match": "matched: gain whole chr12 f 0.96"
+  },
+  {
+   "sample": "NA12739",
+   "chrom": "chr12",
+   "start": 45515557,
+   "end": 59541425,
+   "label": "DRAGEN CNV: CNV CN 3",
+   "match": "matched: gain whole chr12 f 0.96"
+  },
+  {
+   "sample": "NA12739",
+   "chrom": "chr12",
+   "start": 60131989,
+   "end": 71208215,
+   "label": "DRAGEN CNV: CNV CN 3",
+   "match": "matched: gain whole chr12 f 0.96"
+  },
+  {
+   "sample": "NA12739",
+   "chrom": "chr12",
+   "start": 71964010,
+   "end": 79758764,
+   "label": "DRAGEN CNV: CNV CN 3",
+   "match": "matched: gain whole chr12 f 0.96"
+  },
+  {
+   "sample": "NA12739",
+   "chrom": "chr12",
+   "start": 79769262,
+   "end": 90093074,
+   "label": "DRAGEN CNV: CNV CN 3",
+   "match": "matched: gain whole chr12 f 0.96"
+  },
+  {
+   "sample": "NA12739",
+   "chrom": "chr12",
+   "start": 90094114,
+   "end": 101708483,
+   "label": "DRAGEN CNV: CNV CN 3",
+   "match": "matched: gain whole chr12 f 0.96"
+  },
+  {
+   "sample": "NA12739",
+   "chrom": "chr12",
+   "start": 101712911,
+   "end": 114012027,
+   "label": "DRAGEN CNV: CNV CN 3",
+   "match": "matched: gain whole chr12 f 0.96"
+  },
+  {
+   "sample": "NA12739",
+   "chrom": "chr12",
+   "start": 114013108,
+   "end": 123910210,
+   "label": "DRAGEN CNV: CNV CN 3",
+   "match": "matched: gain whole chr12 f 0.96"
+  },
+  {
+   "sample": "NA12739",
+   "chrom": "chr12",
+   "start": 123912921,
+   "end": 127123091,
+   "label": "DRAGEN CNV: CNV CN 3",
+   "match": "matched: gain whole chr12 f 0.96"
+  },
+  {
+   "sample": "NA12739",
+   "chrom": "chr12",
+   "start": 128085892,
+   "end": 131645699,
+   "label": "DRAGEN CNV: CNV CN 3",
+   "match": "matched: gain whole chr12 f 0.96"
+  },
+  {
+   "sample": "NA12748",
+   "chrom": "chr13",
+   "start": 90212757,
+   "end": 101241138,
+   "label": "DRAGEN CNV: CNV CN 3",
+   "match": "matched: gain stretch chr13 f 0.69"
+  },
+  {
+   "sample": "NA12748",
+   "chrom": "chr13",
+   "start": 101244374,
+   "end": 111668671,
+   "label": "DRAGEN CNV: CNV CN 3",
+   "match": "matched: gain stretch chr13 f 0.69"
+  }
+ ],
+ "sites_used": 5446523,
+ "records": 5516159,
+ "skipped": {
+  "contig": 69636
+ },
+ "seconds": 53.2
+}

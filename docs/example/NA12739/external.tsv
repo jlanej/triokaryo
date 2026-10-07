@@ -1,0 +1,16 @@
+sample	chrom	start	end	label	match
+NA12739	chr12	0	133275309	NGS-DOSE: +12 (2.99 copies, every cell)	matched: gain whole chr12 f 0.96
+NA12739	chr12	78305	8381457	DRAGEN CNV: CNV CN 3	matched: gain whole chr12 f 0.96
+NA12739	chr12	11415257	30324660	DRAGEN CNV: CNV CN 3	matched: gain whole chr12 f 0.96
+NA12739	chr12	37624996	45508891	DRAGEN CNV: CNV CN 3	matched: gain whole chr12 f 0.96
+NA12739	chr12	45515557	59541425	DRAGEN CNV: CNV CN 3	matched: gain whole chr12 f 0.96
+NA12739	chr12	60131989	71208215	DRAGEN CNV: CNV CN 3	matched: gain whole chr12 f 0.96
+NA12739	chr12	71964010	79758764	DRAGEN CNV: CNV CN 3	matched: gain whole chr12 f 0.96
+NA12739	chr12	79769262	90093074	DRAGEN CNV: CNV CN 3	matched: gain whole chr12 f 0.96
+NA12739	chr12	90094114	101708483	DRAGEN CNV: CNV CN 3	matched: gain whole chr12 f 0.96
+NA12739	chr12	101712911	114012027	DRAGEN CNV: CNV CN 3	matched: gain whole chr12 f 0.96
+NA12739	chr12	114013108	123910210	DRAGEN CNV: CNV CN 3	matched: gain whole chr12 f 0.96
+NA12739	chr12	123912921	127123091	DRAGEN CNV: CNV CN 3	matched: gain whole chr12 f 0.96
+NA12739	chr12	128085892	131645699	DRAGEN CNV: CNV CN 3	matched: gain whole chr12 f 0.96
+NA12748	chr13	90212757	101241138	DRAGEN CNV: CNV CN 3	matched: gain stretch chr13 f 0.69
+NA12748	chr13	101244374	111668671	DRAGEN CNV: CNV CN 3	matched: gain stretch chr13 f 0.69

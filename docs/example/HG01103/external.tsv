@@ -1,0 +1,7 @@
+sample	chrom	start	end	label	match
+HG01103	chr2	140000000	179000000	NGS-DOSE: -2(140-179Mb)[0.68] (1.32 copies, 68% of cells)	matched: loss stretch chr2 f 0.67; loss stretch chr2 f 0.31
+HG01103	chr2	140685857	153220004	DRAGEN CNV: CN 1	matched: loss stretch chr2 f 0.67
+HG01103	chr2	153802034	161475965	DRAGEN CNV: CN 1	matched: loss stretch chr2 f 0.67
+HG01103	chr2	161477369	167145021	DRAGEN CNV: CN 1	matched: loss stretch chr2 f 0.67
+HG01103	chr2	167157122	172040081	DRAGEN CNV: CN 1	matched: loss stretch chr2 f 0.67
+HG01103	chr14	37301824	41199804	DRAGEN CNV: CN 1	matched: loss stretch chr14 f 0.64

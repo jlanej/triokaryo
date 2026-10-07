@@ -1,0 +1,12 @@
+title: Trio HG01103, chr14
+caption: chr14 in trio HG01103. Top: the LRR of each 1000-kb bin per member with the calls as lines (gain, loss, or copy-neutral LOH at zero); events given from elsewhere as brackets. Middle: the B-allele fraction at each member's heterozygous sites; in the child, the sites where the parents are opposite homozygotes are coloured by the parent of the alt allele - under a gain the duplicated parent's allele sits at 2/3, under a loss the retained parent's at 1, under a copy-neutral LOH the retained parent's at (1 + f)/2. Bottom: the heterozygosity rate per bin, which falls to zero under a loss of heterozygosity in every cell. Dashed: the centromere. Calls: child: loss stretch f 0.64, paternal copy lost.
+key:
+  #444444  filled circle  LRR: log2 of the bin's median depth over the member's autosomal median (GC-corrected where a GC track was given)
+  #9C9C9C  filled circle  BAF: the alt-allele fraction at the member's heterozygous sites (a sample of them)
+  #CC79A7  filled circle  an informative site whose alt allele came from the mother (father 0/0, mother 1/1)
+  #E69F00  filled circle  an informative site whose alt allele came from the father (father 1/1, mother 0/0)
+  #D55E00  line  a called gain (line at the segment's mean LRR)
+  #0072B2  line  a called loss
+  #CC79A7  line  a called copy-neutral loss of heterozygosity (drawn at zero)
+  #000000  bracket  an event given from elsewhere (--events), drawn above the track
+  #7F7F7F  line  reference lines: zero LRR, BAF at 1/2, 1/3 and 2/3; the centromere

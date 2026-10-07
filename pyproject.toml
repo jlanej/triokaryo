@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "triokaryo"
+version = "0.1.0"
+description = "Large chromosomal events in a trio, read from its VCF: LRR and BAF along the genome for child, father and mother, segmentation with the mosaic fraction from depth and from the B-allele bands, parent of origin from informative sites, inheritance, and publication figures."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+keywords = ["trio", "VCF", "aneuploidy", "mosaicism", "LRR", "BAF", "copy number", "UPD", "karyotype", "parent of origin"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Topic :: Scientific/Engineering :: Bio-Informatics",
+  "Intended Audience :: Science/Research",
+]
+dependencies = ["pysam>=0.22", "numpy>=1.22", "matplotlib>=3.5"]
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[project.scripts]
+triokaryo = "triokaryo.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+# a reference panel of twelve public 1000 Genomes genomes (Illumina's DRAGEN 3.7.6 re-analysis, hg38 graph-based), 1-Mb bins:
+# `--panel 1kg-dragen` resolves to it, for data called the same way
+[tool.setuptools.package-data]
+triokaryo = ["data/*.tsv"]

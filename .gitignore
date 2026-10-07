@@ -1,0 +1,20 @@
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+build/
+dist/
+*.egg-info/
+ci_out/
+/mock_out/
+# never any real data: VCFs, pedigrees, CRAMs, sample lists (the mock is written at test time)
+*.vcf
+*.vcf.gz
+*.vcf.gz.tbi
+*.bcf
+*.cram
+*.bam
+*.ped
+*.fa
+*.fa.gz
+*.fai
