@@ -16,6 +16,29 @@
   "mother": 2
  },
  "mie_rate_genome": 0.010414329684585395,
+ "phasing": {
+  "child": {
+   "ref_bias": 0.0,
+   "window_sites": 51,
+   "n_phased": 378808,
+   "n_aux": 1397990,
+   "windows_shared": 32
+  },
+  "father": {
+   "ref_bias": 0.0,
+   "window_sites": 155,
+   "n_phased": 1114918,
+   "n_aux": 697323,
+   "windows_shared": 48
+  },
+  "mother": {
+   "ref_bias": 0.0,
+   "window_sites": 152,
+   "n_phased": 1130865,
+   "n_aux": 700667,
+   "windows_shared": 46
+  }
+ },
  "events": [
   {
    "sample": "NA12739",
@@ -42,7 +65,18 @@
    "origin_n": 1039,
    "inheritance": "new (neither parent carries it)",
    "external": "",
-   "note": "",
+   "note": "the phased bands read a share of 4% against the depth's 12%: the depth's call may be an artefact (GC, the panel's edge) rather than a copy change",
+   "source": "depth",
+   "phase_shift": 0.008752562687273313,
+   "phase_se": 0.0025633948210261014,
+   "n_phased": 1039,
+   "f_phase": 0.03563402889245591,
+   "origin_phase": "extra copy maternal",
+   "start_fine": NaN,
+   "end_fine": 3803588,
+   "edge_sites": 635,
+   "homologues": "",
+   "hetero_share": NaN,
    "f": 0.12043578818806155
   },
   {
@@ -69,8 +103,19 @@
    "origin_llr": -183312.87265894422,
    "origin_n": 17678,
    "inheritance": "new (neither parent carries it)",
-   "external": "NGS-DOSE: +12 (2.99 copies, every cell); DRAGEN CNV: CNV CN 3; DRAGEN CNV: CNV CN 3; DRAGEN CNV: CNV CN 3; DRAGEN CNV: CNV CN 3; DRAGEN CNV: CNV CN 3; DRAGEN CNV: CNV CN 3; DRAGEN CNV: CNV CN 3; DRAGEN CNV: CNV CN 3; DRAGEN CNV: CNV CN 3; DRAGEN CNV: CNV CN 3; DRAGEN CNV: CNV CN 3; DRAGEN CNV: CNV CN 3",
+   "external": "NGS-DOSE: +12 (2.99 copies, every cell); DRAGEN CNV: CN 3 (segment mean 1.52); DRAGEN CNV: CN 3 (segment mean 1.49); DRAGEN CNV: CN 3 (segment mean 1.53); DRAGEN CNV: CN 3 (segment mean 1.48); DRAGEN CNV: CN 3 (segment mean 1.53); DRAGEN CNV: CN 3 (segment mean 1.49); DRAGEN CNV: CN 3 (segment mean 1.45); DRAGEN CNV: CN 3 (segment mean 1.44); DRAGEN CNV: CN 3 (segment mean 1.50); DRAGEN CNV: CN 3 (segment mean 1.52); DRAGEN CNV: CN 3 (segment mean 1.53); DRAGEN CNV: CN 3 (segment mean 1.51); DRAGEN CNV: CN 3 (segment mean 1.49)",
    "note": "joined across 2 bin(s) the panel left out",
+   "source": "depth",
+   "phase_shift": -0.16146227070058783,
+   "phase_se": 0.000544695597467812,
+   "n_phased": 17630,
+   "f_phase": 0.953880508590439,
+   "origin_phase": "extra copy paternal",
+   "start_fine": NaN,
+   "end_fine": NaN,
+   "edge_sites": 0,
+   "homologues": "the two paternal copies are one homologue throughout (mitotic, or a meiosis II error without a crossover)",
+   "hetero_share": 0.004132231404958678,
    "f": 0.9568923575887327
   },
   {
@@ -97,9 +142,59 @@
    "origin_llr": NaN,
    "origin_n": 0,
    "inheritance": "not passed to the child",
-   "external": "DRAGEN CNV: CNV CN 3; DRAGEN CNV: CNV CN 3",
+   "external": "DRAGEN CNV: CN 3 (segment mean 1.28); DRAGEN CNV: CN 3 (segment mean 1.33); DRAGEN CNV: CN 3 (segment mean 1.31); DRAGEN CNV: CN 3 (segment mean 1.34)",
    "note": "",
+   "source": "depth",
+   "phase_shift": 0.10916176600370664,
+   "phase_se": 0.0007081186977118881,
+   "n_phased": 11403,
+   "f_phase": 0.5586033121045262,
+   "origin_phase": "the duplicated homologue is the one passed to the child",
+   "start_fine": 87621450,
+   "end_fine": NaN,
+   "edge_sites": 1094,
+   "homologues": "",
+   "hetero_share": NaN,
    "f": 0.6929899474767778
+  },
+  {
+   "sample": "NA12748",
+   "role": "father",
+   "chrom": "chr21",
+   "start": 42761648,
+   "end": 46699598,
+   "span": "stretch",
+   "type": "loss",
+   "lrr": -0.6150893391582619,
+   "lrr_se": 0.011181392176023578,
+   "n_bins": 4,
+   "f_lrr": NaN,
+   "d_hat": 0.21031161331118498,
+   "llr_baf": NaN,
+   "f_baf": 0.5921671823181869,
+   "het_rate": 0.5844300278035218,
+   "het_rate_rel": 0.9406540447504305,
+   "n_het": 3153,
+   "n_called": 5395,
+   "mie_rate": 0.07694452188458321,
+   "origin": "",
+   "origin_llr": NaN,
+   "origin_n": 0,
+   "inheritance": "not passed to the child",
+   "external": "DRAGEN CNV: CN 1 (segment mean 0.68)",
+   "note": "from the phased bands: the depth leans the same way (-55.0 standard errors) but under its own threshold",
+   "source": "phased",
+   "phase_shift": -0.21224245479175857,
+   "phase_se": 0.002806421253488508,
+   "n_phased": 1334,
+   "f_phase": 0.5959837225760793,
+   "origin_phase": "the lost homologue is the one passed to the child",
+   "start_fine": 42636997,
+   "end_fine": NaN,
+   "edge_sites": 1299,
+   "homologues": "",
+   "hetero_share": NaN,
+   "f": 0.5921671823181869
   }
  ],
  "external": [
@@ -114,114 +209,146 @@
   {
    "sample": "NA12739",
    "chrom": "chr12",
-   "start": 78305,
+   "start": 78304,
    "end": 8381457,
-   "label": "DRAGEN CNV: CNV CN 3",
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.52)",
    "match": "matched: gain whole chr12 f 0.96"
   },
   {
    "sample": "NA12739",
    "chrom": "chr12",
-   "start": 11415257,
+   "start": 11415256,
    "end": 30324660,
-   "label": "DRAGEN CNV: CNV CN 3",
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.49)",
    "match": "matched: gain whole chr12 f 0.96"
   },
   {
    "sample": "NA12739",
    "chrom": "chr12",
-   "start": 37624996,
+   "start": 30328692,
+   "end": 33142212,
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.53)",
+   "match": "matched: gain whole chr12 f 0.96"
+  },
+  {
+   "sample": "NA12739",
+   "chrom": "chr12",
+   "start": 37624995,
    "end": 45508891,
-   "label": "DRAGEN CNV: CNV CN 3",
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.48)",
    "match": "matched: gain whole chr12 f 0.96"
   },
   {
    "sample": "NA12739",
    "chrom": "chr12",
-   "start": 45515557,
+   "start": 45515556,
    "end": 59541425,
-   "label": "DRAGEN CNV: CNV CN 3",
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.53)",
    "match": "matched: gain whole chr12 f 0.96"
   },
   {
    "sample": "NA12739",
    "chrom": "chr12",
-   "start": 60131989,
+   "start": 60131988,
    "end": 71208215,
-   "label": "DRAGEN CNV: CNV CN 3",
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.49)",
    "match": "matched: gain whole chr12 f 0.96"
   },
   {
    "sample": "NA12739",
    "chrom": "chr12",
-   "start": 71964010,
+   "start": 71964009,
    "end": 79758764,
-   "label": "DRAGEN CNV: CNV CN 3",
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.45)",
    "match": "matched: gain whole chr12 f 0.96"
   },
   {
    "sample": "NA12739",
    "chrom": "chr12",
-   "start": 79769262,
+   "start": 79769261,
    "end": 90093074,
-   "label": "DRAGEN CNV: CNV CN 3",
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.44)",
    "match": "matched: gain whole chr12 f 0.96"
   },
   {
    "sample": "NA12739",
    "chrom": "chr12",
-   "start": 90094114,
+   "start": 90094113,
    "end": 101708483,
-   "label": "DRAGEN CNV: CNV CN 3",
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.50)",
    "match": "matched: gain whole chr12 f 0.96"
   },
   {
    "sample": "NA12739",
    "chrom": "chr12",
-   "start": 101712911,
+   "start": 101712910,
    "end": 114012027,
-   "label": "DRAGEN CNV: CNV CN 3",
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.52)",
    "match": "matched: gain whole chr12 f 0.96"
   },
   {
    "sample": "NA12739",
    "chrom": "chr12",
-   "start": 114013108,
+   "start": 114013107,
    "end": 123910210,
-   "label": "DRAGEN CNV: CNV CN 3",
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.53)",
    "match": "matched: gain whole chr12 f 0.96"
   },
   {
    "sample": "NA12739",
    "chrom": "chr12",
-   "start": 123912921,
+   "start": 123912920,
    "end": 127123091,
-   "label": "DRAGEN CNV: CNV CN 3",
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.51)",
    "match": "matched: gain whole chr12 f 0.96"
   },
   {
    "sample": "NA12739",
    "chrom": "chr12",
-   "start": 128085892,
+   "start": 128085891,
    "end": 131645699,
-   "label": "DRAGEN CNV: CNV CN 3",
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.49)",
    "match": "matched: gain whole chr12 f 0.96"
   },
   {
    "sample": "NA12748",
    "chrom": "chr13",
-   "start": 90212757,
-   "end": 101241138,
-   "label": "DRAGEN CNV: CNV CN 3",
+   "start": 87619008,
+   "end": 90210757,
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.28)",
    "match": "matched: gain stretch chr13 f 0.69"
   },
   {
    "sample": "NA12748",
    "chrom": "chr13",
-   "start": 101244374,
-   "end": 111668671,
-   "label": "DRAGEN CNV: CNV CN 3",
+   "start": 90212756,
+   "end": 101241138,
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.33)",
    "match": "matched: gain stretch chr13 f 0.69"
+  },
+  {
+   "sample": "NA12748",
+   "chrom": "chr13",
+   "start": 101244373,
+   "end": 111668671,
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.31)",
+   "match": "matched: gain stretch chr13 f 0.69"
+  },
+  {
+   "sample": "NA12748",
+   "chrom": "chr13",
+   "start": 111790054,
+   "end": 114154011,
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.34)",
+   "match": "matched: gain stretch chr13 f 0.69"
+  },
+  {
+   "sample": "NA12748",
+   "chrom": "chr21",
+   "start": 44199492,
+   "end": 46680053,
+   "label": "DRAGEN CNV: CN 1 (segment mean 0.68)",
+   "match": "matched: loss stretch chr21 f 0.59"
   }
  ],
  "sites_used": 5446523,
@@ -229,5 +356,5 @@
  "skipped": {
   "contig": 69636
  },
- "seconds": 53.2
+ "seconds": 59.7
 }

@@ -28,6 +28,67 @@ deviation is read net of the panel's regional excess over its typical bin, and b
 more than 0.03 above typical are left out of the LOH search; the heterozygosity rate is read as the ratio to the
 panel's. The GC correction then acts on the panel-corrected LRR.
 
+**Transmission phasing: the main tracks.** The alt-allele fraction at a heterozygous site sits at 1/2 ± d with
+the sign unknown, so on its own it is read folded (|BAF − 1/2|, biased upward by the noise: 0.07 at 30× where
+d = 0). The trio gives the sign. At a site where the parents are opposite homozygotes the child's two alleles have
+known parents whatever the child's call, and the fraction of the mother's allele is the maternal fraction: 1/2 where
+the homologues are equal, 1/2 + d or 1/2 − d along an event by the parent of origin, 1 where no paternal copy is
+left (a deletion of the paternal copy, a maternal isodisomy or heterodisomy). At a parent's heterozygous site where
+the child is homozygous, the allele the parent passed on is the child's, and the fraction of the transmitted allele
+along the parent says whether an event of the parent's lies on the homologue the child got. These are the main
+tracks. A phasing error (a genotype error elsewhere in the trio) flips a site at random and so weakens a reading
+rather than inventing one. The reference bias (the alt allele read a little under one half) is taken out by the
+member's own genome-wide median of (alt fraction − 1/2) over its heterozygous sites, with the sign of each site's
+tag. Sites in bins whose bands are parted in the panel's genomes are left out.
+
+**The auxiliary tracks, and one homologue or two.** The sites where only one parent is homozygous phase the child
+too - the homozygous parent's allele is theirs, the other allele the other parent's - but only while each parent gave
+one homologue. Where the child carries two different homologues of one parent (a meiotic trisomy, a heterodisomy)
+the sites tagged by the other parent's homozygosity read the wrong way. So they are pooled as auxiliary tracks beside
+the main one: along a maternal meiotic trisomy the track read at the father's homozygous sites leaves the main track
+(1/3 against 2/3) wherever the two maternal copies differ and returns wherever a crossover made them identical - a
+map of the meiotic error and its crossovers. A parent's auxiliary track (the parent and the child heterozygous, the
+other parent homozygous) does the same from the parent's side. For each gain, LOH or heterodisomy of the child's with
+a parent named and a shift of at least 0.05, the share of the event's windows where the auxiliary track parts from
+the main one is reported: ≥ 90% "two different homologues throughout (meiotic)", ≤ 10% "one homologue throughout
+(mitotic, or a meiosis II error without a crossover)", else the share (a meiotic error with crossovers).
+
+**Pooled windows, the step fit, the copies.** The main track's sites are pooled in windows of a fixed number of
+sites (the number set so that a window spans about 400 kb at the genome's density, never fewer than 20 sites nor
+more than 200; a window never crosses a gap of over 3 Mb), the fraction depth-weighted, with its binomial error. A
+window shifted by ≥ 0.05 in two or more members at once, each at least half the other's, is parted in everyone -
+paralogous sequence, or an imbalance the family shares - and is left out of the fits and the scan. The step fit is
+the exact one-dimensional total-variation denoising of the windows (min ½ Σ (y − x)² + λ Σ |x_{i+1} − x_i|, Condat's
+direct algorithm; λ = 2.5 times the track's noise sd from its first differences): a piecewise-constant reading in
+which every jump has to earn its height - a lone spike under 2λ is flattened, a plateau of m points keeps its height
+less 2λ/m. The same fit is drawn on the LRR. The two homologues' copies are the LRR step fit's copies (2 × 2^LRR)
+split by the fraction's step fit: maternal and paternal along the child, passed and not passed along a parent.
+
+**Each event's phased reading.** The pooled fraction over the event's main-track sites gives the shift from one
+half, its binomial error, and the share of cells by the event's type (gain 4d/(1 − 2d), loss 4d/(1 + 2d), LOH 2d).
+With ≥ 40 sites and a shift of ≥ 3 errors, the sign names the parent: for the child the extra copy's parent, the
+lost copy's, the retained copy's; for a parent whether the duplicated, lost or retained homologue is the one passed
+to the child. The opposite-homozygote reading above is a subset of the same sites read with a likelihood ratio; the
+two are reported side by side and a disagreement noted. For a depth event with ≥ 500 phased sites, a phased share
+under half the depth's is noted (the depth's call may be a GC or panel artefact rather than a copy change).
+
+**Edges at site resolution.** For an event not running to the chromosome's end, the sites of the main track within
+1.5 bins of each bin edge (wider where sparse), signed by the event's shift, are split where a two-mean fit (an
+outside at one half, an inside away from it) reduces the squared error most, with at least 12 sites each side; the
+edge is the midpoint between the two sites either side of the split.
+
+**The phased scan.** On the main track's windows not already inside an event of the member's (and not parted in
+everyone), the same recursive segmentation as the LRR's (z = 5, 8 windows a segment; a chromosome too short to split
+is one segment). A segment is an event when its mean shift is ≥ 0.015 (a gain or loss in about 6% of cells, an LOH
+in 3%) and ≥ 5 empirical standard errors, its median shift is ≥ 0.015 the same way and ≥ 75% of its windows lean
+that way (a few parted windows do not make an event), and it spans ≥ 2 Mb (a dense cluster of sites, as a
+gene-family region, makes many windows of a few hundred kb). It is typed by the depth's lean over the same bins
+(≥ 3 standard errors up, a gain; down, a loss), else read as a copy-neutral LOH at a share of 2d - which a gain or
+loss at a share the depth cannot resolve would mimic, and the note says so - unless the shift is ≥ 0.4 with the
+heterozygosity rate kept (≥ 0.5 of the member's own): a uniparental heterodisomy, which the depth, the folded bands
+and the heterozygosity rate all miss (the child homozygous for one parent's allele wherever the parents are opposite
+homozygotes, heterozygous wherever that parent is). Segments set aside, with the reason, go to `phased_rejected.tsv`.
+
 **Within-trio tracks.** Per site with depth in all three, log2 of the child's depth over the parents' mean, and
 log2 of the father's over the mother's; the bin's value is the median over its sites. They cancel what the three
 libraries share at a site and are drawn, not called.

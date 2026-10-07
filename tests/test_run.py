@@ -67,7 +67,7 @@ def test_x_copies_and_sex_check(run):
 def test_external_events_matched(run):
     ext = run["external"]
     assert len(ext) == 8 and all(x.inheritance.startswith("matched") for x in ext)
-    assert all(e.external for e in run["events"] if e.type != "LOH")
+    assert all(e.external for e in run["events"] if e.type not in ("LOH", "UPD"))      # a depth tool sees neither
     assert all(not e.external for e in run["events"] if e.type == "LOH")
 
 

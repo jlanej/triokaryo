@@ -39,12 +39,34 @@ def run_trio(vcf, trio, out, gc_track=None, events_path=None, bin_size=1_000_000
         ev, xc = call_member(bins, scan, m, trio.members[m], G, P, trio.sexes[m])
         events += ev
         x_copies[role] = xc
+    # the phased tracks: the maternal-allele fraction along the child, the transmitted-allele fraction along each parent
+    from .phase import annotate_events, mask_rejected, mask_shared, phased_scan, phased_tracks
+    tracks, phase_info, rejected = [], {}, []
+    for m, role in enumerate(MEMBERS):
+        t, info = phased_tracks(scan, bins, G, m, min_dp, min_gq, trio.sexes[m])
+        tracks.append(t)
+        phase_info[role] = info
+        log("%s: %d phased sites (%d more on the auxiliary tracks), windows of %d, reference bias %+.3f" % (role, info["n_phased"], info["n_aux"], info["window_sites"], info["ref_bias"]))
+    mask_shared(tracks, bins)
+    for m, role in enumerate(MEMBERS):
+        phase_info[role]["windows_shared"] = int(sum(int(t.w_shared.sum()) for t in tracks[m].values() if t.w_shared is not None))
+        auto = bins.autosomal & (bins.n_called[m] >= 10)
+        base_het = float(np.nanmedian(bins.het_rate[m][auto])) if auto.any() else float("nan")
+        found = phased_scan(tracks[m], bins, scan, m, trio.members[m], G, events, None, min_dp, min_gq, trio.sexes[m], base_het, rejected)
+        if found:
+            log("%s: %d event(s) from the phased bands the depth did not call" % (role, len(found)))
+        events += found
+    mask_rejected(tracks, bins, rejected)
+    if rejected:
+        log("%d phased segment(s) set aside: %s" % (len(rejected), "; ".join("%s %s %.1f-%.1f Mb (%s)" % (r["role"], r["chrom"], r["start"] / 1e6, r["end"] / 1e6, r["reason"].split(" (")[0]) for r in rejected)))
+    events.sort(key=lambda e: (MEMBERS.index(e.role), G.chroms.index(e.chrom), e.start))
     base_mie = read_trio(events, scan, G, min_dp, min_gq)
+    annotate_events(events, tracks, scan, bins, G)
     external = read_events(events_path, G) if events_path else []
     external = [x for x in external if x.sample in trio.members]
     match_external(events, external)
     os.makedirs(out, exist_ok=True)
-    summ = write_tables(out, trio, bins, events, x_copies, scan, base_mie, P)
+    summ = write_tables(out, trio, bins, events, x_copies, scan, base_mie, P, tracks=tracks, phase_info=phase_info, rejected=rejected)
     if external:
         from .report import write_tsv
         write_tsv(os.path.join(out, "external.tsv"), ["sample", "chrom", "start", "end", "label", "match"],
@@ -54,15 +76,15 @@ def run_trio(vcf, trio, out, gc_track=None, events_path=None, bin_size=1_000_000
         from .plots import fig_chrom, fig_genome
         fdir = os.path.join(out, "figures")
         os.makedirs(fdir, exist_ok=True)
-        figs.append(fig_genome(trio, bins, scan, events, external, G, fdir, min_dp=min_dp, min_gq=min_gq))
+        figs.append(fig_genome(trio, bins, scan, events, external, G, fdir, min_dp=min_dp, min_gq=min_gq, tracks=tracks))
         chroms = sorted({e.chrom for e in events} | {x.chrom for x in external}, key=lambda c: G.chroms.index(c))
         for c in chroms:
-            figs.append(fig_chrom(trio, c, bins, scan, events, external, G, fdir, min_dp, min_gq))
+            figs.append(fig_chrom(trio, c, bins, scan, events, external, G, fdir, min_dp, min_gq, tracks=tracks))
     write_html(out, trio, figs, events, summ, external, mock_note)
     with open(os.path.join(out, "summary.json"), "w") as fh:
-        json.dump(dict(trio=trio.name, members=list(trio.members), sexes=list(trio.sexes), x_copies=x_copies, mie_rate_genome=base_mie,
+        json.dump(dict(trio=trio.name, members=list(trio.members), sexes=list(trio.sexes), x_copies=x_copies, mie_rate_genome=base_mie, phasing=phase_info,
                        events=[e.as_dict() for e in events], external=[dict(sample=x.sample, chrom=x.chrom, start=x.start, end=x.end, label=x.note, match=x.inheritance) for x in external],
                        sites_used=scan.n_used, records=scan.n_records, skipped=scan.skipped, seconds=round(time.time() - t0, 1)),
                   fh, indent=1, default=lambda o: None if (isinstance(o, float) and not np.isfinite(o)) else str(o))
     log("%d event(s): %s; %.0f s -> %s" % (len(events), "; ".join("%s %s %s %s f %.2f" % (e.role, e.type, e.span, e.chrom, e.f) for e in events) or "none", time.time() - t0, out))
-    return dict(events=events, x_copies=x_copies, bins=bins, scan=scan, summary=summ, figures=figs, external=external)
+    return dict(events=events, x_copies=x_copies, bins=bins, scan=scan, summary=summ, figures=figs, external=external, tracks=tracks, phase_info=phase_info)

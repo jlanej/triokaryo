@@ -5,7 +5,7 @@
   triokaryo panel --vcfs a.vcf.gz b.vcf.gz ... --out panel.tsv        # or --runs 'out/*' from earlier runs
   triokaryo run ... --panel panel.tsv
   triokaryo gc-track --fasta ref.fa --out gc.tsv [--bin 1000000]
-  triokaryo mock --out mock_dir [--seed 1] [--no-events] [--xxy]
+  triokaryo mock --out mock_dir [--seed 1] [--no-events] [--xxy] [--contigs chr15,chr16,chr17 --sites-per-mb 1000 --low-share]
   triokaryo cohort --runs 'out/*' --out cohort [--events other_calls.tsv]
 """
 import argparse
@@ -81,7 +81,12 @@ def cmd_gc_track(a):
 
 def cmd_mock(a):
     from .mock import write_mock
-    paths = write_mock(a.out, seed=a.seed, sites_per_mb=a.sites_per_mb, no_events=a.no_events, xxy=a.xxy, prefix=a.prefix)
+    events = None
+    if a.low_share:
+        from .mock import LOW_SHARE_EVENTS
+        events = LOW_SHARE_EVENTS
+    paths = write_mock(a.out, seed=a.seed, sites_per_mb=a.sites_per_mb, no_events=a.no_events, xxy=a.xxy, prefix=a.prefix, events=events,
+                       contigs=a.contigs.split(",") if a.contigs else None)
     _log("mock trio -> %s" % paths["vcf"])
     return 0
 
@@ -108,8 +113,8 @@ def cmd_cohort(a):
                     setattr(ev, k, v if v is not None else float("nan"))
             ev.note = (e.get("note") or "")
             events.append(ev)
-    cols = ["trio", "sample", "role", "chrom", "start", "end", "span", "type", "f", "f_lrr", "f_baf", "lrr", "d_hat", "het_rate_rel", "mie_rate", "origin", "origin_llr",
-            "origin_n", "inheritance", "external", "note"]
+    cols = ["trio", "sample", "role", "chrom", "start", "end", "start_fine", "end_fine", "span", "type", "source", "f", "f_lrr", "f_baf", "f_phase", "lrr", "d_hat",
+            "phase_shift", "n_phased", "homologues", "het_rate_rel", "mie_rate", "origin", "origin_llr", "origin_n", "origin_phase", "inheritance", "external", "note"]
     rows = []
     for s in summaries:
         for e in s["events"]:
@@ -196,6 +201,8 @@ def main(argv=None):
     m.add_argument("--no-events", action="store_true")
     m.add_argument("--xxy", action="store_true", help="the child 47,XXY (two X copies, a male)")
     m.add_argument("--prefix", default="", help="a tag before the sample names KID, DAD, MOM (several mock trios in one cohort)")
+    m.add_argument("--contigs", default="", help="only these chromosomes, comma-separated (a dense small mock)")
+    m.add_argument("--low-share", action="store_true", help="plant the low-share events (under the depth's threshold) instead of the default ones")
     m.set_defaults(fn=cmd_mock)
     c = sub.add_parser("cohort", help="gather the runs of many trios; concordance with events from elsewhere")
     c.add_argument("--runs", nargs="+", required=True, help="run directories (globs)")

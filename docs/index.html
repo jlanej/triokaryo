@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>triokaryo</title>
+<meta name="description" content="Large chromosomal events in a trio, read from its VCF alone: depth, B-allele bands and transmission phasing give each event its type, share of cells, parent of origin, one homologue or two, and edges at site resolution. Shown on two public 1000 Genomes trios.">
+<style>
+:root{
+  --bg:#ffffff; --ink:#1b1b1f; --muted:#5d5f66; --line:#e3e4e8; --card:#f6f6f8; --accent:#0072B2;
+  --gain:#D55E00; --loss:#0072B2; --loh:#CC79A7; --mat:#CC79A7; --pat:#E69F00; --phased:#009E73; --trans:#D55E00; --untrans:#56B4E9; --depth:#444444; --baf:#9C9C9C;
+  --code:#f0f1f4;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --bg:#121317; --ink:#e8e8ec; --muted:#a3a5ad; --line:#2a2c33; --card:#1b1d23; --accent:#56B4E9; --code:#1f2128; }
+}
+:root[data-theme="dark"]{ --bg:#121317; --ink:#e8e8ec; --muted:#a3a5ad; --line:#2a2c33; --card:#1b1d23; --accent:#56B4E9; --code:#1f2128; }
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+.wrap{max-width:1100px;margin:0 auto;padding:0 16px}
+header.top{border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5}
+header.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;height:52px}
+header.top .brand{font-weight:700;letter-spacing:.2px}
+header.top nav a{margin-left:18px;color:var(--muted);font-size:14px}
+header.top nav a:hover{color:var(--ink)}
+.hero{padding:56px 0 28px}
+.hero h1{font-size:40px;line-height:1.1;margin:0 0 14px;letter-spacing:-.5px}
+.hero p.lead{font-size:19px;color:var(--muted);max-width:60ch;margin:0 0 22px}
+.hero .cta a{display:inline-block;padding:9px 14px;border:1px solid var(--line);border-radius:8px;margin:0 10px 10px 0;color:var(--ink);background:var(--card)}
+.hero .cta a.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.hero .cta a:hover{text-decoration:none;filter:brightness(1.05)}
+section{padding:34px 0;border-top:1px solid var(--line)}
+section h2{font-size:26px;margin:0 0 6px;letter-spacing:-.3px}
+section p.sub{color:var(--muted);margin:0 0 20px;max-width:70ch}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+@media (max-width:860px){.grid{grid-template-columns:1fr}.hero h1{font-size:32px}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.card img{display:block;width:100%;height:auto;background:#fff}
+.card .body{padding:14px 16px 16px}
+.card h3{margin:0 0 6px;font-size:18px}
+.card .meta{color:var(--muted);font-size:13px;margin-bottom:8px}
+.card ul{margin:8px 0 0 18px;padding:0}
+.card li{margin:4px 0}
+.card .links{margin-top:10px;font-size:14px}
+figure{margin:0}
+figure.wide{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:18px 0}
+figure.wide img{display:block;width:100%;height:auto;background:#fff}
+figcaption{padding:12px 16px;color:var(--muted);font-size:14px}
+.rows{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:16px}
+.row{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+.row b{display:block;margin-bottom:4px}
+.row span{font-size:14px;color:var(--muted)}
+.sw{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:6px}
+.key{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:6px 18px;font-size:14px;margin-top:14px}
+ol.steps{counter-reset:s;list-style:none;padding:0;margin:0;display:grid;grid-template-columns:1fr 1fr;gap:12px 22px}
+@media (max-width:860px){ol.steps{grid-template-columns:1fr}}
+ol.steps li{position:relative;padding-left:36px;margin:0}
+ol.steps li::before{counter-increment:s;content:counter(s);position:absolute;left:0;top:1px;width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center;font-weight:700}
+ol.steps li b{display:block}
+ol.steps li span{color:var(--muted);font-size:14px}
+pre{background:var(--code);border:1px solid var(--line);border-radius:10px;padding:12px 14px;overflow:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+p code,li code{background:var(--code);padding:1px 5px;border-radius:5px;font-size:92%}
+table{border-collapse:collapse;width:100%;font-size:14px;margin:12px 0}
+th,td{text-align:left;padding:7px 9px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:600}
+.note{background:var(--card);border-left:4px solid var(--phased);padding:10px 14px;border-radius:8px;margin:14px 0;font-size:15px}
+footer{padding:28px 0 48px;color:var(--muted);font-size:14px;border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+<header class="top"><div class="wrap">
+  <div class="brand">triokaryo</div>
+  <nav><a href="#example">Example</a><a href="#read">Reading the figures</a><a href="#method">Method</a><a href="#run">Run it</a><a href="https://github.com/jlanej/triokaryo">GitHub</a></nav>
+</div></header>
+
+<div class="wrap">
+<div class="hero">
+  <h1>Large chromosomal events in a trio,<br>read from its VCF alone.</h1>
+  <p class="lead">Depth, B-allele bands and transmission phasing from one trio VCF: every gain, loss, copy-neutral loss of heterozygosity and uniparental disomy, with its share of cells, its parent of origin, whether the parent's two copies are one homologue or two, and its edges at site resolution. No alignments, no array, no joint cohort call.</p>
+  <div class="cta">
+    <a class="primary" href="example/NA12739/index.html">Trio NA12739: a trisomy 12 and a mosaic father</a>
+    <a href="example/HG01103/index.html">Trio HG01103: mosaic losses of 2q and 14q</a>
+    <a href="example/cohort/index.html">Both, against NGS-DOSE and DRAGEN</a>
+  </div>
+</div>
+
+<section id="example">
+  <h2>Two public trios</h2>
+  <p class="sub">Illumina's DRAGEN 3.7.6 re-analysis of the 1000 Genomes high-coverage genomes (AWS Open Data), three per-sample VCFs merged into one trio VCF each. Nothing here was tuned to them; the events were known from NGS-DOSE's alignment-free karyotype and checked against DRAGEN's own CNV caller afterwards.</p>
+  <div class="grid">
+    <div class="card">
+      <a href="example/NA12739/figures/genome.png"><img src="example/NA12739/figures/genome.png" alt="Genome-wide tracks of trio NA12739" loading="lazy"></a>
+      <div class="body">
+        <h3>NA12739, a CEU trio (father NA12748, mother NA12749)</h3>
+        <div class="meta">Genome-wide: LRR with its step fit and the B-allele fraction with the phased fraction over it, per member; the child over the parents' mean; the child's maternal and paternal copies.</div>
+        <ul>
+          <li><b>Trisomy 12 in the child</b>, 96% of cells by depth, 95% by the phased bands. The extra copy is <b>paternal</b> (17,630 phased sites), and the two paternal copies are <b>one homologue</b> throughout: a mitotic duplication or a meiosis II error, not a meiosis I nondisjunction. Neither parent carries it. NGS-DOSE: 47,XY,+12; DRAGEN: CN 3 along the chromosome.</li>
+          <li><b>A gain of 13q in the father</b> from 88 Mb to the end in 69% of his cells, on the homologue he passed to the child (who did not inherit the gain). DRAGEN: CN 3. NGS-DOSE read 1.999 copies of chromosome 13 and missed it.</li>
+          <li><b>A loss of the end of 21q in the father</b>, 42.8 to 46.1 Mb, 59% of cells, found by the phased bands alone: four bins long, under the depth scan's five-bin floor. DRAGEN: CN 1 over 44.2 to 46.7 Mb.</li>
+          <li>A 12% gain of the first 5 Mb of chromosome 1 by depth, which the phased bands put at 4%: flagged as a likely GC artefact.</li>
+        </ul>
+        <div class="links"><a href="example/NA12739/index.html">The page</a> · <a href="example/NA12739/figures/chrom_chr12.png">chromosome 12</a> · <a href="example/NA12739/figures/chrom_chr21.png">chromosome 21</a> · <a href="example/NA12739/figures/chrom_chr13.png">chromosome 13</a></div>
+      </div>
+    </div>
+    <div class="card">
+      <a href="example/HG01103/figures/genome.png"><img src="example/HG01103/figures/genome.png" alt="Genome-wide tracks of trio HG01103" loading="lazy"></a>
+      <div class="body">
+        <h3>HG01103, a Puerto Rican trio (father HG01101, mother HG01102)</h3>
+        <div class="meta">The same eight rows. The child's chromosome 2 and 14 losses stand out in the depth, the phased fraction and the copies; the father's homozygous stretches are runs of homozygosity, not disomies.</div>
+        <ul>
+          <li><b>A loss of 2q from 141 to 173 Mb in 67% of the child's cells</b> (57% by the phased bands), then 173 to 180 Mb in 31%: the <b>paternal copy</b> is the one lost (4,060 phased sites). The edge at 173.16 Mb to site resolution. NGS-DOSE: −2(140–179)[0.68]; DRAGEN: CN 1 in four pieces.</li>
+          <li><b>A loss of 14q, 35 to 41 Mb, in 64% of cells</b>, again the paternal copy. DRAGEN: CN 1. Not in NGS-DOSE's karyotype.</li>
+          <li>Four homozygous stretches in the father and one in the mother read as <b>runs of homozygosity</b> (no heterozygous calls, no Mendelian errors, the phased fraction at one half), not uniparental disomies.</li>
+          <li>Two 10–14% gains by depth in the father (9q34, 19p13) that the phased bands put at 1–3%: flagged.</li>
+        </ul>
+        <div class="links"><a href="example/HG01103/index.html">The page</a> · <a href="example/HG01103/figures/chrom_chr2.png">chromosome 2</a> · <a href="example/HG01103/figures/chrom_chr14.png">chromosome 14</a></div>
+      </div>
+    </div>
+  </div>
+
+  <figure class="wide">
+    <a href="example/NA12739/figures/chrom_chr21.png"><img src="example/NA12739/figures/chrom_chr21.png" alt="Chromosome 21 of trio NA12739" loading="lazy"></a>
+    <figcaption><b>What the depth could not call.</b> Chromosome 21 of trio NA12739. In the father (middle column) the transmitted-allele fraction (row 3) steps from one half to 0.29 at 42.8 Mb and the copies (row 4) show the homologue he passed to the child dropping to 0.4 copies while the other stays at one: a mosaic loss of the end of 21q in 59% of his cells, on the transmitted homologue. The LRR (row 1) dips over the same four bins, too few for the depth scan. DRAGEN's CNV caller reads CN 1 there. The child's chromosome 21 (left) is intact: it received that homologue whole.</figcaption>
+  </figure>
+
+  <figure class="wide">
+    <a href="example/HG01103/figures/chrom_chr2.png"><img src="example/HG01103/figures/chrom_chr2.png" alt="Chromosome 2 of trio HG01103" loading="lazy"></a>
+    <figcaption><b>A mosaic loss with its parent named.</b> Chromosome 2 of trio HG01103. In the child (left) the raw B-allele fraction (row 2) parts into bands at 0.24 and 0.76 from 141 to 173 Mb with the mother's alleles (pink) on the upper band; the maternal-allele fraction (row 3) steps to 0.70 with its step fit; the copies (row 4) show the paternal copy (orange) falling to 0.35 while the maternal stays at one. Both parents are flat. The second step, 173 to 180 Mb at 31% of cells, is a subclone.</figcaption>
+  </figure>
+</section>
+
+<section id="read">
+  <h2>Reading the figures</h2>
+  <p class="sub">Each chromosome figure has five rows per member; the genome figure has the first two per member plus the within-family depth and the child's parental copies. The raw data stay in every figure: the smoothed tracks sit beside them, never instead of them.</p>
+  <div class="rows">
+    <div class="row"><b>1 · LRR</b><span>log<sub>2</sub> of each 1-Mb bin's median depth over the member's autosomal median, GC- and panel-corrected, with its step fit (black) and the calls as coloured lines. A gain of one copy in a share <i>f</i> of cells reads log<sub>2</sub>(1 + f/2).</span></div>
+    <div class="row"><b>2 · BAF</b><span>the raw alt-allele fraction at the member's heterozygous sites. In the child the sites where the parents are opposite homozygotes are coloured by the parent of the alt allele: under a gain the duplicated parent's allele sits at 2/3, under a loss the retained parent's at 1.</span></div>
+    <div class="row"><b>3 · phased fraction</b><span>the maternal allele's fraction along the child, the transmitted allele's along a parent: every phased site (faint), pooled windows (green, hollow where parted in everyone) and the step fit. One half where the homologues are equal; 1/2 ± d along an event, the sign the parent of origin. Thin lines: the auxiliary tracks that leave the main one where the child carries two different homologues of one parent.</span></div>
+    <div class="row"><b>4 · copies</b><span>the LRR step fit's copies split by the fraction's: maternal and paternal along the child, passed and not passed along a parent. A trisomy's extra copy, a deletion's missing one, a disomy's two from one parent, each with its parent named.</span></div>
+    <div class="row"><b>5 · het rate</b><span>heterozygous calls per confident call, per bin: zero under a loss of heterozygosity in every cell.</span></div>
+  </div>
+  <div class="key">
+    <div><span class="sw" style="background:var(--depth)"></span>LRR per bin</div>
+    <div><span class="sw" style="background:var(--baf)"></span>raw B-allele fraction</div>
+    <div><span class="sw" style="background:var(--phased)"></span>phased fraction, pooled by window</div>
+    <div><span class="sw" style="background:#000"></span>step fit (total-variation denoising)</div>
+    <div><span class="sw" style="background:var(--gain)"></span>a called gain</div>
+    <div><span class="sw" style="background:var(--loss)"></span>a called loss</div>
+    <div><span class="sw" style="background:var(--loh)"></span>a called copy-neutral LOH or heterodisomy (at zero)</div>
+    <div><span class="sw" style="background:var(--mat)"></span>the mother's alleles, the maternal copies, the track that parts under two maternal homologues</div>
+    <div><span class="sw" style="background:var(--pat)"></span>the father's alleles, the paternal copies, the track that parts under two paternal homologues</div>
+    <div><span class="sw" style="background:var(--trans)"></span>a parent's copies of the homologue passed to the child</div>
+    <div><span class="sw" style="background:var(--untrans)"></span>a parent's copies of the other homologue; a parent's auxiliary track</div>
+  </div>
+</section>
+
+<section id="method">
+  <h2>The method</h2>
+  <p class="sub">One pass over the PASS biallelic SNVs of a trio VCF (GATK joint calls, or per-sample calls merged with <code>bcftools merge -0</code>). Three signals, one reading.</p>
+  <ol class="steps">
+    <li><b>Depth → LRR</b><span>per 1-Mb bin, the median depth over the member's autosomal median; a reference panel of other genomes called the same way takes out the reference's own depth structure (centromere flanks, segmental duplications); a running median against GC takes out the rest. Segmented recursively; a gain or loss needs 10% of cells and five bins.</span></li>
+    <li><b>Bands → copy-neutral LOH</b><span>the deviation d of the heterozygous sites' alt fraction from one half, by a depth-aware maximum likelihood (not |BAF − ½|, which inflates at low depth), and the heterozygosity rate; a gain reads d = f/(2(2+f)), a loss f/(2(2−f)), an LOH f/2: the share of cells a second time, independently of the depth.</span></li>
+    <li><b>Transmission phasing</b><span>wherever the parents are opposite homozygotes the child's alleles have known parents; wherever the child is homozygous a parent's transmitted allele is known. The signed, pooled fraction is read without the folding bias, fitted by exact total-variation denoising, and scanned for what the depth cannot see: a gain or loss in a few per cent of cells, a uniparental heterodisomy.</span></li>
+    <li><b>One homologue or two</b><span>the sites where only one parent is homozygous phase the child too, but read the wrong way wherever the child carries two different homologues of one parent. Drawn as auxiliary tracks, they part from the main one along a meiotic trisomy or heterodisomy and return at each crossover: meiotic against mitotic, with the crossovers mapped.</span></li>
+    <li><b>The trio reading</b><span>inheritance (the same event in a parent), the parent of origin two ways (a likelihood ratio over the opposite-homozygote sites, and the phased sign), the Mendelian-error rate (a run of homozygosity has none, a uniparental isodisomy has them at every informative site), the edges at site resolution.</span></li>
+    <li><b>The checks</b><span>a window parted in two or more members is paralogy, not an event; a phased find needs 2 Mb, a consistent run of windows and a 6% share; a depth call whose phased share is under half of it is flagged as a likely artefact; given events (NGS-DOSE, DRAGEN, a clinical karyotype) are matched and the concordance tabulated.</span></li>
+  </ol>
+  <div class="note">The method and every threshold are in <a href="https://github.com/jlanej/triokaryo/blob/main/docs/METHODS.md">METHODS.md</a>; every column of every table in <a href="https://github.com/jlanej/triokaryo/blob/main/docs/OUTPUT.md">OUTPUT.md</a>. A mock trio with planted events (a maternal meiotic trisomy, a paternal mitotic mosaic, a heterodisomy, an isodisomy, an inherited deletion, an 8% gain under the depth's threshold) is the test bed: <code>triokaryo mock</code>.</div>
+</section>
+
+<section id="run">
+  <h2>Run it</h2>
+  <p class="sub">Python 3.9 or later with pysam, numpy and matplotlib; or the container.</p>
+<pre><code>pip install git+https://github.com/jlanej/triokaryo
+triokaryo run --vcf trio.vcf.gz --pedigree trios.tsv --child KID --out out/KID \
+    --panel 1kg-dragen --events other_calls.tsv --gc-track gc.tsv
+triokaryo cohort --runs 'out/*' --out cohort --events other_calls.tsv</code></pre>
+  <p><code>--panel 1kg-dragen</code> is the shipped panel of twelve public 1000 Genomes genomes called by DRAGEN; for another pipeline build one from that cohort (<code>triokaryo panel --vcfs ...</code>, or from a first pass's <code>bins.tsv</code> files with <code>--runs</code>). Without a panel the reference's own depth structure reads as events. The two trios above reproduce with <a href="https://github.com/jlanej/triokaryo/blob/main/docs/example/fetch_1kg_trio.sh">docs/example/fetch_1kg_trio.sh</a>.</p>
+  <table>
+    <tr><th>output</th><th>what it holds</th></tr>
+    <tr><td><code>index.html</code></td><td>the trio's page: events, the given events and their matches, every figure with its caption and key</td></tr>
+    <tr><td><code>events.tsv</code></td><td>one row per event: type, source (depth, bands, phased), share of cells three ways, parent of origin two ways, one homologue or two, edges at site resolution, inheritance, Mendelian errors, notes</td></tr>
+    <tr><td><code>phased.tsv</code>, <code>bins.tsv</code></td><td>every window of the phased tracks (fraction, step fit, copies, auxiliary tracks); every bin of the depth tracks</td></tr>
+    <tr><td><code>figures/</code></td><td>PNG, SVG and PDF with no legend or title in the image: a sidecar with title, caption and key, and a legend image, beside each</td></tr>
+    <tr><td><code>cohort/</code></td><td>all trios' events, the concordance with the given events, a page linking every trio's</td></tr>
+  </table>
+</section>
+
+<footer><div class="wrap" style="padding:0">
+  triokaryo · MIT license · <a href="https://github.com/jlanej/triokaryo">github.com/jlanej/triokaryo</a><br>
+  The example genomes are the 1000 Genomes Project's, from Illumina's public DRAGEN 3.7.6 re-analysis on AWS Open Data (bucket <code>1000genomes-dragen</code>); the alignment-free karyotype is NGS-DOSE's. Only summaries of these public genomes are in the repository; no sequence data.
+</div></footer>
+</div>
+</body>
+</html>

@@ -1,3 +1,3 @@
 trio	members	sexes	sites_used	records	mie_rate_genome	x_copies	seconds	n_events	run
-HG01103	HG01103,HG01101,HG01102	F,M,F	5927596	6003641	0.01085	{"child": 2, "father": 1, "mother": 2}	62.1	11	docs/example/HG01103
-NA12739	NA12739,NA12748,NA12749	M,M,F	5446523	5516159	0.01041	{"child": 1, "father": 1, "mother": 2}	53.2	3	docs/example/NA12739
+HG01103	HG01103,HG01101,HG01102	F,M,F	5927596	6003641	0.01085	{"child": 2, "father": 1, "mother": 2}	71.5	10	docs/example/HG01103
+NA12739	NA12739,NA12748,NA12749	M,M,F	5446523	5516159	0.01041	{"child": 1, "father": 1, "mother": 2}	59.7	4	docs/example/NA12739

@@ -7,8 +7,9 @@ import numpy as np
 
 from .model import MEMBERS, NA
 
-EVENT_COLS = ("sample", "role", "chrom", "start", "end", "span", "type", "f", "f_lrr", "f_baf", "lrr", "lrr_se", "n_bins", "d_hat", "llr_baf", "het_rate",
-              "het_rate_rel", "n_het", "n_called", "mie_rate", "origin", "origin_llr", "origin_n", "inheritance", "external", "note")
+EVENT_COLS = ("sample", "role", "chrom", "start", "end", "span", "type", "source", "f", "f_lrr", "f_baf", "f_phase", "lrr", "lrr_se", "n_bins", "d_hat", "llr_baf",
+              "phase_shift", "phase_se", "n_phased", "homologues", "hetero_share", "start_fine", "end_fine", "edge_sites", "het_rate", "het_rate_rel", "n_het", "n_called", "mie_rate", "origin",
+              "origin_llr", "origin_n", "origin_phase", "inheritance", "external", "note")
 
 
 def fmt(x, nd=4):
@@ -30,8 +31,27 @@ def write_tsv(path, cols, rows):
             fh.write("\t".join(fmt(r.get(c)) for c in cols) + "\n")
 
 
-def write_tables(out, trio, bins, events, x_copies, scan, base_mie, params):
+PHASED_COLS = ("role", "chrom", "start", "end", "mid", "n_sites", "depth", "frac", "se", "shared", "step", "lrr", "copies_tagged", "copies_other",
+               "aux_mother_hom", "aux_mother_hom_sites", "aux_father_hom", "aux_father_hom_sites", "aux_child_het", "aux_child_het_sites")
+
+
+def write_tables(out, trio, bins, events, x_copies, scan, base_mie, params, tracks=None, phase_info=None, rejected=None):
     os.makedirs(out, exist_ok=True)
+    if rejected is not None:
+        write_tsv(os.path.join(out, "phased_rejected.tsv"), ["sample", "role", "chrom", "start", "end", "shift", "windows", "reason"], rejected)
+    if tracks:
+        rows = []
+        for m, role in enumerate(MEMBERS):
+            for c, t in tracks[m].items():
+                for i in range(len(t.w_mid)):
+                    r = dict(role=role, chrom=c, start=int(t.w_start[i]), end=int(t.w_end[i]), mid=int(t.w_mid[i]), n_sites=int(t.w_n[i]), depth=int(t.w_dp[i]),
+                             frac=t.w_frac[i], se=t.w_se[i], shared=bool(t.w_shared[i]) if t.w_shared is not None else False, step=t.w_step[i], lrr=t.w_lrr[i],
+                             copies_tagged=t.w_copies_tag[i], copies_other=t.w_copies_other[i])
+                    for k, (af, an) in t.aux.items():
+                        r["aux_%s" % k] = af[i]
+                        r["aux_%s_sites" % k] = int(an[i])
+                    rows.append(r)
+        write_tsv(os.path.join(out, "phased.tsv"), list(PHASED_COLS), rows)
     rows = []
     for i in range(bins.n):
         r = dict(chrom=bins.chrom[i], start=int(bins.start[i]), end=int(bins.end[i]), gc=bins.gc[i], child_vs_mid=bins.child_vs_mid[i],
@@ -64,6 +84,12 @@ def write_tables(out, trio, bins, events, x_copies, scan, base_mie, params):
         summ["%s_x_check" % role] = ("" if not sex or not np.isfinite(xc) else "agrees" if (sex == "M" and xc == 1) or (sex == "F" and xc == 2)
                                      else "X copies %d in a reported %s" % (int(xc), "male (47,XXY or an XX male?)" if sex == "M" else "female (45,X?)"))
         summ["%s_depth" % role] = float(np.nanmedian(bins.depth[m][bins.autosomal])) if np.isfinite(bins.depth[m][bins.autosomal]).any() else NA
+        if phase_info and role in phase_info:
+            summ["%s_phased_sites" % role] = phase_info[role]["n_phased"]
+            summ["%s_window_sites" % role] = phase_info[role]["window_sites"]
+            summ["%s_ref_bias" % role] = phase_info[role]["ref_bias"]
+            summ["%s_phased_finds" % role] = sum(1 for e in ev if e.source == "phased")
+            summ["%s_windows_shared" % role] = phase_info[role].get("windows_shared", 0)
     summ.update({"param_" + k: v for k, v in params.items()})
     write_tsv(os.path.join(out, "summary.tsv"), list(summ.keys()), [summ])
     return summ
@@ -99,8 +125,8 @@ def write_html(out, trio, figs, events, summ, external, mock_note=""):
                  summ["father_x_check"], fmt(summ["mother_x_copies"]), summ["mother_x_check"])))
     w.append("<h2>Events</h2>")
     if events:
-        w.append(_table(["role", "chrom", "span", "start", "end", "type", "f", "f_lrr", "f_baf", "lrr", "d_hat", "het_rate_rel", "mie_rate", "origin", "origin_llr",
-                         "origin_n", "inheritance", "external", "note"], [e.as_dict() for e in events]))
+        w.append(_table(["role", "chrom", "span", "start", "end", "start_fine", "end_fine", "type", "source", "f", "f_lrr", "f_baf", "f_phase", "lrr", "d_hat", "phase_shift",
+                         "n_phased", "homologues", "het_rate_rel", "mie_rate", "origin", "origin_llr", "origin_n", "origin_phase", "inheritance", "external", "note"], [e.as_dict() for e in events]))
     else:
         w.append("<p>No event called.</p>")
     if external:
@@ -115,7 +141,12 @@ def write_html(out, trio, figs, events, summ, external, mock_note=""):
              "a loss to (1-f)/(2-f) and 1/(2-f), a copy-neutral loss of heterozygosity to (1-f)/2 and (1+f)/2 - f estimated from the bands independently "
              "of the depth (f_baf beside f_lrr). The heterozygosity rate falls to zero under a loss of heterozygosity in every cell. Parent of origin: at "
              "sites where the parents are opposite homozygotes the child's alleles have known parents, and the alt fraction says whose copy is extra, lost "
-             "or doubled. Inheritance: the same event in a parent. Every number is in events.tsv and bins.tsv beside this page.</p>")
+             "or doubled. Phased: at every heterozygous site where at least one parent is homozygous the child's alleles have known parents (and at a parent's, "
+             "where the child or the other parent is, the allele passed to the child is known); the fraction of the maternal allele along the child, of the "
+             "transmitted allele along a parent, sits at 1/2 + d or 1/2 - d along an event - the sign is the parent of origin (phase_shift, f_phase, origin_phase), "
+             "the pooled sites give the edges at site resolution (start_fine, end_fine), and the LRR's copies split by the fraction are the maternal and "
+             "paternal copies. Source: depth (the LRR), bands (the folded bands or the heterozygosity rate), phased (a shift of the phased track the depth did "
+             "not call: a few per cent of cells). Inheritance: the same event in a parent. Every number is in events.tsv, bins.tsv and phased.tsv beside this page.</p>")
     w.append("</body></html>")
     with open(os.path.join(out, "index.html"), "w") as fh:
         fh.write("\n".join(w))

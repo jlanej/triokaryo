@@ -25,6 +25,22 @@ pages are [NA12739](docs/example/NA12739/index.html), [HG01103](docs/example/HG0
 [cohort](docs/example/cohort/index.html) (self-contained pages: open them from a clone, GitHub shows their
 source); the recipe reproduces them.
 
+## The phased bands
+
+The B-allele fraction's noise is binomial and cannot be smoothed away site by site, but the trio gives it a sign.
+Wherever the parents are opposite homozygotes the child's two alleles have known parents, and the fraction of the
+mother's allele - the maternal fraction - sits at one half along a normal chromosome, at 1/2 + d or 1/2 − d along
+an event by the parent of origin, at 1 where no paternal copy is left. Along a parent, the fraction of the allele
+passed to the child (read where the child is homozygous) says whether an event lies on the homologue the child got.
+Pooled over windows and fitted by total-variation denoising, this signed track is the clean reading the folded bands
+cannot give; the LRR's copies split by it are the maternal and paternal copies along the child's genome (a trisomy's
+extra copy, a deletion's missing one, a disomy's two from one parent, each with its parent named). The sites where
+only one parent is homozygous phase the child too, but read the wrong way wherever the child carries two different
+homologues of one parent - so they are drawn as auxiliary tracks that part from the main one along a meiotic
+trisomy or heterodisomy and return at each crossover, which tells a meiotic error from a mitotic one. A scan of the
+main track finds what the depth cannot: a gain or loss in a few per cent of cells, and a uniparental heterodisomy.
+The raw B-allele fraction stays in every figure beside it.
+
 ## Install
 
 ```bash
@@ -96,22 +112,26 @@ mosaic do not.
 
 ## Output (per trio, under `--out`)
 
-- `events.tsv` — one row per event: sample, role, chrom, start, end, span, type, `f` (the depth's where there is
-  one, else the bands'), `f_lrr`, `f_baf`, `lrr`, `d_hat`, `llr_baf`, `het_rate`, `het_rate_rel`, `mie_rate`,
-  `origin`, `origin_llr`, `origin_n`, `inheritance`, `external` (the given events it overlaps), `note` (an LOH in
-  every cell with no Mendelian errors is a run of homozygosity, with them a uniparental isodisomy; pieces joined
-  across a masked gap).
+- `events.tsv` — one row per event: sample, role, chrom, start, end, span, type (gain, loss, LOH, UPD), `source`
+  (depth, bands, phased), `f` (the depth's where there is one, else the bands'), `f_lrr`, `f_baf`, `f_phase`,
+  `lrr`, `d_hat`, `llr_baf`, `phase_shift`, `n_phased`, `homologues` (one or two, for a child's gain or disomy),
+  `start_fine`, `end_fine` (the edges at site resolution), `het_rate`, `het_rate_rel`, `mie_rate`, `origin`,
+  `origin_phase`, `inheritance`, `external` (the given events it overlaps), `note` (an LOH in every cell with no
+  Mendelian errors is a run of homozygosity, with them a uniparental isodisomy; pieces joined across a masked gap;
+  the phased share against the depth's).
+- `phased.tsv` — the pooled windows of each member's phased track (fraction, error, step fit, copies, the auxiliary
+  tracks); `phased_rejected.tsv` the scan's segments set aside, with the reason.
 - `bins.tsv` — every bin: GC, the panel's median, spread and masks, and per member the depth, LRR, GC- and
   panel-corrected LRR, calls, heterozygous calls, het rate (and relative to the panel), band deviation; the two
   within-trio tracks.
 - `summary.tsv`, `summary.json` — the trio, the sites used, the X copies per member with the sex check, the
   genome's Mendelian-error rate, the event counts, the parameters.
 - `external.tsv` — the given events (`--events`) and whether a triokaryo event matched each.
-- `figures/` — `genome` (LRR and BAF per member, the child over the parents' mean, the calls, the given events)
-  and `chrom_<chrom>` for every chromosome with an event (LRR, BAF with the informative sites coloured by the
-  parent of the alt allele, het rate; three members side by side); each as PNG, SVG and PDF, with **no legend and
-  no title in the image**: a sidecar `.txt` (title, caption, key) and `legends/<name>_legend.{png,svg,pdf}` go
-  beside it.
+- `figures/` — `genome` (LRR with its step fit and BAF with the pooled phased fraction per member, the child over
+  the parents' mean, the child's maternal and paternal copies, the calls, the given events) and `chrom_<chrom>` for
+  every chromosome with an event (per member: LRR with its step fit and calls, the raw BAF with the informative sites
+  coloured by parent, the phased fraction with its windows, step fit and auxiliary tracks, the two homologues' copies,
+  the het rate), each with a `.txt` sidecar (title, caption, key) and `legends/<name>_legend.*`.
 - `index.html` — self-contained: the events, the given events, every figure with its caption and key.
 
 `triokaryo cohort` writes `events.all.tsv`, `summary.all.tsv`, `concordance.tsv` (each given event: matched or

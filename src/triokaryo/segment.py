@@ -46,6 +46,17 @@ class Event:
     inheritance: str = ""
     external: str = ""
     note: str = ""
+    source: str = "depth"       # depth (LRR), bands (the folded bands / the heterozygosity rate), phased (the phased scan)
+    phase_shift: float = NA     # the phased fraction's shift from one half over the event (child: maternal allele; parent: transmitted allele)
+    phase_se: float = NA
+    n_phased: int = 0
+    f_phase: float = NA         # the share of cells from the phased shift
+    origin_phase: str = ""      # what the sign says
+    start_fine: float = NA      # the edges at site resolution, from the phased sites
+    end_fine: float = NA
+    edge_sites: int = 0
+    homologues: str = ""        # a child's gain, LOH or heterodisomy: the parent's two copies one homologue or two (the auxiliary track)
+    hetero_share: float = NA    # the share of the event's windows where they differ
 
     @property
     def f(self):
@@ -308,13 +319,13 @@ def call_member(bins, scan, m, sample, genome, params=None, sex=""):
                 silent = np.isfinite(rel) and rel <= P["het_rel"] and st.get("n_called", 0) >= max(40, 2 * min_called)
                 if not (banded or silent):
                     continue
-                f_b = f_from_d(d, "LOH") if banded else 1.0
+                f_b = 1.0 if silent else f_from_d(d, "LOH")            # no heterozygous calls: in every cell, whatever the few bands left say
                 if f_b < P["min_f"]:
                     continue
                 ev = Event(sample, role, chrom, lo, hi, span_of(chrom, lo, hi, starts, genome, P["span_frac"]), "LOH", lrr=float(np.mean(y[a:b])),
                            lrr_se=float(sd / np.sqrt(b - a)), n_bins=int(b - a), d_hat=d, llr_baf=st.get("llr_baf", NA), f_baf=f_b,
-                           het_rate=st.get("het_rate", NA), het_rate_rel=rel, n_het=st.get("n_het", 0), n_called=st.get("n_called", 0),
-                           note="no heterozygous calls: in every cell (a uniparental disomy, or a deletion the depth missed)" if silent and not banded else "")
+                           het_rate=st.get("het_rate", NA), het_rate_rel=rel, n_het=st.get("n_het", 0), n_called=st.get("n_called", 0), source="bands",
+                           note="no heterozygous calls: in every cell (a uniparental disomy, or a deletion the depth missed)" if silent else "")
                 events.append(ev)
                 covered[a:b] = True
     return join_pieces(events, bins, genome, frac=P["span_frac"]), x_copies

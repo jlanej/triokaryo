@@ -29,6 +29,12 @@ DEFAULT_EVENTS = [
     dict(member=MOM, chrom="chr8", start=0, end=None, f=0.15, delta={"h0": +1}, label="mosaic +8 in the mother (15% of cells)", type="gain", origin="", inherited=False),
     dict(member=DAD, chrom="chr2", start=100_000_000, end=106_000_000, f=1.0, delta={"h1": -1}, label="6-Mb deletion in the father, constitutional", type="loss", origin="", inherited=False),
     dict(member=KID, chrom="chr2", start=100_000_000, end=106_000_000, f=1.0, delta={"pat": -1}, label="the father's 6-Mb deletion, inherited", type="loss", origin="paternal copy lost", inherited=True),
+    dict(member=KID, chrom="chr15", start=0, end=None, f=1.0, delta={"pat": -1, "mat_other": +1}, label="maternal heterodisomy 15 (UPD, both maternal homologues, no paternal copy): the depth, the folded bands and the heterozygosity rate all flat", type="UPD", origin="both copies maternal (heterodisomy)", inherited=False),
+]
+# a share under the depth's threshold, for a dense mock (the phased scan needs the sites a real genome has: triokaryo mock --sites-per-mb 1000 --contigs chr15,chr16,chr17 --low-share)
+LOW_SHARE_EVENTS = [
+    dict(member=KID, chrom="chr16", start=0, end=None, f=0.08, delta={"pat": +1}, label="mosaic +16 (8% of cells), paternal homologue duplicated: under the depth's threshold, the phased bands' find", type="gain", origin="extra copy paternal", inherited=False),
+    dict(member=MOM, chrom="chr16", start=0, end=36_800_000, f=0.08, delta={"h0": -1}, label="mosaic loss of 16p in the mother (8% of cells)", type="loss", origin="", inherited=False),
 ]
 GC_CHROM = {"chr1": 0.0, "chr4": -0.03, "chr13": -0.025, "chr16": 0.03, "chr17": 0.04, "chr19": 0.07, "chr20": 0.02, "chr22": 0.06, "chrX": -0.02}
 
@@ -43,8 +49,9 @@ def _gt(alt, dp):
 
 
 def write_mock(out_dir, seed=1, sites_per_mb=60, no_events=False, xxy=False, depth=(30.0, 32.0, 28.0), gc_beta=(-0.8, -0.5, -1.0), bin_size=1_000_000,
-               events=None, prefix=""):
-    """prefix: a tag before the sample names (KID, DAD, MOM), so that several mock trios can sit in one cohort."""
+               events=None, prefix="", contigs=None):
+    """prefix: a tag before the sample names (KID, DAD, MOM), so that several mock trios can sit in one cohort.
+    contigs: only these chromosomes (a dense small mock), else all."""
     os.makedirs(out_dir, exist_ok=True)
     nm = {KID: prefix + KID, DAD: prefix + DAD, MOM: prefix + MOM}
     rng = np.random.default_rng(seed)
@@ -76,7 +83,7 @@ def write_mock(out_dir, seed=1, sites_per_mb=60, no_events=False, xxy=False, dep
                  '##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read depth">\n##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype quality">\n')
         fh.write("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t%s\t%s\t%s\n" % (nm[KID], nm[DAD], nm[MOM]))
         for c in G.chroms:
-            if c == "chrY":
+            if c == "chrY" or (contigs and c not in contigs):
                 continue
             L = G.length[c]
             n = int(round(L / 1e6 * sites_per_mb))
@@ -156,8 +163,8 @@ def write_mock(out_dir, seed=1, sites_per_mb=60, no_events=False, xxy=False, dep
     with open(os.path.join(out_dir, "events.external.tsv"), "w") as fh:
         fh.write("sample\tchrom\tspan\tstart_mb\tend_mb\tlabel\tkind\n")
         for ev in truth["events"]:
-            if ev["type"] == "LOH":
-                continue                                           # a depth tool cannot see a copy-neutral event
+            if ev["type"] in ("LOH", "UPD") or ev["f"] < 0.10:
+                continue                                           # a depth tool cannot see a copy-neutral event, nor a share under 10%
             L = G.length[ev["chrom"]]
             pe = G.p_end[ev["chrom"]]
             span = "whole" if ev["start"] == 0 and ev["end"] == L else "q" if ev["start"] == pe and ev["end"] == L else "p" if ev["start"] == 0 and ev["end"] == pe else "stretch"
