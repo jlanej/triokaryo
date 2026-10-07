@@ -47,6 +47,15 @@ ordered by expected value; "done" items are kept for the record with the commit 
 - For events with both copies from one parent (heterodisomy, maternal XXY) the homologue reading uses the auxiliary track at
   any confident child call (0 or 1 where the copies are one homologue), so a mosaic maternal XXY is staged from about 15%.
 - `triokaryo batch`: every trio of a pedigree in parallel, from a joint VCF or per-trio VCFs, then the cohort report.
+- The shipped panel rebuilt from the twelve 1000 Genomes DRAGEN VCFs on the current conventions (trimmed-mean bin depth,
+  the one-unit X and Y shifts) and the two example trios re-run on it. The re-run exposed three classes of depth artefact at
+  the detection floor, each now handled: bins where the panel's genomes disagree by more than the smallest reportable
+  event are masked (robust SD above 0.10, down from 0.25: pericentromeres, 22q11, Xq28); single-bin spikes (germline CNVs,
+  collapsed repeats) are smoothed before segmentation as in circular binary segmentation; and a 1-Mb GRCh38 GC track is
+  shipped and applied by default, removing each library's own GC bias beyond the panel's (a 10% residual over 5p, 16p, 19p).
+- A parent's phased shift is read folded onto the sign runs of its windows: the transmitted homologue switches at the
+  child's crossovers in that parent's meiosis, so a parent's event spanning one no longer cancels or fragments, and the
+  crossovers are reported (`crossovers`, `crossover_states`, `crossovers.tsv`); `triokaryo mock --switch` plants them.
 
 ## Method
 
@@ -73,9 +82,14 @@ ordered by expected value; "done" items are kept for the record with the commit 
 
 - **Y segmental events.** The Y is analysed only as a whole chromosome (copy number, mosaic loss); segmental Y events
   would need a male-only panel with Y bins aligned to one copy and a mappability-aware bin mask.
-- **Rebuild the shipped panel** from the twelve VCFs when they are next available: it predates the diploid-scale Y
-  convention (its Y rows are lifted by one unit at load time), the one-unit X shift and the trimmed-mean bin depth
-  (differences under 2%), and has only five males.
+- **A whole-chromosome mosaic below both floors.** The mother of NA12739 reads 1.94 X copies and a folded phased shift
+  of about 0.012 along the whole X (a loss of one X in about 6% of her cells, with the sign flipping at the son's maternal
+  crossovers), below the depth's 10% floor and at the phased scan's 6% one, which reports only the two blocks that exceed
+  it. A test combining the two sub-threshold whole-chromosome readings when they agree would report it as one whole-X
+  event, with an empirical null for the folded shift.
+- **A phased mask from the panel.** Both mothers show a shift of +0.024 over Xq28 (150–156 Mb, segmental duplications);
+  the panel masks paralogy for the bands and the depth but not for the phased fraction. A per-bin phased deviation over
+  the panel's genomes would mask it.
 - **X inactivation and PAR.** The pseudoautosomal regions are excluded throughout; PAR1 could be analysed as autosomal
   (both parents contribute).
 

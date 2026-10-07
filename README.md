@@ -27,8 +27,10 @@ members with per-sample `GT`, `AD`, `DP` and `GQ`: a joint-called family VCF, or
 [`docs/example/`](docs/example/README.md) applies the method to public genomes (Illumina's DRAGEN 3.7.6 re-analysis
 of the 1000 Genomes high-coverage cohort) and compares the calls with NGS-DOSE's alignment-free karyotype and with
 DRAGEN's CNV calls. In trio NA12739: a trisomy 12 in the child (paternal extra copy, one homologue, 17,630 phased
-sites) and a mosaic gain of 13q in the father (69% of cells) that NGS-DOSE did not report. In trio HG01103: a mosaic
-loss of 2q (141–173 Mb, 67% of cells, paternal copy) with a subclonal extension to 180 Mb, and a mosaic loss of 14q.
+sites), a mosaic gain of 13q in the father (68% of cells, read across a crossover of the son's paternal chromosome 13
+at 112.7 Mb) that NGS-DOSE did not report, a mosaic loss of terminal 21q in the father found by the phased scan alone,
+and a loss of one X in about 5% of the mother's cells, below the floors. In trio HG01103: a mosaic loss of 2q
+(141–173 Mb, 67% of cells, paternal copy) with a subclonal extension to 180 Mb, and a mosaic loss of 14q.
 Pages: [NA12739](docs/example/NA12739/index.html), [HG01103](docs/example/HG01103/index.html), and the
 [cohort report](docs/example/cohort/index.html). They are self-contained HTML files; open them from a clone (GitHub
 displays their source). The fetch script in `docs/example/` reproduces them.
@@ -74,15 +76,14 @@ Python ≥ 3.9 with pysam, numpy and matplotlib.
 ## Quickstart
 
 ```bash
-# a GC track, once per reference and bin size (1 Mb)
-triokaryo gc-track --fasta GRCh38.fa --out gc.grch38.1mb.tsv
-
 # per-sample VCFs: one trio VCF of PASS biallelic SNVs (bcftools merge -0; needs bcftools)
 triokaryo merge --child kid.vcf.gz --father dad.vcf.gz --mother mom.vcf.gz --out family.vcf.gz
 
 # one trio: the VCF holds the three members; the trios file names them (#kid dad mom kid_sex dad_sex mom_sex)
-triokaryo run --vcf family.vcf.gz --pedigree trios.tsv --child KID --gc-track gc.grch38.1mb.tsv \
+triokaryo run --vcf family.vcf.gz --pedigree trios.tsv --child KID \
               --panel 1kg-dragen --events ngsdose/karyotype/events.tsv --out out/KID
+# the LRR is GC-corrected against the shipped 1-Mb GRCh38 track; for another reference or bin size build one
+# (triokaryo gc-track --fasta ref.fa --out gc.tsv, then --gc-track gc.tsv), or pass --gc-track none
 # or name the members directly
 triokaryo run --vcf family.vcf.gz --child KID --father DAD --mother MOM --sex M,M,F --out out/KID
 
@@ -115,7 +116,7 @@ need conversion to `AD`.
 
 | signal | definition | expected value under an event in a cell fraction *f* |
 | --- | --- | --- |
-| **LRR** | log2 of the bin's trimmed-mean depth (the central 60% of its sites) over the member's autosomal median, GC-corrected against a GC track by a running median | one-copy gain: log2(1 + f/2); one-copy loss: log2(1 − f/2) |
+| **LRR** | log2 of the bin's trimmed-mean depth (the central 60% of its sites) over the member's autosomal median, panel-corrected where a panel is given and GC-corrected by a running median against the shipped 1-Mb track; single-bin spikes smoothed before segmentation | one-copy gain: log2(1 + f/2); one-copy loss: log2(1 − f/2) |
 | **BAF** | alt-allele read fraction at the member's heterozygous sites | gain: bands at 1/(2+f) and (1+f)/(2+f) (1/3, 2/3 at f = 1); loss: (1−f)/(2−f) and 1/(2−f); CN-LOH: (1−f)/2 and (1+f)/2 |
 | **heterozygosity rate** | heterozygous calls over confident calls per bin | zero under a constitutional loss of heterozygosity (isodisomy, deletion, run of homozygosity); unchanged under trisomy |
 | **phased fraction** | fraction of reads carrying the maternal allele (child) or the transmitted allele (parent), at phased sites | 1/2 ± d with the sign giving the parent of origin; 1 where only one parent's copies are present |

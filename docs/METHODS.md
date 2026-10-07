@@ -32,18 +32,24 @@ with ≥ 20 sites.
 and log2 of the father's over the mother's, summarised per bin as the median over its sites (≥ 5 sites). They cancel
 site-level depth effects shared by the three libraries and are plotted, not segmented.
 
-**GC correction** (`--gc-track`; `triokaryo gc-track` writes each bin's GC fraction from the reference). Autosomal
-bins with ≥ 20 sites are sorted by GC and a running median over 41 bins gives the expected LRR at each GC value; it
-is subtracted from every bin by interpolation and the result is re-centred so the autosomal median is zero. The
-median is insensitive to the events themselves. The correction is skipped when fewer than 123 bins are available;
-without a track the LRR is used as it is.
+**GC correction** (`--gc-track`). A 1-Mb GC track of GRCh38 is shipped (`gc.hg38.1mb.tsv`, the GC fraction of each
+bin's non-N bases from the UCSC hg38 sequence) and used by default at that bin size; `triokaryo gc-track` writes one
+for another reference or bin size, and `--gc-track none` disables the correction. Autosomal bins with ≥ 20 sites are
+sorted by GC and a running median over 41 bins gives the expected LRR at each GC value; it is subtracted from every
+bin by interpolation and the result is re-centred so the autosomal median is zero. The median is insensitive to the
+events themselves. The correction is skipped when fewer than 123 bins are available. With a panel, the correction is
+applied to the panel-corrected LRR and removes the member's own GC bias beyond the panel's typical one: a library
+with a stronger bias than the panel's shows a residual of about 10% in GC-poor (5p) and GC-rich (16p, 19p) regions
+that the depth alone would call at the detection floor.
 
 **Reference panel** (`--panel`). `triokaryo panel` processes other genomes identically (per-sample or multi-sample
 VCFs, or earlier runs' `bins.tsv`) and records, per bin, the number of genomes, the median self-normalised LRR (each
 genome's X shifted to two copies by its own X median) and its robust SD (1.4826 × MAD), the median band deviation and
 the median heterozygosity rate. With a panel, each member's LRR is its self-normalised LRR minus the panel median,
-re-centred on the autosomes; bins with fewer than five genomes, no median, or a robust SD above 0.25 are masked and
-excluded from calling. The band deviation is read net of the panel's regional excess over its genome-wide median;
+re-centred on the autosomes; bins with fewer than five genomes, no median, or a robust SD above 0.10 are masked and
+excluded from calling: where the panel's genomes themselves spread by more than the LRR of the smallest reportable
+event (a 10% gain or loss shifts it by 0.07), a member's residual is not a copy change (pericentromeric and
+acrocentric bins, 22q11, the Xq28 and Yq12 repeats; about 3% of the bins of the shipped panel). The band deviation is read net of the panel's regional excess over its genome-wide median;
 bins whose panel band deviation exceeds that median by more than 0.03 (paralogous sequence) are excluded from the
 CN-LOH search and from the phased tracks; the heterozygosity rate is expressed relative to the panel's. GC
 correction, when requested, is applied to the panel-corrected LRR.
@@ -54,7 +60,11 @@ Per member and chromosome, over unmasked bins with ≥ 20 sites (`min_sites`). T
 first differences, divided by √2, but never below the counting noise of the bin depth (about 1.1 √(depth/sites) reads in
 log2 units: a uniform, deeply sampled genome has first differences that are mostly zero, and a robust scale of zero
 would disable the segmentation). The same floor applies to the depth's standard error in the phased scan's typing and
-to the step fit's penalty. Binary segmentation splits recursively at the position maximising
+to the step fit's penalty. Single-bin spikes are then smoothed as in circular binary segmentation (Olshen et al.
+2004): a bin farther than 4σ from every one of its two neighbours on each side is moved to their median plus 2σ on
+its own side. A germline copy-number variant of a few hundred kb, or a bin of collapsed repeats, deviates by far more
+than any mosaic and would otherwise drag the mean of the five-bin segment it falls in; a plateau of two bins or more
+has a neighbour at its own level and is untouched. Binary segmentation splits recursively at the position maximising
 |mean(left) − mean(right)| / (σ √(1/n_L + 1/n_R)) while the statistic is ≥ `--z` (5) and both sides hold ≥ `--min-len`
 (5) bins, to at most 20 segments per chromosome. Each boundary is then moved within ±4 bins to the position minimising
 the two adjacent segments' within-segment sums of squares, and adjacent segments whose means differ by less than
@@ -216,7 +226,15 @@ shift from 1/2 (`phase_shift`), its binomial error (`phase_se`) and the site cou
 |shift| by the band-deviation formulas above. With ≥ 40 sites and |shift| ≥ 3 SE, the sign gives `origin_phase`: for
 the child, the parent of the extra, lost or retained copy (for UPD, the parent of both copies); for a parent, whether
 the duplicated, lost or retained homologue is the transmitted one. A disagreement with the likelihood-based `origin`
-is noted. For a depth-called event with ≥ 500 phased sites, f_phase < f_lrr/2 (and lower by more than 0.05) is noted
+is noted. **A parent's event is read folded.** The transmitted homologue is defined by the child's genotype, so it
+changes at each of the child's crossovers in that parent's meiosis, and a parent's event spanning a crossover shifts
+the transmitted-allele fraction one way up to it and the other way beyond; pooled with its sign, the shift would
+cancel. The signs of the event's windows are smoothed into runs (a running majority over five windows, runs shorter
+than five absorbed by their neighbours, as for the homologue states), each site's shift is taken with the sign of its
+window's run, and the pooled folded shift gives f_phase. `origin_phase` then states the relation over the first run
+and the positions at which the transmitted homologue switches; these are the child's crossovers, written to
+`crossovers` and `crossover_states` (transmitted>untransmitted or the reverse: the side the event's homologue is on)
+and to `crossovers.tsv`. The edge refinement uses the same per-site folded shifts. For a depth-called event with ≥ 500 phased sites, f_phase < f_lrr/2 (and lower by more than 0.05) is noted
 as a possible depth artefact; f_phase > 1.5 f_lrr is also noted.
 
 **Boundaries at site resolution.** For each event boundary not at a chromosome end, the main-class sites within 1.5
@@ -226,9 +244,10 @@ that most reduces the squared error of a two-mean fit with the inside mean above
 the midpoint between the two sites flanking the split (`start_fine`, `end_fine`). `edge_sites` is the smaller of the
 two site counts used.
 
-**Phased scan.** On the main-class windows that lie outside the member's events and are not shared, the same binary
-segmentation as for the depth is run (z = 5, ≥ 8 windows per segment; a chromosome with fewer than 16 windows is one
-segment). A segment is reported when its mean shift is ≥ 0.015 (about 6% of cells for a gain or loss) and ≥ 5
+**Phased scan.** On the main-class windows that lie outside the member's events and are not shared (for a parent,
+folded onto the sign runs of the chromosome's windows as above, so that an event is not cut at the child's
+crossovers), the same binary segmentation as for the depth is run (z = 5, ≥ 8 windows per segment; a chromosome with
+fewer than 16 windows is one segment). A segment is reported when its mean shift is ≥ 0.015 (about 6% of cells for a gain or loss) and ≥ 5
 empirical standard errors, its median shift is ≥ 0.015 with the same sign, ≥ 75% of its windows share the sign of the
 mean, and it spans ≥ 2 Mb (a dense cluster of sites can fill many windows over a short distance). It is typed by the
 depth over its bins: a gain when the mean LRR is ≥ 3 SE above zero, a loss when ≥ 3 SE below; otherwise CN-LOH with

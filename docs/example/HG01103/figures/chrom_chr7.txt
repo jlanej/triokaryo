@@ -1,6 +1,6 @@
 title: Trio HG01103, chr7
 caption: chr7 in trio HG01103. Row 1: LRR per 1000-kb bin per member with its step fit and calls as lines (gain, loss; copy-neutral events at 0); supplied events as brackets. Row 2: BAF at each member's heterozygous sites; in the child, informative sites (parents opposite homozygotes) are coloured by the parent of the alt allele. Row 3: the phased fraction (maternal allele along the child at informative sites; transmitted allele along a parent where the child is homozygous) per site (faint), pooled by window, with its step fit: 1/2 with equal homologue copy, 1/2 +/- d along an event with the sign giving the parent of origin (Sign convention: in the child, a phased fraction below 1/2 means the paternal homologue is in excess (paternal gain or maternal loss) and above 1/2 the maternal homologue; in a parent, below 1/2 means the event lies on the untransmitted homologue and above 1/2 on the transmitted one.). Thin lines: the auxiliary tracks (child: sites where one parent is homozygous; parent: sites where the child is heterozygous), which depart from the main track where the child carries two different homologues of one parent; dashed vertical lines mark the crossovers where that state changes along a whole-chromosome event. Row 4: per-homologue copy number, the LRR-derived copy number split by the phased fraction (maternal and paternal in the child; transmitted and untransmitted in a parent). Row 5: heterozygosity rate per bin, zero under a constitutional loss of heterozygosity. Dashed line: centromere. Calls: mother: LOH stretch f 1.00.
-keys: depth,step,baf,mat,pat,psite,phased,aux_mat,aux_pat,aux_par,cmat,cpat,ctrans,cuntrans,gain,loss,loh,ext,ref
+keys: depth,step,baf,mat,pat,psite,phased,aux_mat,aux_pat,aux_par,xover,cmat,cpat,ctrans,cuntrans,gain,loss,loh,ext,ref
 key:
   #444444  filled circle  LRR per bin: log2 of the bin's trimmed-mean depth over the member's autosomal median (GC- and panel-corrected where applicable)
   #000000  line  step fit of the track (exact total-variation denoising)
@@ -12,6 +12,7 @@ key:
   #CC79A7  line  child's maternal fraction at sites where the father is homozygous and the mother heterozygous; departs from the main track where the child carries two different maternal homologues (maternal meiotic trisomy or heterodisomy) and rejoins it after a crossover
   #E69F00  line  the same at sites where the mother is homozygous and the father heterozygous; departs where the child carries two different paternal homologues
   #56B4E9  line  parent's transmitted-allele fraction at sites where the child is heterozygous and the other parent homozygous; departs from the main track where the child carries two different homologues of this parent
+  #000000  line  a crossover: where the auxiliary track's state (two different homologues, or one) changes along a whole-chromosome event (dashed vertical line)
   #CC79A7  line  child's maternal copy number: the LRR step fit's copy number (2 x 2^LRR) times the maternal fraction's step fit
   #E69F00  line  child's paternal copy number, likewise
   #D55E00  line  parent's copy number of the transmitted homologue, likewise

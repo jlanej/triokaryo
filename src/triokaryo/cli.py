@@ -1,6 +1,6 @@
 """triokaryo: large chromosomal events in a trio from its VCF.
 
-  triokaryo run --vcf trio.vcf.gz --pedigree trios.tsv --child KID --out out/KID [--gc-track gc.tsv] [--panel panel.tsv] [--events other_calls.tsv]
+  triokaryo run --vcf trio.vcf.gz --pedigree trios.tsv --child KID --out out/KID [--panel 1kg-dragen] [--gc-track gc.tsv|none] [--events other_calls.tsv]
   triokaryo run --vcf trio.vcf.gz --child KID --father DAD --mother MOM --sex M,M,F --out out/KID
   triokaryo merge --child kid.vcf.gz --father dad.vcf.gz --mother mom.vcf.gz --out trio.vcf.gz   # per-sample VCFs, with bcftools
   triokaryo panel --vcfs a.vcf.gz b.vcf.gz ... --out panel.tsv        # or --runs 'out/*' from earlier runs
@@ -26,6 +26,37 @@ def _log(s):
     print("[triokaryo] " + s, file=sys.stderr)
 
 
+BUILT_IN_PANELS = {"1kg-dragen": "panel.1kg_dragen_3.7.6.1mb.tsv"}
+BUILT_IN_GC_TRACKS = {"hg38": "gc.hg38.1mb.tsv", "grch38": "gc.hg38.1mb.tsv"}
+
+
+def _data_path(name):
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", name)
+
+
+def resolve_panel(panel):
+    """A panel file, or a built-in name."""
+    if panel and not os.path.exists(panel):
+        if panel in BUILT_IN_PANELS:
+            return _data_path(BUILT_IN_PANELS[panel])
+        sys.exit("no panel %s (a file, or one of: %s)" % (panel, ", ".join(BUILT_IN_PANELS)))
+    return panel
+
+
+def resolve_gc_track(gc_track, genome_name, bin_size):
+    """A GC track file, a built-in name ('hg38'), 'none', or, when not given, the shipped hg38 track where the genome and the
+    1-Mb bin match it (otherwise no correction: `triokaryo gc-track` writes one for another reference or bin)."""
+    if gc_track is None:
+        return _data_path(BUILT_IN_GC_TRACKS["hg38"]) if genome_name.lower() in BUILT_IN_GC_TRACKS and bin_size == 1_000_000 else None
+    if gc_track.lower() == "none":
+        return None
+    if os.path.exists(gc_track):
+        return gc_track
+    if gc_track.lower() in BUILT_IN_GC_TRACKS:
+        return _data_path(BUILT_IN_GC_TRACKS[gc_track.lower()])
+    sys.exit("no GC track %s (a file, 'hg38' for the shipped 1-Mb track, or 'none')" % gc_track)
+
+
 def cmd_run(a):
     from .pedigree import read_trios, trio_from_args
     from .pipeline import run_trio
@@ -43,12 +74,8 @@ def cmd_run(a):
             sys.exit("give --pedigree, or --child --father --mother")
         trio = trio_from_args(a.child, a.father, a.mother, a.sex)
     params = dict(min_abs=a.min_abs, z=a.z, min_len=a.min_len, min_f=a.min_f)
-    if a.panel and not os.path.exists(a.panel):
-        built_in = {"1kg-dragen": "panel.1kg_dragen_3.7.6.1mb.tsv"}
-        if a.panel in built_in:
-            a.panel = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", built_in[a.panel])
-        else:
-            sys.exit("no panel %s (a file, or one of: %s)" % (a.panel, ", ".join(built_in)))
+    a.panel = resolve_panel(a.panel)
+    a.gc_track = resolve_gc_track(a.gc_track, a.genome, a.bin)
     note = ""
     for p in (os.path.join(os.path.dirname(os.path.abspath(a.vcf)), "MOCK_DATA.txt"),):
         if os.path.exists(p):
@@ -103,8 +130,15 @@ def cmd_mock(a):
         from .mock import SEX_EVENTS
         events = (events or []) + SEX_EVENTS
     deficit = tuple(float(x) for x in a.sex_deficit.split(",")) if a.sex_deficit else (1.0, 1.0)
+    switches = {"mat": {}, "pat": {}}
+    for item in (x for x in a.switch.split(",") if x.strip()):
+        parts = item.split(":")
+        if len(parts) != 3 or parts[0] not in switches:
+            sys.exit("--switch: give mat:CHROM:POS or pat:CHROM:POS, comma-separated (got %r)" % item)
+        switches[parts[0]][parts[1]] = int(float(parts[2]))
     paths = write_mock(a.out, seed=a.seed, sites_per_mb=a.sites_per_mb, no_events=a.no_events, xxy=a.xxy, prefix=a.prefix, events=events,
-                       contigs=a.contigs.split(",") if a.contigs else None, child_sex=a.child_sex, xxx=a.xxx, sex_deficit=deficit)
+                       contigs=a.contigs.split(",") if a.contigs else None, child_sex=a.child_sex, xxx=a.xxx, sex_deficit=deficit,
+                       switch_maternal=switches["mat"] or None, switch_paternal=switches["pat"] or None)
     _log("mock trio -> %s" % paths["vcf"])
     return 0
 
@@ -132,14 +166,8 @@ def cmd_batch(a):
         sys.exit("no trio in %s" % a.pedigree)
     if not (a.vcf or a.vcf_pattern):
         sys.exit("give --vcf (one joint VCF) or --vcf-pattern (per-trio VCFs, e.g. 'vcfs/{kid}.vcf.gz')")
-    panel = a.panel
-    if panel and not os.path.exists(panel):
-        built_in = {"1kg-dragen": "panel.1kg_dragen_3.7.6.1mb.tsv"}
-        if panel in built_in:
-            panel = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", built_in[panel])
-        else:
-            sys.exit("no panel %s" % panel)
-    kw = dict(gc_track=a.gc_track, events_path=a.events, bin_size=a.bin, min_dp=a.min_dp, min_gq=a.min_gq, thin=a.thin, genome_name=a.genome,
+    panel = resolve_panel(a.panel)
+    kw = dict(gc_track=resolve_gc_track(a.gc_track, a.genome, a.bin), events_path=a.events, bin_size=a.bin, min_dp=a.min_dp, min_gq=a.min_gq, thin=a.thin, genome_name=a.genome,
               figures=not a.no_figures, panel=panel)
     jobs = []
     for t in trios:
@@ -223,7 +251,8 @@ def main(argv=None):
     r.add_argument("--mother")
     r.add_argument("--sex", default="", help="sexes of child,father,mother as M/F when the members are named directly, e.g. M,M,F")
     r.add_argument("--out", required=True)
-    r.add_argument("--gc-track", help="per-bin GC fraction (triokaryo gc-track); the LRR is GC-corrected against it")
+    r.add_argument("--gc-track", help="per-bin GC fraction the LRR is corrected against: a file (triokaryo gc-track), 'hg38' (the shipped 1-Mb track, "
+                                      "the default where the genome is GRCh38 and the bin 1 Mb), or 'none'")
     r.add_argument("--panel", help="reference panel (triokaryo panel): per-bin median LRR, band deviation and heterozygosity rate of other genomes, "
                                    "subtracted from each member's tracks; recommended on real data, where centromere flanks and segmental duplications "
                                    "are otherwise called as events. A file, or '1kg-dragen' (twelve public 1000 Genomes genomes called by DRAGEN 3.7.6, 1-Mb bins)")
@@ -270,6 +299,7 @@ def main(argv=None):
     m.add_argument("--meiosis", action="store_true", help="plant the meiotic-stage trisomies (meiosis I and II with a crossover, mitotic) on chr13, chr16, chr17; use with --contigs chr10,chr11,chr12,chr13,chr16,chr17")
     m.add_argument("--sex-chromosomes", action="store_true", help="plant the sex-chromosome mosaics: loss of Y in the father, 45,X/46,XX in the mother, 46,XY/47,XXY in the son")
     m.add_argument("--sex-deficit", default="", help="depth factors on the X and the Y imitating real data's mappability deficit, e.g. 0.93,0.90")
+    m.add_argument("--switch", default="", help="crossovers in the transmitted haplotypes, e.g. mat:chr8:70000000,pat:chr2:50000000: a parent's event changes sign there along the phased track")
     m.set_defaults(fn=cmd_mock)
     c = sub.add_parser("cohort", help="cohort report over many runs: counts, landscape figure, every event, per-trio metrics, concordance, guide")
     c.add_argument("--runs", nargs="+", required=True, help="run directories (globs)")
@@ -285,8 +315,8 @@ def main(argv=None):
     b.add_argument("--child", help="comma-separated children to run (default all)")
     b.add_argument("--jobs", type=int, default=1, help="parallel workers")
     b.add_argument("--cohort", help="write the cohort report over the finished trios into this directory")
-    b.add_argument("--gc-track")
-    b.add_argument("--panel")
+    b.add_argument("--gc-track", help="as for run: a file, 'hg38' (the default at 1 Mb on GRCh38) or 'none'")
+    b.add_argument("--panel", help="as for run: a file or '1kg-dragen'")
     b.add_argument("--events")
     b.add_argument("--bin", type=int, default=1_000_000)
     b.add_argument("--min-dp", type=int, default=8)

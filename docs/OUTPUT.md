@@ -17,9 +17,9 @@
 | d_hat, llr_baf | band deviation at the segment's heterozygous sites (maximum likelihood) and its log-likelihood ratio against d = 0; for a phased-scan event d_hat is the absolute phased shift and llr_baf is NA |
 | phase_shift, phase_se, n_phased | the phased fraction's shift from 1/2 over the event (maternal allele in the child, transmitted allele in a parent), its binomial error, and the site count |
 | origin, origin_llr, origin_n | parent of origin from the informative sites (child, autosomes), the log-likelihood ratio and the site count |
-| origin_phase | from the sign of the phased shift: the parent of the extra, lost or retained copy (child), or whether the event lies on the transmitted homologue (parent) |
+| origin_phase | from the sign of the phased shift: the parent of the extra, lost or retained copy (child), or whether the event lies on the transmitted homologue (parent; where the event spans one of the child's crossovers, over the first run, with the positions at which the transmitted homologue switches) |
 | homologues, hetero_share | for a child's gain, LOH or UPD with a parent named: whether that parent's two copies are one homologue or two, and the share of the event's windows in which they differ |
-| stage, centromere, n_crossovers, crossovers, crossover_states | for a child's whole-chromosome gain or heterodisomy with a parent named: the meiotic stage (meiosis I, meiosis II, or mitotic / meiosis II without a crossover) from the state of the two copies nearest the centromere, that centromeric state, and the crossovers as changes of state along the chromosome (positions in Mb; the state before and after each as hetero>iso or iso>hetero) |
+| stage, centromere, n_crossovers, crossovers, crossover_states | for a child's whole-chromosome gain or heterodisomy with a parent named: the meiotic stage (meiosis I, meiosis II, or mitotic / meiosis II without a crossover) from the state of the two copies nearest the centromere, that centromeric state, and the crossovers as changes of state along the chromosome (positions in Mb; the state before and after each as hetero>iso or iso>hetero). For a parent's event, the child's crossovers in that parent's meiosis within the event, as transmitted>untransmitted or the reverse (the side the event's homologue is on before and after) |
 | het_rate, het_rate_rel, n_het, n_called | heterozygosity rate in the segment, its ratio to the member's own (or to the panel's), and the counts |
 | mie_rate | Mendelian-error rate among the segment's confident sites (the genome-wide rate is in the summary) |
 | inheritance | child: inherited from the father / the mother, or new; parent: passed to the child or not |
@@ -42,9 +42,11 @@ implies; one copy expected on a male's X and on the Y) and `CF`.
 
 ## crossovers.tsv
 
-One row per crossover of the staged events (the child's whole-chromosome gains and heterodisomies): trio, sample, role, chrom,
-position (bp and Mb), the state before and after (heterodisomic, isodisomic), the event's type and cell fraction, its stage and
-the parent whose two copies are followed. The cohort gathers `crossovers.all.tsv`.
+One row per crossover of the events that carry them: the staged events (the child's whole-chromosome gains and
+heterodisomies) and a parent's events spanning one of the child's crossovers. Trio, sample, role, chrom, position (bp and
+Mb), the state before and after (heterodisomic or isodisomic for the child; transmitted or untransmitted, the side the
+event's homologue is on, for a parent), the event's type and cell fraction, its stage and, for the child, the parent whose
+two copies are followed. The cohort gathers `crossovers.all.tsv`.
 
 ## phased.tsv
 
@@ -73,7 +75,8 @@ values `x_copies_raw`, `y_copies_raw`), the sex-chromosome complement (`sex_kary
 pedigree sex (`sex_check`; `x_check` the X-only wording), the median autosomal depth, the phased-site count, the
 window size, the reference bias, the number of phased-scan events and of shared windows, and the ISCN-like karyotype
 string (`karyotype`; grammar in METHODS); the father/son Y depth ratio (`y_father_son_log2`, `y_father_son_sites`)
-and whether the panel carried Y rows (`y_panel`); the within-trio X correction applied without a panel (`x_offset_trio`, log2); the parameters.
+and whether the panel carried Y rows (`y_panel`); the within-trio X correction applied without a panel (`x_offset_trio`, log2); whether a GC
+track was applied (`gc_corrected`) and how many bins the panel masked (`bins_masked`); the parameters.
 `summary.json` also holds every event, every supplied event and the per-member sex-chromosome state.
 
 ## figures/

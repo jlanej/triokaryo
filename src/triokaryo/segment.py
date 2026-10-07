@@ -98,6 +98,30 @@ def robust_sd(y):
     return float(1.4826 * np.median(np.abs(d - np.median(d))) / np.sqrt(2))
 
 
+def smooth_outliers(y, sd, half=2, k=4.0, shrink=2.0):
+    """Spikes of one bin shrunk before segmentation (the smoothing step of circular binary segmentation, Olshen et al. 2004): a bin
+    farther than k noise sd from every one of its +-half neighbours is moved to their median, plus shrink sd on its own side. A
+    germline copy-number variant of a few hundred kb, or a bin of collapsed repeats, deviates by far more than any mosaic and,
+    left in, drags the mean of the segment it falls in. A plateau of two bins or more has a neighbour at its own level and is
+    untouched, so no event of the segmentation's minimum length is altered."""
+    y = np.asarray(y, dtype=float)
+    out = y.copy()
+    n = len(y)
+    if n < 2 * half + 1 or not np.isfinite(sd) or sd <= 0:
+        return out
+    for i in range(n):
+        if not np.isfinite(y[i]):
+            continue
+        nb = np.concatenate([y[max(0, i - half):i], y[i + 1:i + half + 1]])
+        nb = nb[np.isfinite(nb)]
+        if len(nb) < 2:
+            continue
+        if np.min(np.abs(nb - y[i])) > k * sd:
+            med = float(np.median(nb))
+            out[i] = med + np.sign(y[i] - med) * shrink * sd
+    return out
+
+
 def binary_segmentation(y, min_len=5, z=5.0, sd=None, max_segments=20):
     """Boundaries in y (no NaN) by recursive binary splitting on the two-sample z of the means, with the noise sd given
     (robust, from the first differences) rather than estimated inside each piece. Returns [(i0, i1)] covering y."""
@@ -266,6 +290,7 @@ def call_member(bins, scan, m, sample, genome, params=None, sex=""):
         sd = max(sd if np.isfinite(sd) else 0.0, floor if np.isfinite(floor) else 0.0)
         if sd <= 0:
             continue
+        y = smooth_outliers(y, sd)                                 # single-bin spikes (germline CNVs, collapsed repeats) do not drag a segment
         segs = merge_similar(y, refine_boundaries(y, binary_segmentation(y, P["min_len"], P["z"], sd)), sd)
         sites = scan.sites(chrom)
         covered = np.zeros(len(y), dtype=bool)

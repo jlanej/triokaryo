@@ -1,5 +1,5 @@
 title: Large chromosomal events in the cohort
-caption: (a) Events per chromosome, stacked by type (gain, loss, copy-neutral LOH or heterodisomy). (b) One row per trio: each event a bar over its span, coloured by type; the child's thick on the row's centre line, the father's thin above it, the mother's thin below; a thin black line over a bar marks an event matched by a supplied event. 2 trios, 14 events.
+caption: (a) Events per chromosome, stacked by type (gain, loss, copy-neutral LOH or heterodisomy). (b) One row per trio: each event a bar over its span, coloured by type; the child's thick on the row's centre line, the father's thin above it, the mother's thin below; a thin black line over a bar marks an event matched by a supplied event. 2 trios, 12 events.
 keys: gain,loss,loh,ext
 key:
   #D55E00  line  called gain (line at the segment's mean LRR)

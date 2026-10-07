@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
   "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="310.802576pt" height="235.579458pt" viewBox="0 0 310.802576 235.579458" xmlns="http://www.w3.org/2000/svg" version="1.1">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="310.802576pt" height="246.510076pt" viewBox="0 0 310.802576 246.510076" xmlns="http://www.w3.org/2000/svg" version="1.1">
  <metadata>
   <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
    <cc:Work>
     <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
-    <dc:date>2026-10-07T15:34:13.245842</dc:date>
+    <dc:date>2026-10-07T16:44:01.706742</dc:date>
     <dc:format>image/svg+xml</dc:format>
     <dc:creator>
      <cc:Agent>
@@ -21,18 +21,18 @@
  </defs>
  <g id="figure_1">
   <g id="patch_1">
-   <path d="M 0 235.579458 
-L 310.802576 235.579458 
+   <path d="M 0 246.510076 
+L 310.802576 246.510076 
 L 310.802576 0 
 L 0 0 
-L 0 235.579458 
+L 0 246.510076 
 z
 " style="fill: none"/>
   </g>
   <g id="axes_1">
    <g id="line2d_1">
     <defs>
-     <path id="m877e8fc697" d="M 0 2.5 
+     <path id="m588c4a4c92" d="M 0 2.5 
 C 0.663008 2.5 1.29895 2.236584 1.767767 1.767767 
 C 2.236584 1.29895 2.5 0.663008 2.5 0 
 C 2.5 -0.663008 2.236584 -1.29895 1.767767 -1.767767 
@@ -44,18 +44,18 @@ C -1.29895 2.236584 -0.663008 2.5 0 2.5
 z
 " style="stroke: #444444"/>
     </defs>
-    <g clip-path="url(#pa438af0ca3)">
-     <use xlink:href="#m877e8fc697" x="15.108661" y="13.730391" style="fill: #444444; stroke: #444444"/>
+    <g clip-path="url(#p6383a18d35)">
+     <use xlink:href="#m588c4a4c92" x="15.108661" y="13.730391" style="fill: #444444; stroke: #444444"/>
     </g>
    </g>
    <g id="line2d_2">
-    <path d="M 9.83622 25.333043 
-L 20.381102 25.333043 
-" clip-path="url(#pa438af0ca3)" style="fill: none; stroke: #000000; stroke-width: 2; stroke-linecap: square"/>
+    <path d="M 9.83622 25.29858 
+L 20.381102 25.29858 
+" clip-path="url(#p6383a18d35)" style="fill: none; stroke: #000000; stroke-width: 2; stroke-linecap: square"/>
    </g>
    <g id="line2d_3">
     <defs>
-     <path id="m91b7d5c945" d="M 0 2.5 
+     <path id="mf89a8dcf05" d="M 0 2.5 
 C 0.663008 2.5 1.29895 2.236584 1.767767 1.767767 
 C 2.236584 1.29895 2.5 0.663008 2.5 0 
 C 2.5 -0.663008 2.236584 -1.29895 1.767767 -1.767767 
@@ -67,13 +67,13 @@ C -1.29895 2.236584 -0.663008 2.5 0 2.5
 z
 " style="stroke: #9c9c9c"/>
     </defs>
-    <g clip-path="url(#pa438af0ca3)">
-     <use xlink:href="#m91b7d5c945" x="15.108661" y="36.935695" style="fill: #9c9c9c; stroke: #9c9c9c"/>
+    <g clip-path="url(#p6383a18d35)">
+     <use xlink:href="#mf89a8dcf05" x="15.108661" y="36.866769" style="fill: #9c9c9c; stroke: #9c9c9c"/>
     </g>
    </g>
    <g id="line2d_4">
     <defs>
-     <path id="md7ef8ce48a" d="M 0 2.5 
+     <path id="m0abcc68267" d="M 0 2.5 
 C 0.663008 2.5 1.29895 2.236584 1.767767 1.767767 
 C 2.236584 1.29895 2.5 0.663008 2.5 0 
 C 2.5 -0.663008 2.236584 -1.29895 1.767767 -1.767767 
@@ -85,13 +85,13 @@ C -1.29895 2.236584 -0.663008 2.5 0 2.5
 z
 " style="stroke: #cc79a7"/>
     </defs>
-    <g clip-path="url(#pa438af0ca3)">
-     <use xlink:href="#md7ef8ce48a" x="15.108661" y="48.538348" style="fill: #cc79a7; stroke: #cc79a7"/>
+    <g clip-path="url(#p6383a18d35)">
+     <use xlink:href="#m0abcc68267" x="15.108661" y="48.434958" style="fill: #cc79a7; stroke: #cc79a7"/>
     </g>
    </g>
    <g id="line2d_5">
     <defs>
-     <path id="m59a005925a" d="M 0 2.5 
+     <path id="mc25d762024" d="M 0 2.5 
 C 0.663008 2.5 1.29895 2.236584 1.767767 1.767767 
 C 2.236584 1.29895 2.5 0.663008 2.5 0 
 C 2.5 -0.663008 2.236584 -1.29895 1.767767 -1.767767 
@@ -103,13 +103,13 @@ C -1.29895 2.236584 -0.663008 2.5 0 2.5
 z
 " style="stroke: #e69f00"/>
     </defs>
-    <g clip-path="url(#pa438af0ca3)">
-     <use xlink:href="#m59a005925a" x="15.108661" y="60.141" style="fill: #e69f00; stroke: #e69f00"/>
+    <g clip-path="url(#p6383a18d35)">
+     <use xlink:href="#mc25d762024" x="15.108661" y="60.003147" style="fill: #e69f00; stroke: #e69f00"/>
     </g>
    </g>
    <g id="line2d_6">
     <defs>
-     <path id="m8f911b08dc" d="M 0 2.5 
+     <path id="m43e9ac4742" d="M 0 2.5 
 C 0.663008 2.5 1.29895 2.236584 1.767767 1.767767 
 C 2.236584 1.29895 2.5 0.663008 2.5 0 
 C 2.5 -0.663008 2.236584 -1.29895 1.767767 -1.767767 
@@ -121,13 +121,13 @@ C -1.29895 2.236584 -0.663008 2.5 0 2.5
 z
 " style="stroke: #c8c8c8"/>
     </defs>
-    <g clip-path="url(#pa438af0ca3)">
-     <use xlink:href="#m8f911b08dc" x="15.108661" y="71.743652" style="fill: #c8c8c8; stroke: #c8c8c8"/>
+    <g clip-path="url(#p6383a18d35)">
+     <use xlink:href="#m43e9ac4742" x="15.108661" y="71.571336" style="fill: #c8c8c8; stroke: #c8c8c8"/>
     </g>
    </g>
    <g id="line2d_7">
     <defs>
-     <path id="m67fa1d42f7" d="M 0 2.5 
+     <path id="m8b5c9685f2" d="M 0 2.5 
 C 0.663008 2.5 1.29895 2.236584 1.767767 1.767767 
 C 2.236584 1.29895 2.5 0.663008 2.5 0 
 C 2.5 -0.663008 2.236584 -1.29895 1.767767 -1.767767 
@@ -139,152 +139,161 @@ C -1.29895 2.236584 -0.663008 2.5 0 2.5
 z
 " style="stroke: #009e73"/>
     </defs>
-    <g clip-path="url(#pa438af0ca3)">
-     <use xlink:href="#m67fa1d42f7" x="15.108661" y="83.346304" style="fill: #009e73; stroke: #009e73"/>
+    <g clip-path="url(#p6383a18d35)">
+     <use xlink:href="#m8b5c9685f2" x="15.108661" y="83.139524" style="fill: #009e73; stroke: #009e73"/>
     </g>
    </g>
    <g id="line2d_8">
-    <path d="M 9.83622 94.948957 
-L 20.381102 94.948957 
-" clip-path="url(#pa438af0ca3)" style="fill: none; stroke: #cc79a7; stroke-width: 2; stroke-linecap: square"/>
+    <path d="M 9.83622 94.707713 
+L 20.381102 94.707713 
+" clip-path="url(#p6383a18d35)" style="fill: none; stroke: #cc79a7; stroke-width: 2; stroke-linecap: square"/>
    </g>
    <g id="line2d_9">
-    <path d="M 9.83622 106.551609 
-L 20.381102 106.551609 
-" clip-path="url(#pa438af0ca3)" style="fill: none; stroke: #e69f00; stroke-width: 2; stroke-linecap: square"/>
+    <path d="M 9.83622 106.275902 
+L 20.381102 106.275902 
+" clip-path="url(#p6383a18d35)" style="fill: none; stroke: #e69f00; stroke-width: 2; stroke-linecap: square"/>
    </g>
    <g id="line2d_10">
-    <path d="M 9.83622 118.154261 
-L 20.381102 118.154261 
-" clip-path="url(#pa438af0ca3)" style="fill: none; stroke: #56b4e9; stroke-width: 2; stroke-linecap: square"/>
+    <path d="M 9.83622 117.844091 
+L 20.381102 117.844091 
+" clip-path="url(#p6383a18d35)" style="fill: none; stroke: #56b4e9; stroke-width: 2; stroke-linecap: square"/>
    </g>
    <g id="line2d_11">
-    <path d="M 9.83622 129.756914 
-L 20.381102 129.756914 
-" clip-path="url(#pa438af0ca3)" style="fill: none; stroke: #cc79a7; stroke-width: 2; stroke-linecap: square"/>
+    <path d="M 9.83622 129.41228 
+L 20.381102 129.41228 
+" clip-path="url(#p6383a18d35)" style="fill: none; stroke: #000000; stroke-width: 2; stroke-linecap: square"/>
    </g>
    <g id="line2d_12">
-    <path d="M 9.83622 141.359566 
-L 20.381102 141.359566 
-" clip-path="url(#pa438af0ca3)" style="fill: none; stroke: #e69f00; stroke-width: 2; stroke-linecap: square"/>
+    <path d="M 9.83622 140.980469 
+L 20.381102 140.980469 
+" clip-path="url(#p6383a18d35)" style="fill: none; stroke: #cc79a7; stroke-width: 2; stroke-linecap: square"/>
    </g>
    <g id="line2d_13">
-    <path d="M 9.83622 152.962218 
-L 20.381102 152.962218 
-" clip-path="url(#pa438af0ca3)" style="fill: none; stroke: #d55e00; stroke-width: 2; stroke-linecap: square"/>
+    <path d="M 9.83622 152.548658 
+L 20.381102 152.548658 
+" clip-path="url(#p6383a18d35)" style="fill: none; stroke: #e69f00; stroke-width: 2; stroke-linecap: square"/>
    </g>
    <g id="line2d_14">
-    <path d="M 9.83622 164.564871 
-L 20.381102 164.564871 
-" clip-path="url(#pa438af0ca3)" style="fill: none; stroke: #56b4e9; stroke-width: 2; stroke-linecap: square"/>
+    <path d="M 9.83622 164.116847 
+L 20.381102 164.116847 
+" clip-path="url(#p6383a18d35)" style="fill: none; stroke: #d55e00; stroke-width: 2; stroke-linecap: square"/>
    </g>
    <g id="line2d_15">
-    <path d="M 9.83622 176.167523 
-L 20.381102 176.167523 
-" clip-path="url(#pa438af0ca3)" style="fill: none; stroke: #d55e00; stroke-width: 2; stroke-linecap: square"/>
+    <path d="M 9.83622 175.685036 
+L 20.381102 175.685036 
+" clip-path="url(#p6383a18d35)" style="fill: none; stroke: #56b4e9; stroke-width: 2; stroke-linecap: square"/>
    </g>
    <g id="line2d_16">
-    <path d="M 9.83622 187.770175 
-L 20.381102 187.770175 
-" clip-path="url(#pa438af0ca3)" style="fill: none; stroke: #0072b2; stroke-width: 2; stroke-linecap: square"/>
+    <path d="M 9.83622 187.253225 
+L 20.381102 187.253225 
+" clip-path="url(#p6383a18d35)" style="fill: none; stroke: #d55e00; stroke-width: 2; stroke-linecap: square"/>
    </g>
    <g id="line2d_17">
-    <path d="M 9.83622 199.372827 
-L 20.381102 199.372827 
-" clip-path="url(#pa438af0ca3)" style="fill: none; stroke: #cc79a7; stroke-width: 2; stroke-linecap: square"/>
+    <path d="M 9.83622 198.821414 
+L 20.381102 198.821414 
+" clip-path="url(#p6383a18d35)" style="fill: none; stroke: #0072b2; stroke-width: 2; stroke-linecap: square"/>
    </g>
    <g id="line2d_18">
-    <path d="M 9.83622 210.97548 
-L 20.381102 210.97548 
-" clip-path="url(#pa438af0ca3)" style="fill: none; stroke: #000000; stroke-width: 1.2; stroke-linecap: square"/>
+    <path d="M 9.83622 210.389603 
+L 20.381102 210.389603 
+" clip-path="url(#p6383a18d35)" style="fill: none; stroke: #cc79a7; stroke-width: 2; stroke-linecap: square"/>
    </g>
    <g id="line2d_19">
-    <path d="M 9.83622 217.588992 
-L 9.83622 210.97548 
-" clip-path="url(#pa438af0ca3)" style="fill: none; stroke: #000000; stroke-width: 1.2; stroke-linecap: square"/>
+    <path d="M 9.83622 221.957792 
+L 20.381102 221.957792 
+" clip-path="url(#p6383a18d35)" style="fill: none; stroke: #000000; stroke-width: 1.2; stroke-linecap: square"/>
    </g>
    <g id="line2d_20">
-    <path d="M 20.381102 217.588992 
-L 20.381102 210.97548 
-" clip-path="url(#pa438af0ca3)" style="fill: none; stroke: #000000; stroke-width: 1.2; stroke-linecap: square"/>
+    <path d="M 9.83622 228.898706 
+L 9.83622 221.957792 
+" clip-path="url(#p6383a18d35)" style="fill: none; stroke: #000000; stroke-width: 1.2; stroke-linecap: square"/>
    </g>
    <g id="line2d_21">
-    <path d="M 9.83622 222.578132 
-L 20.381102 222.578132 
-" clip-path="url(#pa438af0ca3)" style="fill: none; stroke: #7f7f7f; stroke-width: 2; stroke-linecap: square"/>
+    <path d="M 20.381102 228.898706 
+L 20.381102 221.957792 
+" clip-path="url(#p6383a18d35)" style="fill: none; stroke: #000000; stroke-width: 1.2; stroke-linecap: square"/>
+   </g>
+   <g id="line2d_22">
+    <path d="M 9.83622 233.525981 
+L 20.381102 233.525981 
+" clip-path="url(#p6383a18d35)" style="fill: none; stroke: #7f7f7f; stroke-width: 2; stroke-linecap: square"/>
    </g>
    <g id="text_1">
     <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 12.017871)">LRR per bin: log2 of the bin's trimmed-mean depth over the member's autosomal median (GC- and</text>
     <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 18.548262)">panel-corrected where applicable)</text>
    </g>
    <g id="text_2">
-    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="28.289764" y="26.885719" transform="rotate(-0 28.289764 26.885719)">step fit of the track (exact total-variation denoising)</text>
+    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="28.289764" y="26.851255" transform="rotate(-0 28.289764 26.851255)">step fit of the track (exact total-variation denoising)</text>
    </g>
    <g id="text_3">
-    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="28.289764" y="38.488371" transform="rotate(-0 28.289764 38.488371)">BAF: alt-allele read fraction at the member's heterozygous sites (subsampled)</text>
+    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="28.289764" y="38.419444" transform="rotate(-0 28.289764 38.419444)">BAF: alt-allele read fraction at the member's heterozygous sites (subsampled)</text>
    </g>
    <g id="text_4">
-    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="28.289764" y="50.091023" transform="rotate(-0 28.289764 50.091023)">informative site whose alt allele is maternal (father 0/0, mother 1/1)</text>
+    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="28.289764" y="49.987633" transform="rotate(-0 28.289764 49.987633)">informative site whose alt allele is maternal (father 0/0, mother 1/1)</text>
    </g>
    <g id="text_5">
-    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="28.289764" y="61.693676" transform="rotate(-0 28.289764 61.693676)">informative site whose alt allele is paternal (father 1/1, mother 0/0)</text>
+    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="28.289764" y="61.555822" transform="rotate(-0 28.289764 61.555822)">informative site whose alt allele is paternal (father 1/1, mother 0/0)</text>
    </g>
    <g id="text_6">
-    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="28.289764" y="73.296328" transform="rotate(-0 28.289764 73.296328)">phased fraction at one site: maternal allele (child) or transmitted allele (parent), reference bias removed</text>
+    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="28.289764" y="73.124011" transform="rotate(-0 28.289764 73.124011)">phased fraction at one site: maternal allele (child) or transmitted allele (parent), reference bias removed</text>
    </g>
    <g id="text_7">
-    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 71.838199)">phased fraction pooled over a window of sites (depth-weighted): 1/2 with equal homologue copy, 1/2 +/- d</text>
-    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 78.36859)">along an event with the sign giving the parent (child: below 1/2 the paternal homologue is in excess,</text>
-    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 84.89898)">above 1/2 the maternal; parent: below 1/2 the event lies on the untransmitted homologue, above 1/2 on</text>
-    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 91.429371)">the transmitted one); hollow where the window deviates in two or more members (paralogy; excluded from</text>
-    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 97.959761)">fits and scan)</text>
+    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 71.631419)">phased fraction pooled over a window of sites (depth-weighted): 1/2 with equal homologue copy, 1/2 +/- d</text>
+    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 78.16181)">along an event with the sign giving the parent (child: below 1/2 the paternal homologue is in excess,</text>
+    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 84.6922)">above 1/2 the maternal; parent: below 1/2 the event lies on the untransmitted homologue, above 1/2 on</text>
+    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 91.222591)">the transmitted one); hollow where the window deviates in two or more members (paralogy; excluded from</text>
+    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 97.752982)">fits and scan)</text>
    </g>
    <g id="text_8">
-    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 89.971242)">child's maternal fraction at sites where the father is homozygous and the mother heterozygous; departs</text>
-    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 96.501633)">from the main track where the child carries two different maternal homologues (maternal meiotic trisomy</text>
-    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 103.032023)">or heterodisomy) and rejoins it after a crossover</text>
+    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 89.729999)">child's maternal fraction at sites where the father is homozygous and the mother heterozygous; departs</text>
+    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 96.260389)">from the main track where the child carries two different maternal homologues (maternal meiotic trisomy</text>
+    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 102.79078)">or heterodisomy) and rejoins it after a crossover</text>
    </g>
    <g id="text_9">
-    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 104.839089)">the same at sites where the mother is homozygous and the father heterozygous; departs where the child</text>
-    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 111.36948)">carries two different paternal homologues</text>
+    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 104.563383)">the same at sites where the mother is homozygous and the father heterozygous; departs where the child</text>
+    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 111.093774)">carries two different paternal homologues</text>
    </g>
    <g id="text_10">
-    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 116.441742)">parent's transmitted-allele fraction at sites where the child is heterozygous and the other parent</text>
-    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 122.972132)">homozygous; departs from the main track where the child carries two different homologues of this parent</text>
+    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 116.131572)">parent's transmitted-allele fraction at sites where the child is heterozygous and the other parent</text>
+    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 122.661963)">homozygous; departs from the main track where the child carries two different homologues of this parent</text>
    </g>
    <g id="text_11">
-    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 128.044453)">child's maternal copy number: the LRR step fit's copy number (2 x 2^LRR) times the maternal fraction's</text>
-    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 134.574843)">step fit</text>
+    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 127.699761)">a crossover: where the auxiliary track's state (two different homologues, or one) changes along a</text>
+    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 134.230151)">whole-chromosome event (dashed vertical line)</text>
    </g>
    <g id="text_12">
-    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="28.289764" y="142.912242" transform="rotate(-0 28.289764 142.912242)">child's paternal copy number, likewise</text>
+    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 139.268008)">child's maternal copy number: the LRR step fit's copy number (2 x 2^LRR) times the maternal fraction's</text>
+    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif" transform="translate(28.289764 145.798399)">step fit</text>
    </g>
    <g id="text_13">
-    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="28.289764" y="154.514894" transform="rotate(-0 28.289764 154.514894)">parent's copy number of the transmitted homologue, likewise</text>
+    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="28.289764" y="154.101334" transform="rotate(-0 28.289764 154.101334)">child's paternal copy number, likewise</text>
    </g>
    <g id="text_14">
-    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="28.289764" y="166.117546" transform="rotate(-0 28.289764 166.117546)">parent's copy number of the untransmitted homologue</text>
+    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="28.289764" y="165.669523" transform="rotate(-0 28.289764 165.669523)">parent's copy number of the transmitted homologue, likewise</text>
    </g>
    <g id="text_15">
-    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="28.289764" y="177.720199" transform="rotate(-0 28.289764 177.720199)">called gain (line at the segment's mean LRR)</text>
+    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="28.289764" y="177.237712" transform="rotate(-0 28.289764 177.237712)">parent's copy number of the untransmitted homologue</text>
    </g>
    <g id="text_16">
-    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="28.289764" y="189.32291" transform="rotate(-0 28.289764 189.32291)">called loss</text>
+    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="28.289764" y="188.805901" transform="rotate(-0 28.289764 188.805901)">called gain (line at the segment's mean LRR)</text>
    </g>
    <g id="text_17">
-    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="28.289764" y="200.925503" transform="rotate(-0 28.289764 200.925503)">called copy-neutral event: loss of heterozygosity or uniparental heterodisomy (drawn at LRR 0)</text>
+    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="28.289764" y="200.374149" transform="rotate(-0 28.289764 200.374149)">called loss</text>
    </g>
    <g id="text_18">
-    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="28.289764" y="212.528156" transform="rotate(-0 28.289764 212.528156)">event supplied with --events (bracket above the track)</text>
+    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="28.289764" y="211.942279" transform="rotate(-0 28.289764 211.942279)">called copy-neutral event: loss of heterozygosity or uniparental heterodisomy (drawn at LRR 0)</text>
    </g>
    <g id="text_19">
-    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="28.289764" y="224.130866" transform="rotate(-0 28.289764 224.130866)">reference lines: LRR 0; BAF 1/2, 1/3 and 2/3; the centromere</text>
+    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="28.289764" y="223.510468" transform="rotate(-0 28.289764 223.510468)">event supplied with --events (bracket above the track)</text>
+   </g>
+   <g id="text_20">
+    <text style="font-size: 6px; font-family: 'Arial', 'Helvetica', 'DejaVu Sans', sans-serif; text-anchor: start" x="28.289764" y="235.078716" transform="rotate(-0 28.289764 235.078716)">reference lines: LRR 0; BAF 1/2, 1/3 and 2/3; the centromere</text>
    </g>
   </g>
  </g>
  <defs>
-  <clipPath id="pa438af0ca3">
-   <rect x="7.2" y="7.929064" width="263.622047" height="220.450394"/>
+  <clipPath id="p6383a18d35">
+   <rect x="7.2" y="7.946296" width="263.622047" height="231.36378"/>
   </clipPath>
  </defs>
 </svg>

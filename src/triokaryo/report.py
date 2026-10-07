@@ -104,7 +104,9 @@ CROSSOVER_COLS = ["trio", "sample", "role", "chrom", "position", "position_mb", 
 
 
 def crossover_rows(events, trio=""):
-    """One row per crossover of the events that carry them (the child's whole-chromosome gains and heterodisomies)."""
+    """One row per crossover of the events that carry them: the child's whole-chromosome gains and heterodisomies (the state of the
+    two copies changes), and a parent's events spanning one of the child's crossovers (the event's homologue changes between the
+    transmitted and the untransmitted one)."""
     out = []
     for e in events:
         if not e.crossovers:

@@ -107,7 +107,8 @@ def member_noise_floor(bins, m):
     return lrr_noise_floor(float(np.median(bins.depth[m][ok])), float(np.median(bins.n_dp[m][ok])))
 
 
-PANEL_MAX_RSD = 0.25        # a bin whose LRR robust SD across the panel's genomes exceeds this is not called
+PANEL_MAX_RSD = 0.10        # a bin whose LRR robust SD across the panel's genomes exceeds this is not called: the genomes disagree there
+                            # by more than the smallest event reported (a 10% gain or loss shifts the LRR by 0.07), so no residual is a copy change
 PANEL_MIN_N = 5             # minimum genomes per bin: a median over fewer follows one genome's own event
 PANEL_MIN_N_Y = 3           # the same for the Y, to which only the panel's males contribute
 PANEL_BDEV_EXCESS = 0.03    # a bin whose panel band deviation exceeds the panel's genome-wide median by this much (paralogous sequence,

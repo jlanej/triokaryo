@@ -1,10 +1,10 @@
 sample	chrom	start	end	label	match
-HG01103	chr2	140000000	179000000	NGS-DOSE: -2(140-179Mb)[0.68] (1.32 copies, 68% of cells)	matched: loss stretch chr2 f 0.67; loss stretch chr2 f 0.31
+HG01103	chr2	140000000	179000000	NGS-DOSE: -2(140-179Mb)[0.68] (1.32 copies, 68% of cells)	matched: loss stretch chr2 f 0.67; loss stretch chr2 f 0.32
 HG01103	chr2	140685856	153220004	DRAGEN CNV: CN 1 (segment mean 0.66)	matched: loss stretch chr2 f 0.67
 HG01103	chr2	153802033	161475965	DRAGEN CNV: CN 1 (segment mean 0.66)	matched: loss stretch chr2 f 0.67
 HG01103	chr2	161477368	167145021	DRAGEN CNV: CN 1 (segment mean 0.64)	matched: loss stretch chr2 f 0.67
 HG01103	chr2	167157121	172040081	DRAGEN CNV: CN 1 (segment mean 0.68)	matched: loss stretch chr2 f 0.67
-HG01103	chr2	176830742	179545490	DRAGEN CNV: CN 1 (segment mean 0.68)	matched: loss stretch chr2 f 0.31
+HG01103	chr2	176830742	179545490	DRAGEN CNV: CN 1 (segment mean 0.68)	matched: loss stretch chr2 f 0.32
 HG01103	chr2	200373358	202442322	DRAGEN CNV: CN 1 (segment mean 0.68)	unmatched
-HG01103	chr14	35283715	37294455	DRAGEN CNV: CN 1 (segment mean 0.68)	matched: loss stretch chr14 f 0.64
-HG01103	chr14	37301823	41199804	DRAGEN CNV: CN 1 (segment mean 0.65)	matched: loss stretch chr14 f 0.64
+HG01103	chr14	35283715	37294455	DRAGEN CNV: CN 1 (segment mean 0.68)	matched: loss stretch chr14 f 0.62
+HG01103	chr14	37301823	41199804	DRAGEN CNV: CN 1 (segment mean 0.65)	matched: loss stretch chr14 f 0.62

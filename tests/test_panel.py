@@ -42,6 +42,33 @@ def test_shipped_panel_resolves_by_name(mock, tmp_path):
     assert "panel_median" in head and any(r.split("\t")[head.index("panel_median")] != "NA" for r in rows)
 
 
+def test_panel_masks_bins_where_its_genomes_disagree(mock, tmp_path):
+    """A bin whose LRR spreads across the panel's genomes by more than the smallest reportable event (robust SD above 0.10) is masked;
+    one within it is not; and the shipped GC track, the default at 1 Mb on GRCh38, is loaded unless 'none' is asked for."""
+    from triokaryo.genome import genome
+    from triokaryo.model import PANEL_MAX_RSD, load_gc_track
+    from triokaryo.cli import resolve_gc_track
+    G = genome()
+    rows = ["chrom\tstart\tend\tn\tlrr_median\tlrr_rsd\tn_bdev\tbdev_median\tn_het\thet_rate_median"]
+    loud = {("chr1", 10_000_000): 0.15, ("chr1", 11_000_000): 0.09, ("chr2", 50_000_000): PANEL_MAX_RSD + 0.001}
+    for c in G.chroms:
+        for st in range(0, G.length[c], 1_000_000):
+            n = 4 if c == "chrY" else 6
+            rows.append("%s\t%d\t%d\t%d\t%.4f\t%.4f\t%d\t0.0700\t%d\t0.4000" % (c, st, min(st + 1_000_000, G.length[c]), n, 0.0, loud.get((c, st), 0.03), n, n))
+    panel = tmp_path / "panel.tsv"
+    panel.write_text("\n".join(rows) + "\n")
+    trio = read_trios(mock["trios"])[0]
+    res = run_trio(mock["vcf"], trio, str(tmp_path / "masked"), gc_track=resolve_gc_track(None, "grch38", 1_000_000), panel=str(panel), thin=3, figures=False, log=lambda s: None)
+    b = res["bins"]
+    at = lambda c, st: int(np.flatnonzero((np.asarray(b.chrom) == c) & (np.asarray(b.start) == st))[0])
+    assert b.masked[at("chr1", 10_000_000)] and b.masked[at("chr2", 50_000_000)] and not b.masked[at("chr1", 11_000_000)] and not b.masked[at("chr1", 12_000_000)]
+    assert res["summary"]["gc_corrected"] and np.isfinite(b.gc).sum() > 2900
+    gc = load_gc_track(resolve_gc_track("hg38", "grch38", 1_000_000))
+    assert len(gc) == 2970 and abs(gc[("chr1", 1_000_000)] - 0.573) < 0.01        # 3102 bins, 132 of them all N
+    assert np.mean([v for (c, _), v in gc.items() if c == "chr19"]) > np.mean([v for (c, _), v in gc.items() if c == "chr4"]) + 0.08
+    assert resolve_gc_track(None, "grch38", 500_000) is None and resolve_gc_track("none", "grch38", 1_000_000) is None
+
+
 def test_cohort_panel_corrects_the_y_for_a_father_of_a_daughter(tmp_path):
     """Mosaic loss of Y in a father without a son needs the Y level of other males. A panel built from the cohort's runs (its
     fathers and sons, --roles father,child) holds the male Y and X levels with their mappability deficit; a 15% loss, invisible

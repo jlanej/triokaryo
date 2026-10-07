@@ -41,6 +41,26 @@ def test_segmentation_finds_one_step():
     assert (20, 26) in segs2, segs2
 
 
+def test_single_bin_spike_is_smoothed_and_a_plateau_kept():
+    """A bin far above the noise (a germline CNV, collapsed repeats) is shrunk to its neighbours' level before segmentation; a plateau
+    of two bins or more keeps its level, so no event of the minimum length is altered; the spike alone makes no segment."""
+    from triokaryo.segment import smooth_outliers
+    rng = np.random.default_rng(3)
+    sd = 0.02
+    y = rng.normal(0, sd, 60)
+    y[20] = 0.6                                                    # one bin at a 1.5-fold depth
+    y[40:45] += 0.25                                               # a five-bin gain
+    s = smooth_outliers(y, sd)
+    assert abs(s[20]) < 3 * sd, s[20]
+    assert np.allclose(s[40:45], y[40:45]) and np.allclose(np.delete(s, 20), np.delete(y, 20))
+    segs = merge_similar(s, refine_boundaries(s, binary_segmentation(s, 5, 5.0, sd)), sd)
+    of = lambda i: next((a, b) for a, b in segs if a <= i < b)
+    assert abs(np.mean(s[slice(*of(20))])) < 0.05 and np.mean(s[slice(*of(42))]) > 0.2, segs
+    y2 = rng.normal(0, sd, 40)
+    y2[30:32] += 0.5                                               # a two-bin plateau: each bin has a neighbour at its level
+    assert np.allclose(smooth_outliers(y2, sd), y2)
+
+
 def test_trios_file_and_ped(tmp_path):
     p = tmp_path / "t.tsv"
     p.write_text("#kid\tdad\tmom\tkid_sex\tdad_sex\tmom_sex\nA\tB\tC\t1\t1\t2\n")

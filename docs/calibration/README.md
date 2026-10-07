@@ -35,4 +35,6 @@ The first run of this grid, with the bin depth as the median over the bin's site
 gains and losses even at f = 1: the median of hundreds of integer depths is quantised to one read, the robust noise
 scale of the LRR track was exactly zero, and the depth segmentation skipped those chromosomes while the phased scan
 typed the events as LOH against a "flat" depth. The bin depth is now a 20% trimmed mean and the noise scale has a
-counting-noise floor; the grid is the regression check for such changes.
+counting-noise floor; the grid is the regression check for such changes. Re-run after single-bin outlier smoothing was
+added before the depth segmentation: the detection tables are unchanged, no call appeared on an unaffected chromosome,
+and the cell-fraction errors moved by at most 0.004.

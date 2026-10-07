@@ -365,6 +365,60 @@ def origin_from_shift(role, kind, shift):
     return "the retained homologue is the one passed to the child" if up else "the retained homologue is the one not passed to the child"
 
 
+def transmitted_sign_runs(y, smooth=None, min_run=None):
+    """A parent's windows: the sign of the transmitted-allele shift, smoothed into runs (a running majority, then runs shorter
+    than min_run absorbed by their neighbours, as for the homologue states). The transmitted homologue is defined by the
+    child's genotype and so changes at each of the child's crossovers in that parent's meiosis: a parent's mosaic event shifts
+    the track one way up to a crossover and the other way beyond it. Returns (+1 or -1 per window, 0 where y is not finite;
+    the indices of the windows that open a new run)."""
+    smooth = STAGE["smooth"] if smooth is None else smooth
+    min_run = STAGE["min_run"] if min_run is None else min_run
+    y = np.asarray(y, dtype=float)
+    ok = np.flatnonzero(np.isfinite(y))
+    sign = np.zeros(len(y), dtype=int)
+    if len(ok) == 0:
+        return sign, []
+    state = flatten_short_runs(running_majority(y[ok] > 0, smooth), min_run)
+    sign[ok] = np.where(state, 1, -1)
+    flips = [int(ok[i]) for i in np.flatnonzero(state[1:] != state[:-1]) + 1]
+    return sign, flips
+
+
+def folded_reading(ev, track, sites, m):
+    """A parent's phased statistics over an event: each site's shift from 1/2 taken with the sign of its window's run
+    (transmitted_sign_runs over the event's windows) and pooled by depth, so that an event spanning one of the child's
+    crossovers keeps its size instead of cancelling. Returns (shift, its binomial error, the site count, the crossovers in bp
+    (midway between the last window of a run and the first of the next), the sign of the first run, the per-site signed
+    shifts for the edge refinement); without a window inside the event, the plain signed reading."""
+    shift, se, n = phased_reading(ev, track, sites, m)
+    if not np.isfinite(shift):
+        return shift, se, n, [], 0, None
+    inside = (track.w_mid > ev.start) & (track.w_mid <= ev.end) & np.isfinite(track.w_frac)
+    if not inside.any():
+        return shift, se, n, [], int(np.sign(shift)) or 1, None
+    sign_w, flips = transmitted_sign_runs(np.where(inside, track.w_frac - 0.5, NA))
+    first = int(sign_w[np.flatnonzero(inside)[0]])
+    pos = sites.pos[track.idx]
+    wi = np.clip(np.searchsorted(track.w_start, pos, side="right") - 1, 0, len(track.w_start) - 1)
+    s_site = np.where(sign_w[wi] == 0, first, sign_w[wi])                     # a site in no window of the event: the first run's sign
+    y = s_site * (track.frac - 0.5)
+    sel = (pos > ev.start) & (pos <= ev.end)
+    dp = sites.dp[m][track.idx[sel]].astype(float)
+    folded = float((y[sel] * dp).sum() / dp.sum())
+    xo = [int((track.w_mid[i - 1] + track.w_mid[i]) // 2) for i in flips]
+    return folded, se, n, xo, first, y
+
+
+def parent_origin_text(kind, first_sign, crossovers_mb):
+    """What the sign says along a parent's event: the homologue's relation to the one transmitted over the first run, and the
+    child's crossovers at which the transmitted homologue, hence the sign, switches."""
+    base = origin_from_shift("parent", kind, first_sign)
+    if not crossovers_mb:
+        return base
+    return base.replace("is the one", "is, up to %.1f Mb, the one" % crossovers_mb[0]) + "; the transmitted homologue switches at %s Mb (the child's crossover%s)" % (
+        ", ".join("%.1f" % x for x in crossovers_mb), "s" if len(crossovers_mb) > 1 else "")
+
+
 def _homologue_states(ev, track, absent_is_iso=False, upd_like=None):
     """Per window inside a child's event: True where the named parent's two copies in the child are different homologues, False
     where they are one, from the auxiliary track read at the other parent's homozygous sites (it departs from the main track,
@@ -493,14 +547,14 @@ def stage_reading(ev, track, genome, absent_is_iso=None, upd_like=None):
                 n_windows=int(len(mid)))
 
 
-def refine_edges(ev, track, sites, bins, genome):
+def refine_edges(ev, track, sites, bins, genome, y=None):
     """The event's start and end at site resolution: within EDGE_BINS bins of each bin edge, the split of the phased sites
-    (signed by the event's shift) that best separates an outside at 1/2 from an inside away from it. (NA, NA, 0) where the
-    event runs to the chromosome end, or the sites are too few."""
+    (signed by the event's shift, or the per-site signed shifts given: a parent's folded ones) that best separates an outside
+    at 1/2 from an inside away from it. (NA, NA, 0) where the event runs to the chromosome end, or the sites are too few."""
     if track is None or not np.isfinite(ev.phase_shift) or ev.phase_shift == 0:
         return NA, NA, 0
     pos = sites.pos[track.idx]
-    y = np.sign(ev.phase_shift) * (track.frac - 0.5)
+    y = np.sign(ev.phase_shift) * (track.frac - 0.5) if y is None else y
     L = genome.length[ev.chrom]
     half = EDGE_BINS * bins.bin_size
     out = [NA, NA]
@@ -569,7 +623,11 @@ def annotate_events(events, tracks_by_member, scan, bins, genome, child_x_baseli
         sites = scan.sites(e.chrom)
         if track is None or sites is None:
             continue
-        e.phase_shift, e.phase_se, e.n_phased = phased_reading(e, track, sites, m)
+        xo, first, y_sites = [], 0, None
+        if e.role == "child":
+            e.phase_shift, e.phase_se, e.n_phased = phased_reading(e, track, sites, m)
+        else:                                                              # a parent: the sign flips at the child's crossovers; read folded
+            e.phase_shift, e.phase_se, e.n_phased, xo, first, y_sites = folded_reading(e, track, sites, m)
         if not np.isfinite(e.phase_shift):
             continue
         if e.role == "child" and e.chrom == "chrX" and child_x_baseline == 1:
@@ -599,14 +657,26 @@ def annotate_events(events, tracks_by_member, scan, bins, genome, child_x_baseli
                 e.note = (e.note + "; " if e.note else "") + "the phased bands read a larger share (%.0f%%) than the depth (%.0f%%)" % (100 * e.f_phase, 100 * e.f_lrr)
         roh = "run of homozygosity" in e.note                               # a run of homozygosity has no parent of origin
         if e.n_phased >= ORIGIN_MIN_SITES and abs(e.phase_shift) >= ORIGIN_MIN_Z * e.phase_se and not roh:
-            e.origin_phase = origin_from_shift(e.role, e.type, e.phase_shift)
-            if e.role == "child" and e.origin and e.type != "UPD" and e.origin != e.origin_phase:
-                e.note = (e.note + "; " if e.note else "") + "the phased bands and the opposite-homozygote sites name different parents"
-            e.homologues, e.hetero_share = homologues_reading(e, track)
-            st = stage_reading(e, track, genome)
-            if st:
-                e.stage, e.centromere, e.n_crossovers, e.crossovers, e.crossover_states = st["stage"], st["centromere"], st["n_crossovers"], st["crossovers"], st["crossover_states"]
-        e.start_fine, e.end_fine, e.edge_sites = refine_edges(e, track, sites, bins, genome)
+            if e.role == "child":
+                e.origin_phase = origin_from_shift(e.role, e.type, e.phase_shift)
+                if e.origin and e.type != "UPD" and e.origin != e.origin_phase:
+                    e.note = (e.note + "; " if e.note else "") + "the phased bands and the opposite-homozygote sites name different parents"
+                e.homologues, e.hetero_share = homologues_reading(e, track)
+                st = stage_reading(e, track, genome)
+                if st:
+                    e.stage, e.centromere, e.n_crossovers, e.crossovers, e.crossover_states = st["stage"], st["centromere"], st["n_crossovers"], st["crossovers"], st["crossover_states"]
+            else:
+                xo_mb = [x / 1e6 for x in xo]
+                e.origin_phase = parent_origin_text(e.type, first if e.phase_shift > 0 else -first, xo_mb)
+                if xo:                                                     # the child's crossovers in this parent's meiosis, where the event's homologue changes sides
+                    on_tx = lambda sg: (sg > 0) != (e.type == "loss")      # the event's homologue is the transmitted one
+                    sg = first
+                    states = []
+                    for _ in xo:
+                        states.append("%s>%s" % ("transmitted" if on_tx(sg) else "untransmitted", "transmitted" if on_tx(-sg) else "untransmitted"))
+                        sg = -sg
+                    e.n_crossovers, e.crossovers, e.crossover_states = len(xo), ";".join("%.2f" % x for x in xo_mb), ";".join(states)
+        e.start_fine, e.end_fine, e.edge_sites = refine_edges(e, track, sites, bins, genome, y=y_sites)
 
 
 def phased_scan(tracks, bins, scan, m, sample, genome, events, params, min_dp, min_gq, sex="", base_het=NA, rejected=None, x_copies=NA):
@@ -631,6 +701,8 @@ def phased_scan(tracks, bins, scan, m, sample, genome, events, params, min_dp, m
             free &= ~t.w_shared
         keep = np.flatnonzero(free & np.isfinite(t.w_frac))
         y = t.w_frac[keep] - 0.5
+        if role != "child":                                                 # a parent: the sign flips at the child's crossovers; fold onto the sign runs
+            y = y * transmitted_sign_runs(y)[0]
         if len(y) < max(4, S["min_len"] // 2):
             continue
         sd = robust_sd(y)

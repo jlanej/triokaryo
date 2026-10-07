@@ -73,12 +73,14 @@ def _gt(alt, dp):
 
 
 def write_mock(out_dir, seed=1, sites_per_mb=60, no_events=False, xxy=False, depth=(30.0, 32.0, 28.0), gc_beta=(-0.8, -0.5, -1.0), bin_size=1_000_000,
-               events=None, prefix="", contigs=None, child_sex="M", xxx=False, sex_deficit=(1.0, 1.0), with_gq=True):
+               events=None, prefix="", contigs=None, child_sex="M", xxx=False, sex_deficit=(1.0, 1.0), with_gq=True, switch_maternal=None, switch_paternal=None):
     """prefix: a tag before the sample names (KID, DAD, MOM), so that several mock trios can sit in one cohort.
     contigs: only these chromosomes (a dense small mock), else all. child_sex: M (one maternal X, the father's Y) or F (one X
     from each parent, no Y). xxy: a son with both maternal X homologues (a maternal meiosis I 47,XXY); xxx: a daughter with
     both maternal X homologues and the paternal X (a maternal meiosis I 47,XXX). sex_deficit: depth factors on the X and
-    the Y, imitating the mappability deficit of real data (e.g. 0.93, 0.90). with_gq=False writes no GQ, as some callers do."""
+    the Y, imitating the mappability deficit of real data (e.g. 0.93, 0.90). with_gq=False writes no GQ, as some callers do.
+    switch_maternal / switch_paternal: {chrom: position}, a crossover in that parent's meiosis: the child's inherited homologue
+    switches to the parent's other one beyond the position (the transmitted-allele sign of a parent's event flips there)."""
     os.makedirs(out_dir, exist_ok=True)
     nm = {KID: prefix + KID, DAD: prefix + DAD, MOM: prefix + MOM}
     son = child_sex.upper().startswith("M")
@@ -102,7 +104,7 @@ def write_mock(out_dir, seed=1, sites_per_mb=60, no_events=False, xxy=False, dep
                 gc[(c, s)] = g
                 fh.write("%s\t%d\t%d\t%.4f\n" % (c, s, min(s + bin_size, L), g))
     truth = dict(seed=seed, samples=[nm[KID], nm[DAD], nm[MOM]], sexes=["M" if son else "F", "M", "F"], xxy=bool(xxy), xxx=bool(xxx), events=[],
-                 transmitted_paternal=tp, transmitted_maternal=tm)
+                 transmitted_paternal=tp, transmitted_maternal=tm, switch_maternal=dict(switch_maternal or {}), switch_paternal=dict(switch_paternal or {}))
     vcf_txt = os.path.join(out_dir, "mock.vcf")
     with open(vcf_txt, "w") as fh:
         fh.write("##fileformat=VCFv4.2\n##source=triokaryo mock (no real data)\n")
@@ -130,7 +132,12 @@ def write_mock(out_dir, seed=1, sites_per_mb=60, no_events=False, xxy=False, dep
             # the four parental homologues
             d0, d1 = (rng.random(n) < p).astype(int), (rng.random(n) < p).astype(int)
             m0, m1 = (rng.random(n) < p).astype(int), (rng.random(n) < p).astype(int)
-            hom = {"pat": [d0, d1][tp[c]], "pat_other": [d0, d1][1 - tp[c]], "mat": [m0, m1][tm[c]], "mat_other": [m0, m1][1 - tm[c]]}
+            def transmitted(h0, h1, t, sw):                              # the inherited homologue per site, the other beyond a crossover
+                pick = np.where(pos > sw, 1 - t, t) if sw is not None else np.full(n, t)
+                return np.where(pick == 0, h0, h1), np.where(pick == 0, h1, h0)
+            pat, pat_other = transmitted(d0, d1, tp[c], (switch_paternal or {}).get(c))
+            mat, mat_other = transmitted(m0, m1, tm[c], (switch_maternal or {}).get(c))
+            hom = {"pat": pat, "pat_other": pat_other, "mat": mat, "mat_other": mat_other}
             # base copies per member: the child's inherited pair; each parent's own two; the X: child (male) one maternal X, father one X;
             # the Y: the father's one Y, inherited by the son as the same sequence; the mother none
             base = {KID: {"pat": 1, "mat": 1}, DAD: {"h0": 1, "h1": 1}, MOM: {"h0": 1, "h1": 1}}

@@ -143,3 +143,29 @@ def test_meiotic_stage_from_the_centromere_and_the_crossovers(tmp_path):
     xo = [l.split("\t") for l in open(os.path.join(str(tmp_path / "out"), "crossovers.tsv")).read().splitlines()]
     rows = [dict(zip(xo[0], r)) for r in xo[1:]]
     assert [(r["chrom"], r["from_state"], r["to_state"], r["parent"]) for r in rows] == [("chr13", "isodisomic", "heterodisomic", "maternal"), ("chr16", "heterodisomic", "isodisomic", "paternal")]
+
+
+def test_parent_event_is_read_folded_across_the_childs_crossover(tmp_path):
+    """The transmitted-allele sign flips at the child's crossover in that parent's meiosis. A mother's mosaic gain of the whole of
+    chromosome 8 spanning a crossover at 70 Mb is read folded onto the sign runs: its phased cell fraction matches the planted one
+    instead of cancelling, the crossover is placed, and the depth call is not doubted."""
+    from triokaryo.mock import DEFAULT_EVENTS, MOM, write_mock
+    from triokaryo.pedigree import read_trios
+    from triokaryo.phase import parent_origin_text, transmitted_sign_runs
+    from triokaryo.pipeline import run_trio
+    rng = np.random.default_rng(5)
+    y = np.concatenate([0.05 + rng.normal(0, 0.01, 30), -0.05 + rng.normal(0, 0.01, 30)])
+    y[10] = np.nan
+    sign, flips = transmitted_sign_runs(y)
+    assert sign[10] == 0 and (sign[:10] == 1).all() and (sign[11:30] == 1).all() and (sign[30:] == -1).all() and flips == [30]
+    assert parent_origin_text("gain", 1, [70.2]) == "the duplicated homologue is, up to 70.2 Mb, the one passed to the child; the transmitted homologue switches at 70.2 Mb (the child's crossover)"
+    assert parent_origin_text("loss", -1, []) == "the lost homologue is the one passed to the child"
+    ev = [dict(e, f=0.30) for e in DEFAULT_EVENTS if e["member"] == MOM and e["chrom"] == "chr8"]
+    m = write_mock(str(tmp_path / "sw"), seed=11, sites_per_mb=300, events=ev, contigs=("chr8", "chr9", "chr11", "chr12"), switch_maternal={"chr8": 70_000_000})
+    trio = read_trios(m["trios"])[0]
+    res = run_trio(m["vcf"], trio, str(tmp_path / "out"), gc_track=m["gc"], figures=False, log=lambda s: None)
+    (e,) = [e for e in res["events"] if e.sample == "MOM" and e.chrom == "chr8" and e.type == "gain"]
+    assert abs(e.f_phase - 0.30) < 0.08 and "artefact" not in e.note, (e.f_phase, e.note)
+    assert e.n_crossovers == 1 and abs(float(e.crossovers) - 70.0) < 3 and e.crossover_states in ("transmitted>untransmitted", "untransmitted>transmitted"), (e.crossovers, e.crossover_states)
+    assert "switches at" in e.origin_phase and e.origin_phase.startswith("the duplicated homologue is, up to"), e.origin_phase
+    assert np.isfinite(e.start_fine) or e.start == 0

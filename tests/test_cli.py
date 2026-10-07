@@ -25,6 +25,9 @@ def test_cli_members_given_outright(mock, tmp_path):
     out = tmp_path / "direct"
     rc = main(["run", "--vcf", mock["vcf"], "--child", "KID", "--father", "DAD", "--mother", "MOM", "--sex", "M,M,F", "--out", str(out), "--no-figures", "--thin", "3"])
     assert rc == 0 and "chr7" in (out / "events.tsv").read_text()
+    import csv
+    (summ,) = list(csv.DictReader(open(out / "summary.tsv"), delimiter="\t"))
+    assert summ["gc_corrected"] in ("1", "True")                        # no --gc-track: the shipped hg38 track at 1 Mb
 
 
 def test_cli_entry_point_help():

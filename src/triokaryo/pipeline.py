@@ -26,6 +26,8 @@ def run_trio(vcf, trio, out, gc_track=None, events_path=None, bin_size=1_000_000
     scan = scan_vcf(vcf, trio.members, G, thin=thin, log=log)
     log("%d records, %d PASS biallelic SNVs used (%s); %.0f s" % (scan.n_records, scan.n_used, ", ".join("%s %d" % kv for kv in sorted(scan.skipped.items())), time.time() - t0))
     gc = load_gc_track(gc_track) if gc_track else None
+    if gc is not None:
+        log("GC track: %d bins from %s" % (len(gc), gc_track))
     pan = None
     if panel:
         from .panel import load_panel

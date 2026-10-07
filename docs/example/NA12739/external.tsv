@@ -1,20 +1,20 @@
 sample	chrom	start	end	label	match
-NA12739	chr12	0	133275309	NGS-DOSE: +12 (2.99 copies, every cell)	matched: gain whole chr12 f 0.96
-NA12739	chr12	78304	8381457	DRAGEN CNV: CN 3 (segment mean 1.52)	matched: gain whole chr12 f 0.96
-NA12739	chr12	11415256	30324660	DRAGEN CNV: CN 3 (segment mean 1.49)	matched: gain whole chr12 f 0.96
-NA12739	chr12	30328692	33142212	DRAGEN CNV: CN 3 (segment mean 1.53)	matched: gain whole chr12 f 0.96
-NA12739	chr12	37624995	45508891	DRAGEN CNV: CN 3 (segment mean 1.48)	matched: gain whole chr12 f 0.96
-NA12739	chr12	45515556	59541425	DRAGEN CNV: CN 3 (segment mean 1.53)	matched: gain whole chr12 f 0.96
-NA12739	chr12	60131988	71208215	DRAGEN CNV: CN 3 (segment mean 1.49)	matched: gain whole chr12 f 0.96
-NA12739	chr12	71964009	79758764	DRAGEN CNV: CN 3 (segment mean 1.45)	matched: gain whole chr12 f 0.96
-NA12739	chr12	79769261	90093074	DRAGEN CNV: CN 3 (segment mean 1.44)	matched: gain whole chr12 f 0.96
-NA12739	chr12	90094113	101708483	DRAGEN CNV: CN 3 (segment mean 1.50)	matched: gain whole chr12 f 0.96
-NA12739	chr12	101712910	114012027	DRAGEN CNV: CN 3 (segment mean 1.52)	matched: gain whole chr12 f 0.96
-NA12739	chr12	114013107	123910210	DRAGEN CNV: CN 3 (segment mean 1.53)	matched: gain whole chr12 f 0.96
-NA12739	chr12	123912920	127123091	DRAGEN CNV: CN 3 (segment mean 1.51)	matched: gain whole chr12 f 0.96
-NA12739	chr12	128085891	131645699	DRAGEN CNV: CN 3 (segment mean 1.49)	matched: gain whole chr12 f 0.96
-NA12748	chr13	87619008	90210757	DRAGEN CNV: CN 3 (segment mean 1.28)	matched: gain stretch chr13 f 0.69
-NA12748	chr13	90212756	101241138	DRAGEN CNV: CN 3 (segment mean 1.33)	matched: gain stretch chr13 f 0.69
-NA12748	chr13	101244373	111668671	DRAGEN CNV: CN 3 (segment mean 1.31)	matched: gain stretch chr13 f 0.69
-NA12748	chr13	111790054	114154011	DRAGEN CNV: CN 3 (segment mean 1.34)	matched: gain stretch chr13 f 0.69
-NA12748	chr21	44199492	46680053	DRAGEN CNV: CN 1 (segment mean 0.68)	matched: loss stretch chr21 f 0.59
+NA12739	chr12	0	133275309	NGS-DOSE: +12 (2.99 copies, every cell)	matched: gain whole chr12 f 0.98
+NA12739	chr12	78304	8381457	DRAGEN CNV: CN 3 (segment mean 1.52)	matched: gain whole chr12 f 0.98
+NA12739	chr12	11415256	30324660	DRAGEN CNV: CN 3 (segment mean 1.49)	matched: gain whole chr12 f 0.98
+NA12739	chr12	30328692	33142212	DRAGEN CNV: CN 3 (segment mean 1.53)	matched: gain whole chr12 f 0.98
+NA12739	chr12	37624995	45508891	DRAGEN CNV: CN 3 (segment mean 1.48)	matched: gain whole chr12 f 0.98
+NA12739	chr12	45515556	59541425	DRAGEN CNV: CN 3 (segment mean 1.53)	matched: gain whole chr12 f 0.98
+NA12739	chr12	60131988	71208215	DRAGEN CNV: CN 3 (segment mean 1.49)	matched: gain whole chr12 f 0.98
+NA12739	chr12	71964009	79758764	DRAGEN CNV: CN 3 (segment mean 1.45)	matched: gain whole chr12 f 0.98
+NA12739	chr12	79769261	90093074	DRAGEN CNV: CN 3 (segment mean 1.44)	matched: gain whole chr12 f 0.98
+NA12739	chr12	90094113	101708483	DRAGEN CNV: CN 3 (segment mean 1.50)	matched: gain whole chr12 f 0.98
+NA12739	chr12	101712910	114012027	DRAGEN CNV: CN 3 (segment mean 1.52)	matched: gain whole chr12 f 0.98
+NA12739	chr12	114013107	123910210	DRAGEN CNV: CN 3 (segment mean 1.53)	matched: gain whole chr12 f 0.98
+NA12739	chr12	123912920	127123091	DRAGEN CNV: CN 3 (segment mean 1.51)	matched: gain whole chr12 f 0.98
+NA12739	chr12	128085891	131645699	DRAGEN CNV: CN 3 (segment mean 1.49)	matched: gain whole chr12 f 0.98
+NA12748	chr13	87619008	90210757	DRAGEN CNV: CN 3 (segment mean 1.28)	matched: gain stretch chr13 f 0.68
+NA12748	chr13	90212756	101241138	DRAGEN CNV: CN 3 (segment mean 1.33)	matched: gain stretch chr13 f 0.68
+NA12748	chr13	101244373	111668671	DRAGEN CNV: CN 3 (segment mean 1.31)	matched: gain stretch chr13 f 0.68
+NA12748	chr13	111790054	114154011	DRAGEN CNV: CN 3 (segment mean 1.34)	matched: gain stretch chr13 f 0.68
+NA12748	chr21	44199492	46680053	DRAGEN CNV: CN 1 (segment mean 0.68)	matched: loss stretch chr21 f 0.60
