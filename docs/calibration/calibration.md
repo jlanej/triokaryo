@@ -103,25 +103,25 @@ Detection rate of planted events in the child (rows: cell fraction; columns: eve
 
 ## Whole-chromosome events
 
-A maternal meiosis I trisomy (both maternal homologues) and a maternal heterodisomy; a heterodisomy below f = 1 is read as copy-neutral LOH, which counts as found. Staged: the share of found trisomies with a stage (none below a phased shift of 0.05, about a cell fraction of 0.22, where the homologue test is not attempted); meiosis I: the share of the staged ones read as meiosis I.
+A maternal meiosis I trisomy (both maternal homologues) and a maternal heterodisomy; a heterodisomy below f = 1 is read as copy-neutral LOH, which counts as found. Staged: the share of found trisomies with a stage (none below a phased shift of 0.03, about a cell fraction of 0.13, where the homologue test is not attempted); meiosis I: the share of the staged ones read as meiosis I.
 
 | depth | f | trisomy found | staged | meiosis I | origin correct | heterodisomy found | read as |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 15× | 0.05 | 0% (0–66) |  |  |  | 0% (0–66) |  |
 | 15× | 0.10 | 100% (34–100) | 0% |  | 100% | 100% (34–100) | LOH |
-| 15× | 0.20 | 100% (34–100) | 0% |  | 100% | 100% (34–100) | LOH |
+| 15× | 0.20 | 100% (34–100) | 100% | 100% | 100% | 100% (34–100) | LOH |
 | 15× | 0.30 | 100% (34–100) | 100% | 100% | 100% | 100% (34–100) | LOH |
 | 15× | 0.50 | 100% (34–100) | 100% | 100% | 100% | 100% (34–100) | LOH |
 | 15× | 1.00 | 100% (34–100) | 100% | 100% | 100% | 100% (34–100) | UPD |
 | 30× | 0.05 | 50% (9–91) | 0% |  | 100% | 50% (9–91) | LOH |
 | 30× | 0.10 | 100% (34–100) | 0% |  | 100% | 100% (34–100) | LOH |
-| 30× | 0.20 | 100% (34–100) | 0% |  | 100% | 100% (34–100) | LOH |
+| 30× | 0.20 | 100% (34–100) | 100% | 100% | 100% | 100% (34–100) | LOH |
 | 30× | 0.30 | 100% (34–100) | 100% | 100% | 100% | 100% (34–100) | LOH |
 | 30× | 0.50 | 100% (34–100) | 100% | 100% | 100% | 100% (34–100) | LOH |
 | 30× | 1.00 | 100% (34–100) | 100% | 100% | 100% | 100% (34–100) | UPD |
 | 60× | 0.05 | 0% (0–66) |  |  |  | 0% (0–66) |  |
 | 60× | 0.10 | 100% (34–100) | 0% |  | 100% | 100% (34–100) | LOH |
-| 60× | 0.20 | 100% (34–100) | 0% |  | 100% | 100% (34–100) | LOH |
+| 60× | 0.20 | 100% (34–100) | 100% | 100% | 100% | 100% (34–100) | LOH |
 | 60× | 0.30 | 100% (34–100) | 100% | 100% | 100% | 100% (34–100) | LOH |
 | 60× | 0.50 | 100% (34–100) | 100% | 100% | 100% | 100% (34–100) | LOH |
 | 60× | 1.00 | 100% (34–100) | 100% | 100% | 100% | 100% (34–100) | UPD |
@@ -134,12 +134,12 @@ None in 36 runs.
 
 | type | depth | f_called | f_lrr | f_baf | f_phase | parent of origin correct |
 | --- | --- | --- | --- | --- | --- | --- |
-| gain | 15× | 0.005 | 0.005 | 0.031 | 0.018 | 100% |
+| gain | 15× | 0.004 | 0.004 | 0.031 | 0.018 | 100% |
 | loss | 15× | 0.002 | 0.002 | 0.062 | 0.014 | 100% |
 | LOH | 15× | 0.030 | nan | 0.030 | 0.014 | 100% |
 | gain | 30× | 0.003 | 0.003 | 0.015 | 0.012 | 100% |
 | loss | 30× | 0.003 | 0.003 | 0.017 | 0.008 | 100% |
 | LOH | 30× | 0.010 | nan | 0.010 | 0.008 | 100% |
 | gain | 60× | 0.004 | 0.004 | 0.002 | 0.008 | 100% |
-| loss | 60× | 0.002 | 0.002 | 0.009 | 0.005 | 100% |
+| loss | 60× | 0.002 | 0.002 | 0.009 | 0.006 | 100% |
 | LOH | 60× | 0.000 | nan | 0.000 | 0.006 | 100% |

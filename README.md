@@ -231,7 +231,7 @@ genomes. The grid in [`docs/calibration/`](docs/calibration/README.md) (15×, 30
 replicates) finds segmental events of 10 Mb and up from a cell fraction of 0.2 at every depth and from 0.1 at 60×,
 5-Mb events from 0.5 at 15×, 0.3 at 30× and 0.2 at 60×, whole-chromosome trisomy and heterodisomy from 0.1 at every
 depth, and nothing at 0.05; the cell fraction is within 0.01–0.03, the parent of origin is always correct, the meiotic
-stage is assigned from a cell fraction of 0.3, and no false call appears on the unaffected chromosomes in 36 runs.
+stage is assigned from a cell fraction of 0.2, and no false call appears on the unaffected chromosomes in 36 runs.
 
 ## Limitations
 

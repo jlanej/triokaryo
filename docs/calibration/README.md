@@ -25,8 +25,8 @@ Reading, at this density:
 - **Whole chromosomes.** The maternal trisomy and the heterodisomy are found from a cell fraction of 0.1 at every depth
   (half the replicates at 0.05 and 30×), with the parent of origin always correct. A heterodisomy below f = 1 is read as
   mosaic copy-neutral LOH, which the method cannot tell from a mosaic heterodisomy; at f = 1 it is UPD. The meiotic stage is
-  assigned from a cell fraction of 0.3 and is then always meiosis I; below a phased shift of 0.05 (a cell fraction of about
-  0.22) the homologue test is not attempted, so low-fraction mosaics carry no stage rather than a wrong one.
+  assigned from a cell fraction of 0.2 and is then always meiosis I; below a phased shift of 0.03 (a cell fraction of about
+  0.13) the homologue test is not attempted, so a 10% mosaic carries no stage rather than a wrong one.
 - **No false call** on an unaffected chromosome in any of the 36 runs.
 - **Cell fraction.** The depth estimate is within 0.004 at every depth; the folded-band estimate within 0.03–0.06 at 15×
   and 0.01–0.02 at 30×; the phased estimate within 0.02 at 15× and 0.01 at 30× and 60×.
