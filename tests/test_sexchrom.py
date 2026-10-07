@@ -129,3 +129,17 @@ def test_x_level_corrected_within_the_trio_without_a_panel(tmp_path):
     res2 = run_trio(m2["vcf"], read_trios(m2["trios"])[0], str(tmp_path / "out2"), gc_track=m2["gc"], figures=False, log=lambda s: None)
     (e,) = res2["events"]
     assert e.chrom == "chrX" and e.type == "gain" and abs(e.f - 1.0) < 0.08 and res2["summary"]["child_karyotype"] == "47,XXY(mat,MI)", (e.f, res2["summary"]["child_karyotype"])
+
+
+def test_mosaic_maternal_xxy_is_staged_from_a_low_cell_fraction(tmp_path):
+    """A 46,XY/47,XXY mosaic with both maternal X homologues (a maternal meiosis I error, the extra X lost in most cells) in 20% of
+    cells: the whole-X gain is maternal, and the stage reads meiosis I from the auxiliary track at the father's sites, which does
+    not depend on the child being called heterozygous."""
+    from triokaryo.mock import KID
+    ev = [dict(member=KID, chrom="chrX", start=0, end=None, f=0.2, delta={"mat_other": +1}, label="mosaic maternal XXY, 20%", type="gain", origin="extra copy maternal", inherited=False)]
+    m = write_mock(str(tmp_path / "xxy20"), seed=13, events=ev)
+    res = run_trio(m["vcf"], read_trios(m["trios"])[0], str(tmp_path / "out"), gc_track=m["gc"], figures=False, log=lambda s: None)
+    (e,) = [e for e in res["events"] if e.chrom == "chrX"]
+    assert e.type == "gain" and abs(e.f - 0.2) < 0.06 and e.origin == "extra copy maternal" and e.origin_phase == "extra copy maternal", (e.f, e.origin, e.origin_phase)
+    assert e.stage == "meiosis I" and e.centromere == "heterodisomic" and e.n_crossovers == 0, (e.stage, e.centromere, e.n_crossovers, e.hetero_share)
+    assert res["summary"]["child_karyotype"] == "mos 47,XXY(mat,MI)[%.2f]/46,XY" % e.f

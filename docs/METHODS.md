@@ -136,9 +136,9 @@ the maternal fraction at informative sites stays at 1 (p = 1 or 0 in the likelih
 and the cell fraction is not readable from the bands) and paternal when it falls to 1/(1 + f) (p = 1/(1+f) or
 f/(1+f); the phased shift is (1 − f)/(2(1 + f)), so f_phase = (1 − 2s)/(1 + 2s)); a paternal extra X implies a
 paternal meiosis I error (X and Y transmitted together), a maternal one is staged like an autosomal trisomy, with
-windows lacking the auxiliary track counted as isodisomic (where the two maternal copies differ at cell fraction f, the
-auxiliary track reads 1/(1 + f) or f/(1 + f), so the two-homologue criterion widens with 1/(1 + f) − 1/2; below a cell
-fraction of about 0.3 the child's heterozygous calls thin out and the stage is unreliable). A male's X loss has no
+the auxiliary track read at any confident child call (where the two maternal copies differ at cell fraction f it reads
+1/(1 + f) or f/(1 + f), where they are one homologue 0 or 1, so the two-homologue criterion widens with 1/(1 + f) − 1/2
+and holds down to a cell fraction of about 0.15). A male's X loss has no
 parent to resolve (the single X is maternal). In a daughter, a paternal extra X (47,XXX or a mosaic) is necessarily the
 father's single X twice, so its two copies are one homologue and the stage is meiosis II or post-zygotic; a maternal
 extra X is staged from the centromere like an autosomal trisomy. Without a pedigree sex, the Y copy number implies the
@@ -178,7 +178,11 @@ heterodisomy), the class tagged by the other parent's homozygous genotype is mis
 trisomy the `father_hom` track reads 1/3 where the two maternal homologues differ and returns to the main track's 2/3
 where a crossover has made them identical. For a child's gain, LOH or UPD with a parent named and |shift| ≥ 0.03 (a gain
 in about 13% of cells), the share of the event's windows (≥ 4 windows with ≥ 5 auxiliary sites each) in which the relevant auxiliary track
-disagrees in sign with the main track (for UPD: lies within half the main track's deviation) is `hetero_share`:
+disagrees in sign with the main track is `hetero_share`. For an event with both copies from one parent (a heterodisomy,
+a maternal XXY) the auxiliary track is read at the same sites with any confident child call: where the two copies are
+one homologue the child is homozygous there and the fraction sits at 0 or 1, where they differ it sits near 1/2
+(1/(1 + f) or f/(1 + f) in a mosaic), so the reading does not depend on the child being called heterozygous, which
+fails at a low cell fraction. `hetero_share` is then the share of windows within 1/(1 + f) − 1/2 + 0.12 of one half:
 ≥ 0.9 "two different homologues throughout (meiotic)", ≤ 0.1 "one homologue throughout (mitotic, or a meiosis II error
 without a crossover)", otherwise the share is reported (meiotic with crossovers).
 
@@ -191,9 +195,8 @@ heterodisomic at the centromere, a meiosis I nondisjunction; isodisomic at the c
 elsewhere, meiosis II; isodisomic throughout, a mitotic duplication or a meiosis II error without a crossover (`stage`,
 `centromere`). Each change of state along the chromosome is a crossover, placed midway between the two windows
 (`n_crossovers`, `crossovers` in Mb, `crossover_states` as hetero>iso or iso>hetero; one row per crossover in
-`crossovers.tsv`, and a dashed line on the chromosome figure). Along a heterodisomy an isodisomic segment has no heterozygous child sites, so a
-window carrying the main track but no auxiliary track counts as isodisomic. Segmental events receive no stage, since
-nondisjunction is a whole-chromosome event.
+`crossovers.tsv`, and a dashed line on the chromosome figure). Segmental events receive no stage, since nondisjunction is
+a whole-chromosome event.
 
 **Windows and step fit.** Main-class sites are pooled in consecutive windows of w sites, w chosen so that a window
 spans about 400 kb at the member's genome-wide phased-site density (20 ≤ w ≤ 200); a window never spans a gap of more

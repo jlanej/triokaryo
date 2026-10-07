@@ -115,6 +115,14 @@ def phase_classes(sites, m, min_dp, min_gq, x_hemizygous_child=False):
         out["mother_hom"] = (np.flatnonzero(c2), (gt[2] == GT_HOMALT)[c2])
         c3 = hom[1] & het[2] & het[0]
         out["father_hom"] = (np.flatnonzero(c3), (gt[1] == GT_HOMREF)[c3])
+        # the same sites with any confident child call, for events with both copies from one parent (a heterodisomy, a maternal
+        # XXY): where the two copies are one homologue the child is homozygous there and the fraction sits at 0 or 1, where they
+        # differ it sits near 1/2, so the reading does not depend on the child being called heterozygous (which fails at a low
+        # cell fraction, where the minor allele's reads fall under the caller's threshold)
+        c2a = hom[2] & het[1] & conf[0]
+        out["mother_hom_all"] = (np.flatnonzero(c2a), (gt[2] == GT_HOMALT)[c2a])
+        c3a = hom[1] & het[2] & conf[0]
+        out["father_hom_all"] = (np.flatnonzero(c3a), (gt[1] == GT_HOMREF)[c3a])
     else:
         o = 3 - m
         main = het[m] & hom[0]
@@ -360,12 +368,17 @@ def origin_from_shift(role, kind, shift):
 def _homologue_states(ev, track, absent_is_iso=False, upd_like=None):
     """Per window inside a child's event: True where the named parent's two copies in the child are different homologues, False
     where they are one, from the auxiliary track read at the other parent's homozygous sites (it departs from the main track,
-    1/3 against 2/3 along a trisomy, where the copies differ; along a heterodisomy it sits at 1/2). Windows without that track
-    are dropped, or counted as one homologue when absent_is_iso: a heterodisomy's isodisomic segments have no heterozygous
-    child sites, so the track is absent there while the main track is present. Returns (window positions, states) or None."""
+    1/3 against 2/3 along a trisomy, where the copies differ; along a heterodisomy it sits at 1/2). For an event with both
+    copies from one parent (upd_like) the track read at any confident child call is used, which sits at 0 or 1 where the copies
+    are one homologue; otherwise windows without the track are dropped, or counted as one homologue when absent_is_iso.
+    Returns (window positions, states) or None."""
     if ev.role != "child" or ev.type not in ("gain", "LOH", "UPD") or not np.isfinite(ev.phase_shift) or track is None or abs(ev.phase_shift) < HOMOLOGUE_MIN_SHIFT:
         return None
+    upd = (ev.type == "UPD") if upd_like is None else upd_like
     name = "father_hom" if ev.phase_shift > 0 else "mother_hom"          # a maternal event: the sites tagged by the father's homozygosity
+    if upd and name + "_all" in track.aux:
+        name += "_all"                                                      # both copies from one parent: any confident child call (see phase_classes)
+        absent_is_iso = False
     if name not in track.aux:
         return None
     af, an = track.aux[name]
@@ -373,7 +386,7 @@ def _homologue_states(ev, track, absent_is_iso=False, upd_like=None):
     have = inside & np.isfinite(af) & (an >= 5)
     main = track.w_frac - 0.5
     other = np.where(np.isfinite(af), af, 0.5) - 0.5
-    if (ev.type == "UPD") if upd_like is None else upd_like:
+    if upd:
         # both copies from one parent in a cell fraction f: where they differ, the auxiliary track reads 1/(1+f) or f/(1+f),
         # i.e. 1/(1+f) - 1/2 from one half (0 at f = 1); where they are one homologue the child has no heterozygous site
         f = float(np.clip(ev.f, 0.0, 1.0)) if np.isfinite(ev.f) else 1.0

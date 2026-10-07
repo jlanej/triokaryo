@@ -44,6 +44,9 @@ ordered by expected value; "done" items are kept for the record with the commit 
 - A structural-variant VCF of the events (`events.vcf`) beside the BED.
 - The homologue test's shift floor is 0.03 (a gain in about 13% of cells) with a five-window minimum run for a state, so
   mosaic trisomies and XXY from 15% receive a stage; tested against one- and two-homologue mosaics at 15-30%.
+- For events with both copies from one parent (heterodisomy, maternal XXY) the homologue reading uses the auxiliary track at
+  any confident child call (0 or 1 where the copies are one homologue), so a mosaic maternal XXY is staged from about 15%.
+- `triokaryo batch`: every trio of a pedigree in parallel, from a joint VCF or per-trio VCFs, then the cohort report.
 
 ## Method
 
@@ -82,5 +85,5 @@ ordered by expected value; "done" items are kept for the record with the commit 
   events only; a mosaic trisomy from a meiotic error with partial trisomy rescue carries the same signature at a diluted
   shift, and the centromeric state could also date a uniparental isodisomy (monosomy rescue) when read from the parents'
   haplotypes.
-- **Throughput for cohorts.** Parallelise the scan and the binning by chromosome; stream sites instead of holding every
-  chromosome's arrays; a `--regions` option for a quick look at one chromosome.
+- **Throughput within a trio.** `triokaryo batch` parallelises over trios; within one trio, the scan and binning could be
+  parallelised by chromosome, and a `--regions` option would give a quick look at one chromosome.

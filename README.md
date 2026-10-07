@@ -86,8 +86,9 @@ triokaryo run --vcf family.vcf.gz --pedigree trios.tsv --child KID --gc-track gc
 # or name the members directly
 triokaryo run --vcf family.vcf.gz --child KID --father DAD --mother MOM --sex M,M,F --out out/KID
 
-# many trios: all events, per-trio quality metrics, concordance with the supplied events
-triokaryo cohort --runs 'out/*' --events ngsdose/karyotype/events.tsv --out cohort
+# many trios: every trio of the pedigree in parallel, then the cohort report (all events, per-trio metrics, concordance)
+triokaryo batch --pedigree trios.tsv --vcf family.vcf.gz --out out --jobs 8 --panel 1kg-dragen --cohort cohort
+triokaryo cohort --runs 'out/*' --events ngsdose/karyotype/events.tsv --out cohort     # or gather existing runs
 
 # the demo on the simulated trio
 make demo && open mock_out/KID/index.html

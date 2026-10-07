@@ -6,6 +6,7 @@
   triokaryo panel --vcfs a.vcf.gz b.vcf.gz ... --out panel.tsv        # or --runs 'out/*' from earlier runs
   triokaryo gc-track --fasta ref.fa --out gc.tsv [--bin 1000000]
   triokaryo mock --out mock_dir [--seed 1] [--no-events] [--xxy] [--contigs chr15,chr16,chr17 --sites-per-mb 1000 --low-share | --meiosis]
+  triokaryo batch --pedigree trios.tsv --vcf joint.vcf.gz --out out --jobs 8 --cohort cohort [--panel ...]   # every trio, in parallel
   triokaryo cohort --runs 'out/*' --out cohort [--events other_calls.tsv]   # cohort report and guide
   triokaryo calibrate --out calib [--cell-fractions 0.05,0.1,0.2,0.3,0.5,1 --depths 15,30,60 --sizes 5,10,20,50 --replicates 2]
   triokaryo report --runs 'out/*'                   # rebuild a run's page from its tables (no VCF needed)
@@ -106,6 +107,66 @@ def cmd_mock(a):
                        contigs=a.contigs.split(",") if a.contigs else None, child_sex=a.child_sex, xxx=a.xxx, sex_deficit=deficit)
     _log("mock trio -> %s" % paths["vcf"])
     return 0
+
+
+def _batch_one(args):
+    """One trio of a batch, in a worker process: returns (kid, out dir, error or None)."""
+    vcf, trio, out, kw = args
+    try:
+        from .pipeline import run_trio
+        run_trio(vcf, trio, out, log=lambda s: None, **kw)
+        return trio.kid, out, None
+    except BaseException as e:  # noqa: BLE001  (a failed trio is reported, the batch goes on)
+        return trio.kid, out, "%s: %s" % (type(e).__name__, e)
+
+
+def cmd_batch(a):
+    """Every trio of a pedigree, in parallel, from one joint VCF or per-trio VCFs named by a pattern; then the cohort report."""
+    import multiprocessing
+    from .pedigree import read_trios
+    trios = read_trios(a.pedigree)
+    if a.child:
+        keep = set(a.child.split(","))
+        trios = [t for t in trios if t.kid in keep]
+    if not trios:
+        sys.exit("no trio in %s" % a.pedigree)
+    if not (a.vcf or a.vcf_pattern):
+        sys.exit("give --vcf (one joint VCF) or --vcf-pattern (per-trio VCFs, e.g. 'vcfs/{kid}.vcf.gz')")
+    panel = a.panel
+    if panel and not os.path.exists(panel):
+        built_in = {"1kg-dragen": "panel.1kg_dragen_3.7.6.1mb.tsv"}
+        if panel in built_in:
+            panel = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", built_in[panel])
+        else:
+            sys.exit("no panel %s" % panel)
+    kw = dict(gc_track=a.gc_track, events_path=a.events, bin_size=a.bin, min_dp=a.min_dp, min_gq=a.min_gq, thin=a.thin, genome_name=a.genome,
+              figures=not a.no_figures, panel=panel)
+    jobs = []
+    for t in trios:
+        vcf = a.vcf or a.vcf_pattern.format(kid=t.kid, dad=t.dad, mom=t.mom, family=t.family)
+        if not os.path.exists(vcf):
+            _log("WARNING: %s: no VCF at %s, skipped" % (t.kid, vcf))
+            continue
+        jobs.append((vcf, t, os.path.join(a.out, t.kid), kw))
+    _log("%d trios, %d worker(s)" % (len(jobs), a.jobs))
+    done, failed = [], []
+    if a.jobs > 1:
+        with multiprocessing.get_context("spawn").Pool(a.jobs) as pool:
+            results = pool.imap_unordered(_batch_one, jobs)
+            for kid, out, err in results:
+                (failed if err else done).append((kid, out, err))
+                _log("%s: %s" % (kid, err or ("-> " + out)))
+    else:
+        for job in jobs:
+            kid, out, err = _batch_one(job)
+            (failed if err else done).append((kid, out, err))
+            _log("%s: %s" % (kid, err or ("-> " + out)))
+    if failed:
+        _log("%d trio(s) failed: %s" % (len(failed), "; ".join("%s (%s)" % (k, e) for k, _, e in failed)))
+    if a.cohort and done:
+        from .report import write_cohort
+        write_cohort(a.cohort, [out for _, out, _ in done], events_path=a.events, genome_name=a.genome, log=_log)
+    return 1 if failed and not done else 0
 
 
 def cmd_merge(a):
@@ -216,6 +277,24 @@ def main(argv=None):
     c.add_argument("--events", help="events from another method to match (as for run)")
     c.add_argument("--genome", default="grch38")
     c.set_defaults(fn=cmd_cohort)
+    b = sub.add_parser("batch", help="every trio of a pedigree in parallel, from one joint VCF or per-trio VCFs, then the cohort report")
+    b.add_argument("--pedigree", required=True, help="a trios file or PED with every trio")
+    b.add_argument("--vcf", help="one joint VCF holding every member")
+    b.add_argument("--vcf-pattern", help="per-trio VCF paths with {kid}, {dad}, {mom} or {family}, e.g. 'vcfs/{kid}.trio.vcf.gz'")
+    b.add_argument("--out", required=True, help="output directory; each trio under <out>/<child>")
+    b.add_argument("--child", help="comma-separated children to run (default all)")
+    b.add_argument("--jobs", type=int, default=1, help="parallel workers")
+    b.add_argument("--cohort", help="write the cohort report over the finished trios into this directory")
+    b.add_argument("--gc-track")
+    b.add_argument("--panel")
+    b.add_argument("--events")
+    b.add_argument("--bin", type=int, default=1_000_000)
+    b.add_argument("--min-dp", type=int, default=8)
+    b.add_argument("--min-gq", type=int, default=20)
+    b.add_argument("--thin", type=int, default=1)
+    b.add_argument("--genome", default="grch38")
+    b.add_argument("--no-figures", action="store_true")
+    b.set_defaults(fn=cmd_batch)
     mg = sub.add_parser("merge", help="per-sample VCFs into one trio VCF with bcftools: PASS biallelic SNVs, merged with -0 (absent = homozygous reference), indexed")
     mg.add_argument("--child", required=True, help="the child's VCF (bgzipped and indexed)")
     mg.add_argument("--father", required=True)
