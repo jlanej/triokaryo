@@ -81,8 +81,11 @@ def run_trio(vcf, trio, out, gc_track=None, events_path=None, bin_size=1_000_000
         for c in chroms:
             figs.append(fig_chrom(trio, c, bins, scan, events, external, G, fdir, min_dp, min_gq, tracks=tracks))
     write_html(out, trio, figs, events, summ, external, mock_note)
+    from .guide import write_guide
+    write_guide(os.path.join(out, "guide.html"))
     with open(os.path.join(out, "summary.json"), "w") as fh:
         json.dump(dict(trio=trio.name, members=list(trio.members), sexes=list(trio.sexes), x_copies=x_copies, mie_rate_genome=base_mie, phasing=phase_info,
+                       genome=genome_name, mock_note=mock_note,
                        events=[e.as_dict() for e in events], external=[dict(sample=x.sample, chrom=x.chrom, start=x.start, end=x.end, label=x.note, match=x.inheritance) for x in external],
                        sites_used=scan.n_used, records=scan.n_records, skipped=scan.skipped, seconds=round(time.time() - t0, 1)),
                   fh, indent=1, default=lambda o: None if (isinstance(o, float) and not np.isfinite(o)) else str(o))

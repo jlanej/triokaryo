@@ -59,6 +59,27 @@ panels the mother's alleles `#CC79A7`, the father's `#E69F00` (the informative s
 that parts where the child carries two different homologues of that parent); a parent's copies passed `#D55E00` and
 not passed `#56B4E9`; given events black brackets; references dotted grey.
 
-## cohort/
+## guide.html
 
-`events.all.tsv`, `summary.all.tsv`, `concordance.tsv` (each given event with its match), `index.html`.
+Beside every trio's page and the cohort report: how to read every row of the figures, every colour, every kind of
+event (pattern cards drawn from idealised tracks: gain, loss, copy-neutral LOH, isodisomy, heterodisomy, a run of
+homozygosity, a meiotic and a mitotic trisomy), the rules the calls follow, and every column. Also
+`triokaryo guide --out guide.html [--figures dir]`.
+
+## cohort/ (`triokaryo cohort`)
+
+`index.html`: the report - the counts (trios, events by type, by member, by source, new and inherited, the phased
+finds, the depth calls the bands doubt, the runs of homozygosity, the X readings against the pedigree's sex, the
+concordance), `figures/landscape.*` (events per chromosome by type; one row per trio, each event a bar coloured by
+type, the child's thick, a parent's thin above or below, a black line over a bar for a matched event), the table of
+every event (sortable, filterable; links to each trio's page and chromosome figure), the trios with their quality
+readings, the concordance with the given events, the phased scan's segments set aside by region, the colours.
+`events.all.tsv` (every event with its trio), `summary.all.tsv` (per trio: members, sexes, sites, Mendelian-error
+rate, X copies and checks, depths, phased sites, windows parted in everyone, segments set aside, events, flagged
+events, seconds, run), `concordance.tsv` (each given event with its match), `flags.tsv` (every event with a note),
+`rejected.all.tsv`, `guide.html`, `figures/patterns_*.*`.
+
+## triokaryo report --runs
+
+A run's page, figure sidecars, legends and guide again from its tables and figures (no VCF): after a change to the
+page or the key, or to add the guide to an older run.

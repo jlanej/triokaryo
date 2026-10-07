@@ -1,6 +1,7 @@
 """Tables and the per-trio page. Every number of the figures is in a table; the page embeds the figures and their keys."""
 import base64
 import html
+import json
 import os
 
 import numpy as np
@@ -107,7 +108,7 @@ def _table(cols, rows):
     return h + "</table>"
 
 
-CSS = ("body{font-family:Helvetica,Arial,sans-serif;max-width:1200px;margin:1.5em auto;padding:0 1em;color:#222}table{border-collapse:collapse;font-size:12px;"
+CSS = ("html{background:#fff;color-scheme:light}body{font-family:Helvetica,Arial,sans-serif;max-width:1200px;margin:1.5em auto;padding:0 1em;color:#222;background:#fff}table{border-collapse:collapse;font-size:12px;"
        "margin:0.5em 0}th,td{border:1px solid #ddd;padding:2px 6px;text-align:left}th{background:#f3f3f3}img{max-width:100%}figure{margin:1em 0}"
        "figcaption{font-size:12px;color:#444}.key{font-size:11px;color:#555}h2{margin-top:1.5em}.mock{background:#fff3cd;padding:0.5em;border:1px solid #e0c060}")
 
@@ -136,7 +137,31 @@ def write_html(out, trio, figs, events, summ, external, mock_note=""):
         w.append('<figure><img src="%s" alt="%s"><figcaption><b>Figure %d. %s.</b> %s</figcaption><div class="key">%s</div></figure>' % (
             _img(fg["png"]), html.escape(fg["name"]), n, html.escape(fg["title"]), html.escape(fg["caption"]),
             " &middot; ".join('<span style="color:%s">&#9632;</span> %s' % (c, html.escape(t)) for c, _, t in (__import__("triokaryo.plots", fromlist=["KEY"]).KEY[k] for k in fg["keys"]))))
-    w.append("<h2>How to read it</h2><p>LRR: log2 of the bin's median depth over the member's autosomal median; a gain of one copy in a share f of the cells "
+    flagged = [e for e in events if e.note]
+    if flagged:
+        w.append("<h3>Flags</h3><ul>" + "".join("<li>%s %s %s %s: %s</li>" % tuple(html.escape(str(v)) for v in (e.role, e.chrom, e.type, e.span, e.note)) for e in flagged) + "</ul>")
+    w.append("<h2>How to read it</h2>")
+    from .guide import key_table
+    from .plots import DIRECTION
+    w.append("<p><b>The rows.</b> LRR: log2 of the bin's median depth over the member's autosomal median, with its step fit and the calls (a gain in a share f of cells "
+             "reads log2(1 + f/2), a loss log2(1 - f/2); a copy-neutral event is drawn at zero). BAF: the raw alt-allele fraction at heterozygous sites, the child's "
+             "opposite-homozygote sites coloured by the parent of the alt allele. The phased fraction: the maternal allele's along the child, the transmitted allele's "
+             "along a parent - sites, pooled windows and step fit; the thin lines the auxiliary tracks, which part from the main one where the child carries two "
+             "different homologues of one parent. Copies: the LRR step fit's copies split by the fraction's. Het rate: heterozygous calls per confident call.</p>")
+    w.append("<p><b>The direction.</b> %s</p>" % html.escape(DIRECTION))
+    w.append("<p><b>The calls.</b> source: depth (the LRR), bands (the folded bands or the heterozygosity rate), phased (a shift of the phased track the depth did not "
+             "call: a gain or loss in a few per cent of cells, or a uniparental heterodisomy). f: the share of cells, from the depth where it called the event, else from "
+             "the bands; f_lrr, f_baf and f_phase are the three readings side by side. origin: the parent of origin from the opposite-homozygote sites; origin_phase "
+             "from the phased sign; homologues: one or two. An LOH in every cell with no Mendelian errors is a run of homozygosity, with them a uniparental isodisomy. "
+             "Every number is in events.tsv, bins.tsv and phased.tsv beside this page; the full guide with pattern cards is <a href=\"guide.html\">guide.html</a>.</p>")
+    used = []
+    for fg in figs:
+        for k in fg["keys"]:
+            if k not in used:
+                used.append(k)
+    if used:
+        w.append("<p><b>The colours.</b></p>" + key_table(used))
+    w.append("<p style=\"display:none\">LRR: log2 of the bin's median depth over the member's autosomal median; a gain of one copy in a share f of the cells "
              "reads log2(1 + f/2), a loss log2(1 - f/2). BAF: the alt-allele fraction at heterozygous sites; a gain parts the bands to 1/(2+f) and (1+f)/(2+f), "
              "a loss to (1-f)/(2-f) and 1/(2-f), a copy-neutral loss of heterozygosity to (1-f)/2 and (1+f)/2 - f estimated from the bands independently "
              "of the depth (f_baf beside f_lrr). The heterozygosity rate falls to zero under a loss of heterozygosity in every cell. Parent of origin: at "
@@ -150,3 +175,262 @@ def write_html(out, trio, figs, events, summ, external, mock_note=""):
     w.append("</body></html>")
     with open(os.path.join(out, "index.html"), "w") as fh:
         fh.write("\n".join(w))
+
+
+def _trio_of(summary):
+    from .pedigree import Trio
+    m, sx = summary["members"], summary.get("sexes") or ["", "", ""]
+    return Trio(m[0], m[1], m[2], sx[0] or "", sx[1] or "", sx[2] or "")
+
+
+def events_of(summary):
+    """The events of a run's summary.json back as Event objects."""
+    from .segment import Event
+    out = []
+    for e in summary["events"]:
+        ev = Event(e["sample"], e["role"], e["chrom"], int(e["start"]), int(e["end"]), e["span"], e["type"])
+        for k, v in e.items():
+            if hasattr(ev, k) and k not in ("f",):
+                if isinstance(v, str) or v is None:
+                    setattr(ev, k, v if v is not None else (float("nan") if isinstance(getattr(ev, k), float) else ""))
+                else:
+                    setattr(ev, k, v)
+        ev.note = e.get("note") or ""
+        ev.external = e.get("external") or ""
+        out.append(ev)
+    return out
+
+
+def _read_summary_tsv(path):
+    if not os.path.exists(path):
+        return {}
+    lines = open(path).read().splitlines()
+    if len(lines) < 2:
+        return {}
+    return dict(zip(lines[0].split("\t"), lines[1].split("\t")))
+
+
+def _externals_of(path):
+    """The given events of a run back from external.tsv (sample, chrom, start, end, label, match)."""
+    from .segment import Event
+    out = []
+    if not os.path.exists(path):
+        return out
+    head = None
+    for line in open(path):
+        f = line.rstrip("\n").split("\t")
+        if head is None:
+            head = f
+            continue
+        r = dict(zip(head, f))
+        x = Event(r["sample"], "", r["chrom"], int(float(r["start"])), int(float(r["end"])), "", "", note=r.get("label", ""))
+        x.inheritance = r.get("match", "")
+        out.append(x)
+    return out
+
+
+def rebuild_run(run_dir, log=None):
+    """A run's page, sidecars, legends and guide again from its tables and figures (after a change to the page or the key), no VCF needed."""
+    from .genome import genome as load_genome
+    from .guide import write_guide
+    from .plots import read_sidecar, write_legend, write_sidecar
+    summary = json.load(open(os.path.join(run_dir, "summary.json")))
+    trio = _trio_of(summary)
+    events = events_of(summary)
+    summ = _read_summary_tsv(os.path.join(run_dir, "summary.tsv"))
+    for k in ("mie_rate_genome", "child_x_copies", "father_x_copies", "mother_x_copies"):
+        try:
+            summ[k] = float(summ.get(k, "nan"))
+        except ValueError:
+            summ[k] = float("nan")
+    external = _externals_of(os.path.join(run_dir, "external.tsv"))
+    G = load_genome(summary.get("genome", "grch38"))
+    fdir = os.path.join(run_dir, "figures")
+    figs = []
+    if os.path.isdir(fdir):
+        names = [f[:-4] for f in os.listdir(fdir) if f.endswith(".png") and (f == "genome.png" or f.startswith("chrom_"))]
+        names.sort(key=lambda n: (n != "genome", G.chroms.index(n[6:]) if n.startswith("chrom_") and n[6:] in G.chroms else 99))
+        for n in names:
+            sc = os.path.join(fdir, n + ".txt")
+            title, caption, keys = read_sidecar(sc) if os.path.exists(sc) else ("", "", None)
+            if keys is None:
+                from .plots import CHROM_KEYS, GENOME_KEYS
+                keys = GENOME_KEYS if n == "genome" else CHROM_KEYS
+            write_sidecar(fdir, n, title, caption, keys)
+            write_legend(fdir, n, keys)
+            figs.append(dict(name=n, title=title, caption=caption, keys=keys, png=os.path.join(fdir, n + ".png")))
+    write_html(run_dir, trio, figs, events, summ, external, summary.get("mock_note", ""))
+    write_guide(os.path.join(run_dir, "guide.html"))
+    if log:
+        log("%s: page, %d figure sidecars and legends, guide rebuilt" % (run_dir, len(figs)))
+    return figs
+
+
+JS = """
+function sortTable(t, n) {
+  const tb = t.tBodies[0], rows = Array.from(tb.rows), asc = !(t.dataset.sortCol == n && t.dataset.sortAsc == '1');
+  const num = v => { const x = parseFloat(v.replace(/,/g, '')); return isNaN(x) ? null : x; };
+  rows.sort((a, b) => { const va = a.cells[n].textContent.trim(), vb = b.cells[n].textContent.trim(); const na = num(va), nb = num(vb);
+    const c = (na !== null && nb !== null) ? na - nb : va.localeCompare(vb); return asc ? c : -c; });
+  rows.forEach(r => tb.appendChild(r)); t.dataset.sortCol = n; t.dataset.sortAsc = asc ? '1' : '0';
+}
+document.querySelectorAll('table.sortable').forEach(t => Array.from(t.tHead.rows[0].cells).forEach((th, i) => { th.style.cursor = 'pointer'; th.title = 'sort'; th.addEventListener('click', () => sortTable(t, i)); }));
+const box = document.getElementById('filter');
+if (box) box.addEventListener('input', () => { const q = box.value.toLowerCase(); let n = 0;
+  document.querySelectorAll('#events tbody tr').forEach(r => { const on = r.textContent.toLowerCase().includes(q); r.style.display = on ? '' : 'none'; if (on) n++; });
+  document.getElementById('nshown').textContent = n; });
+"""
+
+COHORT_COLS = ["trio", "sample", "role", "chrom", "start", "end", "start_fine", "end_fine", "span", "type", "source", "f", "f_lrr", "f_baf", "f_phase", "lrr", "d_hat",
+               "phase_shift", "n_phased", "homologues", "het_rate_rel", "mie_rate", "origin", "origin_llr", "origin_n", "origin_phase", "inheritance", "external", "note"]
+
+
+def write_cohort(out, run_dirs, events_path=None, genome_name="grch38", log=None):
+    """The cohort report over every trio's run: the tables (events.all.tsv, summary.all.tsv, concordance.tsv, rejected.all.tsv,
+    flags.tsv), the landscape figure, the page (index.html) and the guide (guide.html)."""
+    from .external import match_external, read_events
+    from .genome import genome as load_genome
+    from .guide import key_table, write_guide
+    from .plots import DIRECTION, LANDSCAPE_KEYS, fig_landscape
+    os.makedirs(out, exist_ok=True)
+    G = load_genome(genome_name)
+    summaries, events, rows, rejected = [], [], [], []
+    for d in run_dirs:
+        sj = os.path.join(d, "summary.json")
+        if not os.path.exists(sj):
+            continue
+        s = json.load(open(sj))
+        s["run"] = d
+        s["tsv"] = _read_summary_tsv(os.path.join(d, "summary.tsv"))
+        s["events_obj"] = events_of(s)
+        summaries.append(s)
+        for e in s["events_obj"]:
+            events.append((s["trio"], e))
+        for e in s["events"]:
+            rows.append(dict(e, trio=s["trio"]))
+        rp = os.path.join(d, "phased_rejected.tsv")
+        if os.path.exists(rp):
+            head = None
+            for line in open(rp):
+                f = line.rstrip("\n").split("\t")
+                if head is None:
+                    head = f
+                    continue
+                rejected.append(dict(zip(head, f), trio=s["trio"]))
+    if not summaries:
+        raise SystemExit("no run with a summary.json under: " + " ".join(run_dirs))
+    write_tsv(os.path.join(out, "events.all.tsv"), COHORT_COLS, rows)
+    # the concordance with the given events
+    conc, ext = None, []
+    if events_path:
+        ext = read_events(events_path, G)
+        samples = {m for s in summaries for m in s["members"]}
+        ext = [x for x in ext if x.sample in samples]
+        match_external([e for _, e in events], ext)
+        conc = dict(external=len(ext), matched=sum(1 for x in ext if x.inheritance.startswith("matched")),
+                    new=sum(1 for _, e in events if e.type in ("gain", "loss") and not e.external), cn=sum(1 for _, e in events if e.type in ("LOH", "UPD")))
+        write_tsv(os.path.join(out, "concordance.tsv"), ["sample", "chrom", "start", "end", "label", "match"],
+                  [dict(sample=x.sample, chrom=x.chrom, start=x.start, end=x.end, label=x.note, match=x.inheritance) for x in ext])
+    # per trio
+    scols = ["trio", "members", "sexes", "sites_used", "records", "mie_rate_genome", "x_copies", "child_x_check", "father_x_check", "mother_x_check", "child_depth",
+             "father_depth", "mother_depth", "child_phased_sites", "father_phased_sites", "mother_phased_sites", "windows_shared", "rejected", "n_events", "n_flagged", "seconds", "run"]
+    srows = []
+    for s in summaries:
+        t = s["tsv"]
+        srows.append(dict(trio=s["trio"], members=",".join(s["members"]), sexes=",".join(s.get("sexes") or []), sites_used=s["sites_used"], records=s["records"],
+                          mie_rate_genome=s["mie_rate_genome"], x_copies=json.dumps(s["x_copies"]), child_x_check=t.get("child_x_check", ""), father_x_check=t.get("father_x_check", ""),
+                          mother_x_check=t.get("mother_x_check", ""), child_depth=t.get("child_depth", "NA"), father_depth=t.get("father_depth", "NA"), mother_depth=t.get("mother_depth", "NA"),
+                          child_phased_sites=t.get("child_phased_sites", "NA"), father_phased_sites=t.get("father_phased_sites", "NA"), mother_phased_sites=t.get("mother_phased_sites", "NA"),
+                          windows_shared=t.get("child_windows_shared", "NA"), rejected=sum(1 for r in rejected if r["trio"] == s["trio"]), n_events=len(s["events"]),
+                          n_flagged=sum(1 for e in s["events_obj"] if e.note), seconds=s.get("seconds"), run=s["run"]))
+    write_tsv(os.path.join(out, "summary.all.tsv"), scols, srows)
+    write_tsv(os.path.join(out, "rejected.all.tsv"), ["trio", "sample", "role", "chrom", "start", "end", "shift", "windows", "reason"], rejected)
+    flags = [dict(trio=t, sample=e.sample, role=e.role, chrom=e.chrom, start=e.start, end=e.end, type=e.type, source=e.source, f=e.f, note=e.note) for t, e in events if e.note]
+    write_tsv(os.path.join(out, "flags.tsv"), ["trio", "sample", "role", "chrom", "start", "end", "type", "source", "f", "note"], flags)
+    # the figure and the guide
+    fdir = os.path.join(out, "figures")
+    os.makedirs(fdir, exist_ok=True)
+    land = fig_landscape(events, G, fdir)
+    write_guide(os.path.join(out, "guide.html"), figures_dir=fdir)
+    # the counts
+    kids = [e for _, e in events if e.role == "child"]
+    n_by = lambda key, vals: {v: sum(1 for _, e in events if getattr(e, key) == v) for v in vals}  # noqa: E731
+    by_type = n_by("type", ("gain", "loss", "LOH", "UPD"))
+    by_role = n_by("role", ("child", "father", "mother"))
+    by_src = n_by("source", ("depth", "bands", "phased"))
+    new = sum(1 for e in kids if e.inheritance.startswith("new"))
+    inh = sum(1 for e in kids if e.inheritance.startswith("inherited"))
+    doubted = sum(1 for _, e in events if "may be an artefact" in e.note)
+    roh = sum(1 for _, e in events if "run of homozygosity" in e.note)
+    xbad = [(s["trio"], r, s["tsv"].get("%s_x_check" % r, "")) for s in summaries for r in MEMBERS if s["tsv"].get("%s_x_check" % r, "") not in ("", "agrees")]
+    quiet = sum(1 for s in summaries if not s["events"])
+    # the page
+    w = ['<!doctype html><html><head><meta charset="utf-8"><title>triokaryo cohort</title><style>%s'
+         'input{font-size:13px;padding:3px 6px;width:22em}.tiles{display:flex;flex-wrap:wrap;gap:10px;margin:0.8em 0}.tile{background:#f6f6f8;border:1px solid #ddd;border-radius:8px;'
+         'padding:8px 12px;min-width:140px}.tile b{display:block;font-size:20px}.tile span{font-size:12px;color:#555}</style></head><body>' % CSS,
+         "<h1>triokaryo: %d trios, %d events</h1>" % (len(summaries), len(events)),
+         "<p>Every trio's large chromosomal events from its VCF, read from the depth, the B-allele bands and transmission phasing. How to read every figure, colour and "
+         "column: <a href=\"guide.html\">guide.html</a>. The tables beside this page: events.all.tsv, summary.all.tsv, concordance.tsv, flags.tsv, rejected.all.tsv.</p>",
+         '<div class="tiles">']
+    tiles = [(len(summaries), "trios (%d without an event)" % quiet), (len(events), "events"), (by_type["gain"], "gains"), (by_type["loss"], "losses"),
+             (by_type["LOH"], "copy-neutral LOH"), (by_type["UPD"], "heterodisomies"), (by_role["child"], "in children (%d new, %d inherited)" % (new, inh)),
+             (by_role["father"] + by_role["mother"], "in parents"), (by_src["phased"], "from the phased bands alone"), (doubted, "depth calls the bands doubt"),
+             (roh, "runs of homozygosity"), (len(xbad), "X readings against the pedigree's sex")]
+    if conc:
+        tiles.append((conc["matched"], "of %d given events matched" % conc["external"]))
+    for n, label in tiles:
+        w.append('<div class="tile"><b>%s</b><span>%s</span></div>' % (n, html.escape(label)))
+    w.append("</div>")
+    w.append('<figure><img src="%s" alt="landscape"><figcaption><b>Figure 1. %s.</b> %s</figcaption><div class="key">%s</div></figure>' % (
+        _img(land["png"]), html.escape(land["title"]), html.escape(land["caption"]),
+        " &middot; ".join('<span style="color:%s">&#9632;</span> %s' % (c, html.escape(t)) for c, _, t in (__import__("triokaryo.plots", fromlist=["KEY"]).KEY[k] for k in LANDSCAPE_KEYS))))
+    w.append("<h2>Events</h2><p>Click a heading to sort; type to filter. <input id=\"filter\" placeholder=\"filter: a trio, a chromosome, a type, a word of a note\"> "
+             "<span id=\"nshown\">%d</span> shown. %s</p>" % (len(events), html.escape(DIRECTION)))
+    w.append('<table class="sortable" id="events"><thead><tr>' + "".join("<th>%s</th>" % h for h in (
+        "trio", "member", "chrom", "start (Mb)", "end (Mb)", "span", "type", "source", "f", "f depth", "f bands", "f phased", "origin", "homologues", "inheritance", "given", "flags", "page", "figure")) + "</tr></thead><tbody>")
+    for s in summaries:
+        page = os.path.relpath(os.path.join(s["run"], "index.html"), out)
+        for e in s["events_obj"]:
+            fine = lambda v, b: ("%.2f" % (v / 1e6)) if (isinstance(v, (int, float)) and np.isfinite(v)) else ("%.0f" % (b / 1e6))  # noqa: E731
+            figp = os.path.relpath(os.path.join(s["run"], "figures", "chrom_%s.png" % e.chrom), out)
+            cells = [s["trio"], "%s (%s)" % (e.sample, e.role), e.chrom, fine(e.start_fine, e.start), fine(e.end_fine, e.end), e.span, e.type, e.source, fmt(e.f, 2), fmt(e.f_lrr, 2),
+                     fmt(e.f_baf, 2), fmt(e.f_phase, 2), e.origin_phase or e.origin, e.homologues, e.inheritance, e.external, e.note]
+            w.append("<tr>" + "".join("<td>%s</td>" % html.escape(str(c)) for c in cells) + '<td><a href="%s">page</a></td><td><a href="%s">%s</a></td></tr>' % (
+                html.escape(page), html.escape(figp), html.escape(e.chrom)))
+    w.append("</tbody></table>")
+    w.append("<h2>Trios</h2><table class=\"sortable\"><thead><tr>" + "".join("<th>%s</th>" % h for h in (
+        "trio", "members", "sexes", "events", "flagged", "X copies (child, father, mother)", "X against the pedigree", "MIE rate", "sites", "depth (child, father, mother)",
+        "phased sites (child)", "set aside", "page")) + "</tr></thead><tbody>")
+    for s, r in zip(summaries, srows):
+        xc = s["x_copies"]
+        xchk = "; ".join("%s: %s" % (m, r["%s_x_check" % m]) for m in MEMBERS if r["%s_x_check" % m] not in ("", "agrees")) or "agrees"
+        w.append("<tr>" + "".join("<td>%s</td>" % html.escape(str(c)) for c in (
+            s["trio"], ", ".join(s["members"]), ",".join(s.get("sexes") or []), r["n_events"], r["n_flagged"], "%s, %s, %s" % tuple(fmt(xc.get(m)) for m in MEMBERS), xchk,
+            fmt(s["mie_rate_genome"], 3), s["sites_used"], "%s, %s, %s" % (r["child_depth"], r["father_depth"], r["mother_depth"]), r["child_phased_sites"], r["rejected"])) +
+                 '<td><a href="%s">page</a></td></tr>' % html.escape(os.path.relpath(os.path.join(s["run"], "index.html"), out)))
+    w.append("</tbody></table>")
+    if conc:
+        w.append("<h2>Concordance with the given events</h2><p>%d given events, %d matched by a triokaryo event of the same sample and region (half or more of the "
+                 "shorter overlapping); %d triokaryo gains or losses without a given event; %d copy-neutral events, which a depth tool cannot see.</p>" % (
+                     conc["external"], conc["matched"], conc["new"], conc["cn"]))
+        w.append(_table(["sample", "chrom", "start", "end", "label", "match"], [dict(sample=x.sample, chrom=x.chrom, start=x.start, end=x.end, label=x.note, match=x.inheritance) for x in ext]))
+    if rejected:
+        by_reg = {}
+        for r in rejected:
+            k = (r["chrom"], int(float(r["start"]) // 5e6))
+            by_reg.setdefault(k, []).append(r)
+        w.append("<h2>Segments the phased scan set aside</h2><p>%d segments in %d trios (rejected.all.tsv): under the 2-Mb floor, or windows not agreeing with their mean, "
+                 "or a bands-only shift under its floor. A region recurring across trios is paralogous sequence or a dense cluster of sites, not an event.</p>" % (
+                     len(rejected), len({r["trio"] for r in rejected})))
+        w.append("<table><tr><th>region</th><th>segments</th><th>trios</th><th>reasons</th></tr>")
+        for (c, b), lst in sorted(by_reg.items(), key=lambda kv: (-len(kv[1]), kv[0])):
+            reasons = sorted({r["reason"].split(" (")[0] for r in lst})
+            w.append("<tr><td>%s:%d-%d Mb</td><td>%d</td><td>%d</td><td>%s</td></tr>" % (c, b * 5, b * 5 + 5, len(lst), len({r["trio"] for r in lst}), html.escape("; ".join(reasons))))
+        w.append("</table>")
+    w.append("<h2>The colours</h2>" + key_table(["depth", "step", "baf", "phased", "gain", "loss", "loh", "mat", "pat", "cmat", "cpat", "ctrans", "cuntrans", "ext"]))
+    w.append("<script>%s</script></body></html>" % JS)
+    with open(os.path.join(out, "index.html"), "w") as fh:
+        fh.write("\n".join(w))
+    if log:
+        log("%d trios, %d events -> %s" % (len(summaries), len(events), out))
+    return dict(trios=len(summaries), events=len(events), concordance=conc, by_type=by_type, by_source=by_src)

@@ -127,11 +127,18 @@ mosaic do not.
 - `summary.tsv`, `summary.json` — the trio, the sites used, the X copies per member with the sex check, the
   genome's Mendelian-error rate, the event counts, the parameters.
 - `external.tsv` — the given events (`--events`) and whether a triokaryo event matched each.
+- `guide.html` — how to read every row, colour, call and column, with pattern cards of what each kind of event
+  looks like; beside every page, and `triokaryo guide --out`.
 - `figures/` — `genome` (LRR with its step fit and BAF with the pooled phased fraction per member, the child over
   the parents' mean, the child's maternal and paternal copies, the calls, the given events) and `chrom_<chrom>` for
   every chromosome with an event (per member: LRR with its step fit and calls, the raw BAF with the informative sites
   coloured by parent, the phased fraction with its windows, step fit and auxiliary tracks, the two homologues' copies,
   the het rate), each with a `.txt` sidecar (title, caption, key) and `legends/<name>_legend.*`.
+- `cohort/` (`triokaryo cohort --runs 'out/*' --events ...`) — the cohort report: the counts, the landscape figure
+  (events per chromosome; one row per trio), every event sortable and filterable with links to its trio's page and
+  figure, the trios with their quality readings, the concordance with the given events, the segments the phased scan
+  set aside by region, and the guide; `events.all.tsv`, `summary.all.tsv`, `concordance.tsv`, `flags.tsv`,
+  `rejected.all.tsv`. `triokaryo report --runs 'out/*'` rebuilds a run's page from its tables after a change.
 - `index.html` — self-contained: the events, the given events, every figure with its caption and key.
 
 `triokaryo cohort` writes `events.all.tsv`, `summary.all.tsv`, `concordance.tsv` (each given event: matched or

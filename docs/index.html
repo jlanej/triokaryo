@@ -84,7 +84,8 @@ footer{padding:28px 0 48px;color:var(--muted);font-size:14px;border-top:1px soli
   <div class="cta">
     <a class="primary" href="example/NA12739/index.html">Trio NA12739: a trisomy 12 and a mosaic father</a>
     <a href="example/HG01103/index.html">Trio HG01103: mosaic losses of 2q and 14q</a>
-    <a href="example/cohort/index.html">Both, against NGS-DOSE and DRAGEN</a>
+    <a href="example/cohort/index.html">The cohort report: both, against NGS-DOSE and DRAGEN</a>
+    <a href="example/cohort/guide.html">The guide</a>
   </div>
 </div>
 
@@ -135,18 +136,18 @@ footer{padding:28px 0 48px;color:var(--muted);font-size:14px;border-top:1px soli
 
 <section id="read">
   <h2>Reading the figures</h2>
-  <p class="sub">Each chromosome figure has five rows per member; the genome figure has the first two per member plus the within-family depth and the child's parental copies. The raw data stay in every figure: the smoothed tracks sit beside them, never instead of them.</p>
+  <p class="sub">Each chromosome figure has five rows per member; the genome figure has the first two per member plus the within-family depth and the child's parental copies. The raw data stay in every figure: the smoothed tracks sit beside them, never instead of them. The full guide, with pattern cards of what each kind of event looks like and every column explained, is written beside every page: <a href="example/cohort/guide.html">guide.html</a>.</p>
   <div class="rows">
     <div class="row"><b>1 · LRR</b><span>log<sub>2</sub> of each 1-Mb bin's median depth over the member's autosomal median, GC- and panel-corrected, with its step fit (black) and the calls as coloured lines. A gain of one copy in a share <i>f</i> of cells reads log<sub>2</sub>(1 + f/2).</span></div>
     <div class="row"><b>2 · BAF</b><span>the raw alt-allele fraction at the member's heterozygous sites. In the child the sites where the parents are opposite homozygotes are coloured by the parent of the alt allele: under a gain the duplicated parent's allele sits at 2/3, under a loss the retained parent's at 1.</span></div>
-    <div class="row"><b>3 · phased fraction</b><span>the maternal allele's fraction along the child, the transmitted allele's along a parent: every phased site (faint), pooled windows (green, hollow where parted in everyone) and the step fit. One half where the homologues are equal; 1/2 ± d along an event, the sign the parent of origin. Thin lines: the auxiliary tracks that leave the main one where the child carries two different homologues of one parent.</span></div>
+    <div class="row"><b>3 · phased fraction</b><span>the maternal allele's fraction along the child, the transmitted allele's along a parent: every phased site (faint), pooled windows (green, hollow where parted in everyone) and the step fit. One half where the homologues are equal; 1/2 ± d along an event, and the band is the parent: <b>in the child, below one half the paternal homologue is in excess (a paternal gain, a maternal copy lost), above one half the maternal; in a parent, below one half the event lies on the homologue not passed to the child, above one half on the one passed.</b> Thin lines: the auxiliary tracks that leave the main one where the child carries two different homologues of one parent.</span></div>
     <div class="row"><b>4 · copies</b><span>the LRR step fit's copies split by the fraction's: maternal and paternal along the child, passed and not passed along a parent. A trisomy's extra copy, a deletion's missing one, a disomy's two from one parent, each with its parent named.</span></div>
     <div class="row"><b>5 · het rate</b><span>heterozygous calls per confident call, per bin: zero under a loss of heterozygosity in every cell.</span></div>
   </div>
   <div class="key">
     <div><span class="sw" style="background:var(--depth)"></span>LRR per bin</div>
     <div><span class="sw" style="background:var(--baf)"></span>raw B-allele fraction</div>
-    <div><span class="sw" style="background:var(--phased)"></span>phased fraction, pooled by window</div>
+    <div><span class="sw" style="background:var(--phased)"></span>phased fraction, pooled by window: below one half the paternal homologue in excess (the child) or the event on the homologue not passed (a parent), above one half the maternal / the one passed</div>
     <div><span class="sw" style="background:#000"></span>step fit (total-variation denoising)</div>
     <div><span class="sw" style="background:var(--gain)"></span>a called gain</div>
     <div><span class="sw" style="background:var(--loss)"></span>a called loss</div>
@@ -186,7 +187,8 @@ triokaryo cohort --runs 'out/*' --out cohort --events other_calls.tsv</code></pr
     <tr><td><code>events.tsv</code></td><td>one row per event: type, source (depth, bands, phased), share of cells three ways, parent of origin two ways, one homologue or two, edges at site resolution, inheritance, Mendelian errors, notes</td></tr>
     <tr><td><code>phased.tsv</code>, <code>bins.tsv</code></td><td>every window of the phased tracks (fraction, step fit, copies, auxiliary tracks); every bin of the depth tracks</td></tr>
     <tr><td><code>figures/</code></td><td>PNG, SVG and PDF with no legend or title in the image: a sidecar with title, caption and key, and a legend image, beside each</td></tr>
-    <tr><td><code>cohort/</code></td><td>all trios' events, the concordance with the given events, a page linking every trio's</td></tr>
+    <tr><td><code>cohort/</code></td><td>the cohort report: the counts, the landscape figure (events per chromosome; one row per trio), every event sortable and filterable with links to its trio's page and figure, the trios with their quality readings, the concordance with the given events, the segments set aside, and the guide</td></tr>
+    <tr><td><code>guide.html</code></td><td>beside every page: how to read every row, colour, call and column, with pattern cards; also <code>triokaryo guide --out</code></td></tr>
   </table>
 </section>
 

@@ -6,7 +6,9 @@
   triokaryo run ... --panel panel.tsv
   triokaryo gc-track --fasta ref.fa --out gc.tsv [--bin 1000000]
   triokaryo mock --out mock_dir [--seed 1] [--no-events] [--xxy] [--contigs chr15,chr16,chr17 --sites-per-mb 1000 --low-share]
-  triokaryo cohort --runs 'out/*' --out cohort [--events other_calls.tsv]
+  triokaryo cohort --runs 'out/*' --out cohort [--events other_calls.tsv]   # the cohort report + guide
+  triokaryo report --runs 'out/*'                   # a run's page again from its tables (after a change to the page)
+  triokaryo guide --out guide.html                  # how to read every figure, colour and column
 """
 import argparse
 import glob
@@ -92,62 +94,28 @@ def cmd_mock(a):
 
 
 def cmd_cohort(a):
-    from .external import match_external, read_events
-    from .genome import genome
-    from .report import CSS, fmt, write_tsv
-    from .segment import Event
+    from .report import write_cohort
     runs = sorted(d for pat in a.runs for d in glob.glob(pat) if os.path.exists(os.path.join(d, "summary.json")))
     if not runs:
         sys.exit("no run with a summary.json under: " + " ".join(a.runs))
-    os.makedirs(a.out, exist_ok=True)
-    G = genome(a.genome)
-    events, summaries = [], []
+    write_cohort(a.out, runs, events_path=a.events, genome_name=a.genome, log=_log)
+    return 0
+
+
+def cmd_guide(a):
+    from .guide import write_guide
+    write_guide(a.out, figures_dir=a.figures)
+    _log("the guide -> %s" % a.out)
+    return 0
+
+
+def cmd_report(a):
+    from .report import rebuild_run
+    runs = sorted(d for pat in a.runs for d in glob.glob(pat) if os.path.exists(os.path.join(d, "summary.json")))
+    if not runs:
+        sys.exit("no run with a summary.json under: " + " ".join(a.runs))
     for d in runs:
-        s = json.load(open(os.path.join(d, "summary.json")))
-        s["run"] = d
-        summaries.append(s)
-        for e in s["events"]:
-            ev = Event(e["sample"], e["role"], e["chrom"], int(e["start"]), int(e["end"]), e["span"], e["type"])
-            for k, v in e.items():
-                if hasattr(ev, k) and k not in ("f",):
-                    setattr(ev, k, v if v is not None else float("nan"))
-            ev.note = (e.get("note") or "")
-            events.append(ev)
-    cols = ["trio", "sample", "role", "chrom", "start", "end", "start_fine", "end_fine", "span", "type", "source", "f", "f_lrr", "f_baf", "f_phase", "lrr", "d_hat",
-            "phase_shift", "n_phased", "homologues", "het_rate_rel", "mie_rate", "origin", "origin_llr", "origin_n", "origin_phase", "inheritance", "external", "note"]
-    rows = []
-    for s in summaries:
-        for e in s["events"]:
-            rows.append(dict(e, trio=s["trio"]))
-    write_tsv(os.path.join(a.out, "events.all.tsv"), cols, rows)
-    scols = ["trio", "members", "sexes", "sites_used", "records", "mie_rate_genome", "x_copies", "seconds", "n_events", "run"]
-    write_tsv(os.path.join(a.out, "summary.all.tsv"), scols,
-              [dict(trio=s["trio"], members=",".join(s["members"]), sexes=",".join(s["sexes"]), sites_used=s["sites_used"], records=s["records"],
-                    mie_rate_genome=s["mie_rate_genome"], x_copies=json.dumps(s["x_copies"]), seconds=s["seconds"], n_events=len(s["events"]), run=s["run"]) for s in summaries])
-    conc = None
-    if a.events:
-        ext = read_events(a.events, G)
-        samples = {m for s in summaries for m in s["members"]}
-        ext = [x for x in ext if x.sample in samples]
-        match_external(events, ext)
-        conc = dict(external=len(ext), matched=sum(1 for x in ext if x.inheritance.startswith("matched")),
-                    new=sum(1 for e in events if e.type in ("gain", "loss") and not e.external), loh=sum(1 for e in events if e.type == "LOH"))
-        write_tsv(os.path.join(a.out, "concordance.tsv"), ["sample", "chrom", "start", "end", "label", "match"],
-                  [dict(sample=x.sample, chrom=x.chrom, start=x.start, end=x.end, label=x.note, match=x.inheritance) for x in ext])
-    w = ['<!doctype html><html><head><meta charset="utf-8"><title>triokaryo cohort</title><style>%s</style></head><body>' % CSS,
-         "<h1>triokaryo: %d trios</h1>" % len(summaries)]
-    if conc:
-        w.append("<p>Events given from elsewhere: %d, of which %d matched by a triokaryo event of the same sample and region; %d triokaryo gains/losses "
-                 "without a given event; %d copy-neutral LOH (which a depth tool cannot see).</p>" % (conc["external"], conc["matched"], conc["new"], conc["loh"]))
-    w.append("<table><tr><th>trio</th><th>events</th><th>X copies</th><th>MIE rate</th><th>sites</th><th>page</th></tr>")
-    for s in summaries:
-        w.append("<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td><a href=\"%s\">index.html</a></td></tr>" % (
-            html.escape(s["trio"]), html.escape("; ".join("%s %s %s %s f %s" % (e["role"], e["type"], e["span"], e["chrom"], fmt(e.get("f"), 2)) for e in s["events"]) or "none"),
-            html.escape(json.dumps(s["x_copies"])), fmt(s["mie_rate_genome"], 3), s["sites_used"], html.escape(os.path.relpath(os.path.join(s["run"], "index.html"), a.out))))
-    w.append("</table></body></html>")
-    with open(os.path.join(a.out, "index.html"), "w") as fh:
-        fh.write("\n".join(w))
-    _log("%d trios, %d events -> %s" % (len(summaries), len(events), a.out))
+        rebuild_run(d, log=_log)
     return 0
 
 
@@ -204,12 +172,19 @@ def main(argv=None):
     m.add_argument("--contigs", default="", help="only these chromosomes, comma-separated (a dense small mock)")
     m.add_argument("--low-share", action="store_true", help="plant the low-share events (under the depth's threshold) instead of the default ones")
     m.set_defaults(fn=cmd_mock)
-    c = sub.add_parser("cohort", help="gather the runs of many trios; concordance with events from elsewhere")
+    c = sub.add_parser("cohort", help="the cohort report over many trios' runs: counts, the landscape figure, every event, the trios, the concordance, the guide")
     c.add_argument("--runs", nargs="+", required=True, help="run directories (globs)")
     c.add_argument("--out", required=True)
-    c.add_argument("--events")
+    c.add_argument("--events", help="events from elsewhere to match (as for run)")
     c.add_argument("--genome", default="grch38")
     c.set_defaults(fn=cmd_cohort)
+    g = sub.add_parser("guide", help="the guide: how to read every figure, colour, call and column (one self-contained page with pattern cards)")
+    g.add_argument("--out", required=True, help="the HTML to write")
+    g.add_argument("--figures", help="keep the pattern figures (PNG, SVG, PDF, sidecars, legends) in this directory")
+    g.set_defaults(fn=cmd_guide)
+    rp = sub.add_parser("report", help="a run's page, sidecars, legends and guide again from its tables and figures (no VCF needed)")
+    rp.add_argument("--runs", nargs="+", required=True, help="run directories (globs)")
+    rp.set_defaults(fn=cmd_report)
     a = ap.parse_args(argv)
     return a.fn(a)
 

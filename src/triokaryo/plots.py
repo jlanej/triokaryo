@@ -23,7 +23,7 @@ KEY = {
     "ref": (PAL["ref"], "line", "reference lines: zero LRR, BAF at 1/2, 1/3 and 2/3; the centromere"),
     "trio": (PAL["child"], "point", "the child over the parents' mean depth, site by site, per bin (the within-family difference)"),
     "psite": (PAL["psite"], "point", "the phased fraction at one heterozygous site: of the maternal allele (the child), of the allele passed to the child (a parent); reference bias out"),
-    "phased": (PAL["phased"], "point", "the phased fraction pooled over a window of sites (depth-weighted): at 1/2 where the homologues are equal, 1/2 + d or 1/2 - d along an event, the sign the parent of origin; hollow where the window is parted in two or more members (paralogy), which the fits and the scan leave out"),
+    "phased": (PAL["phased"], "point", "the phased fraction pooled over a window of sites (depth-weighted): at 1/2 where the homologues are equal, 1/2 + d or 1/2 - d along an event, the sign the parent of origin - in the child, below one half the paternal homologue is in excess (a paternal gain, a maternal copy lost), above one half the maternal; in a parent, below one half the event lies on the homologue not passed to the child, above one half on the one passed; hollow where the window is parted in two or more members (paralogy), which the fits and the scan leave out"),
     "step": (PAL["step"], "line", "the step fit of the track (total-variation denoising): a piecewise-constant reading in which every jump has to earn its height"),
     "aux_mat": (PAL["mat"], "line", "the child's maternal fraction read at the sites where the father is homozygous and the mother heterozygous: it leaves the main track where the child carries two different maternal homologues (a meiotic maternal trisomy or heterodisomy) and returns where a crossover made them one"),
     "aux_pat": (PAL["pat"], "line", "the same at the sites where the mother is homozygous and the father heterozygous: it leaves the main track where the child carries two different paternal homologues"),
@@ -34,10 +34,41 @@ KEY = {
     "cuntrans": (PAL["untrans"], "line", "a parent's copies of the other homologue"),
 }
 MARK = {"point": "filled circle", "line": "line", "bracket": "bracket"}
+GENOME_KEYS = ["depth", "step", "baf", "phased", "gain", "loss", "loh", "trio", "cmat", "cpat", "ext", "ref"]
+CHROM_KEYS = ["depth", "step", "baf", "mat", "pat", "psite", "phased", "aux_mat", "aux_pat", "aux_par", "cmat", "cpat", "ctrans", "cuntrans", "gain", "loss", "loh", "ext", "ref"]
+LANDSCAPE_KEYS = ["gain", "loss", "loh", "ext"]
+DIRECTION = ("The phased fraction's band is the parent: in the child below one half the paternal homologue is in excess, above one half the maternal; "
+             "in a parent below one half the event lies on the homologue not passed to the child, above one half on the one passed.")
 MM = 1 / 25.4
 plt.rcParams.update({"font.family": "sans-serif", "font.sans-serif": ["Arial", "Helvetica", "DejaVu Sans"], "font.size": 7,
                      "axes.labelsize": 7, "xtick.labelsize": 6, "ytick.labelsize": 6, "axes.linewidth": 0.6, "axes.spines.top": False,
                      "axes.spines.right": False, "svg.fonttype": "none", "pdf.fonttype": 42, "savefig.dpi": 300})
+
+
+def write_sidecar(out_dir, name, title, caption, keys):
+    """The figure's title, caption and key (colour, mark, text), and the key names, beside the image."""
+    with open(os.path.join(out_dir, name + ".txt"), "w") as fh:
+        fh.write("title: %s\ncaption: %s\nkeys: %s\nkey:\n" % (title, caption, ",".join(keys)))
+        for k in keys:
+            col, mk, text = KEY[k]
+            fh.write("  %s  %s  %s\n" % (col, MARK[mk], text))
+
+
+def read_sidecar(path):
+    """(title, caption, key names) back from a sidecar; the names from its 'keys:' line, else by the figure's kind."""
+    title = caption = ""
+    keys = None
+    for line in open(path):
+        if line.startswith("title: "):
+            title = line[7:].rstrip("\n")
+        elif line.startswith("caption: "):
+            caption = line[9:].rstrip("\n")
+        elif line.startswith("keys: "):
+            keys = [k for k in line[6:].strip().split(",") if k]
+    if keys is None:
+        base = os.path.basename(path)[:-4]
+        keys = GENOME_KEYS if base == "genome" else LANDSCAPE_KEYS if base == "landscape" else CHROM_KEYS
+    return title, caption, keys
 
 
 def _save(fig, out_dir, name, title, caption, keys):
@@ -48,12 +79,14 @@ def _save(fig, out_dir, name, title, caption, keys):
         fig.savefig(p, bbox_inches="tight")
         paths[ext] = p
     plt.close(fig)
-    with open(os.path.join(out_dir, name + ".txt"), "w") as fh:
-        fh.write("title: %s\ncaption: %s\nkey:\n" % (title, caption))
-        for k in keys:
-            col, mk, text = KEY[k]
-            fh.write("  %s  %s  %s\n" % (col, MARK[mk], text))
-    # the legend as its own image
+    write_sidecar(out_dir, name, title, caption, keys)
+    write_legend(out_dir, name, keys)
+    return dict(name=name, title=title, caption=caption, keys=keys, **paths)
+
+
+def write_legend(out_dir, name, keys):
+    """The legend as its own image (PNG, SVG, PDF) under legends/."""
+    os.makedirs(os.path.join(out_dir, "legends"), exist_ok=True)
     fig, ax = plt.subplots(figsize=(120 * MM, (6 + 5 * len(keys)) * MM))
     ax.axis("off")
     for i, k in enumerate(keys):
@@ -67,11 +100,10 @@ def _save(fig, out_dir, name, title, caption, keys):
             ax.plot([0.01, 0.05], [y, y], color=col, lw=1.2, transform=ax.transAxes)
             ax.plot([0.01, 0.01], [y - 0.03, y], color=col, lw=1.2, transform=ax.transAxes)
             ax.plot([0.05, 0.05], [y - 0.03, y], color=col, lw=1.2, transform=ax.transAxes)
-        ax.text(0.08, y, text, va="center", fontsize=6, transform=ax.transAxes)
+        ax.text(0.08, y, text, va="center", fontsize=6, transform=ax.transAxes, wrap=True)
     for ext in ("png", "svg", "pdf"):
         fig.savefig(os.path.join(out_dir, "legends", "%s_legend.%s" % (name, ext)), bbox_inches="tight", transparent=True)
     plt.close(fig)
-    return dict(name=name, title=title, caption=caption, keys=keys, **paths)
 
 
 def _genome_axis(bins, genome):
@@ -216,12 +248,11 @@ def fig_genome(trio, bins, scan, events, external, genome, out_dir, name="genome
                "median%s) with its step fit and the called gains, losses and copy-neutral losses of heterozygosity as lines; and the B-allele fraction at the "
                "member's heterozygous sites (a sample; dotted lines at 1/2, 1/3 and 2/3) with, over it, the phased fraction pooled by windows - of the maternal "
                "allele along the child, of the allele passed to the child along a parent - which sits at one half where the homologues are equal and leaves it "
-               "along an event, upward or downward by the parent of origin. (g) The child's depth over the parents' mean, site by site, per bin: the "
+               "along an event, upward or downward by the parent of origin (%s). (g) The child's depth over the parents' mean, site by site, per bin: the "
                "within-family difference, zero where the child inherited what the parents carry. (h) The child's maternal and paternal copies: the LRR's copies "
                "split by the phased fraction (a trisomy's extra copy, a deletion's missing one, a disomy's two from one parent, each with its parent named). "
-               "Events given from elsewhere are brackets above the LRR." % (bins.bin_size // 1000, ", GC-corrected" if np.isfinite(bins.gc).any() else ""))
-    return _save(fig, out_dir, name, "Large chromosomal events in trio %s, genome-wide" % trio.name, caption,
-                 ["depth", "step", "baf", "phased", "gain", "loss", "loh", "trio", "cmat", "cpat", "ext", "ref"])
+               "Events given from elsewhere are brackets above the LRR." % (bins.bin_size // 1000, ", GC-corrected" if np.isfinite(bins.gc).any() else "", DIRECTION))
+    return _save(fig, out_dir, name, "Large chromosomal events in trio %s, genome-wide" % trio.name, caption, GENOME_KEYS)
 
 
 def fig_chrom(trio, chrom, bins, scan, events, external, genome, out_dir, min_dp=8, min_gq=20, max_points=6000, tracks=None):
@@ -335,9 +366,67 @@ def fig_chrom(trio, chrom, bins, scan, events, external, genome, out_dir, min_dp
                "parents are opposite homozygotes are coloured by the parent of the alt allele. Row 3: the phased fraction - of the maternal allele along the "
                "child (the parents opposite homozygotes), of the allele passed to the child along a parent (the child homozygous) - at every phased site "
                "(faint), pooled by windows, and its step fit: one half where the homologues are equal, 1/2 + d or 1/2 - d along an event, the sign the parent "
-               "of origin; the thin lines are the fraction read at the sites where only one parent is homozygous (the child) or where the child is "
+               "of origin (%s); the thin lines are the fraction read at the sites where only one parent is homozygous (the child) or where the child is "
                "heterozygous (a parent), which leave the main track where the child carries two different homologues of one parent. Row 4: the two homologues' copies, the LRR's copies "
                "split by the phased fraction (maternal and paternal in the child; passed to the child and not in a parent). Row 5: the heterozygosity rate per "
-               "bin, which falls to zero under a loss of heterozygosity in every cell. Dashed: the centromere. Calls: %s." % (chrom, trio.name, bins.bin_size // 1000, what))
-    return _save(fig, out_dir, "chrom_%s" % chrom, "Trio %s, %s" % (trio.name, chrom), caption,
-                 ["depth", "step", "baf", "mat", "pat", "psite", "phased", "aux_mat", "aux_pat", "aux_par", "cmat", "cpat", "ctrans", "cuntrans", "gain", "loss", "loh", "ext", "ref"])
+               "bin, which falls to zero under a loss of heterozygosity in every cell. Dashed: the centromere. Calls: %s." % (chrom, trio.name, bins.bin_size // 1000, DIRECTION, what))
+    return _save(fig, out_dir, "chrom_%s" % chrom, "Trio %s, %s" % (trio.name, chrom), caption, CHROM_KEYS)
+
+
+def fig_landscape(rows, genome, out_dir, name="landscape", max_labels=60):
+    """The cohort's events on one genome axis: (a) events per chromosome by type, (b) one row per trio, each event a bar
+    coloured by type - the child's thick, a parent's thin - with the given events as brackets. rows: [(trio, Event)]."""
+    trios = sorted({t for t, _ in rows})
+    chroms = [c for c in genome.chroms if c != "chrY"]
+    off, x = {}, 0
+    for c in chroms:
+        off[c] = x
+        x += genome.length[c]
+    total = x
+    n = max(1, len(trios))
+    fig, axes = plt.subplots(2, 1, figsize=(180 * MM, (45 + min(6 * n, 180)) * MM), sharex=True,
+                             gridspec_kw=dict(height_ratios=[1, max(1.2, min(n, 30) / 6.0)], hspace=0.08))
+    ax = axes[0]
+    for k, c in enumerate(chroms):
+        if k % 2:
+            for a in axes:
+                a.axvspan(off[c], off[c] + genome.length[c], color=PAL["band"], lw=0)
+    width = 0.8
+    for i, c in enumerate(chroms):
+        xm = off[c] + genome.length[c] / 2
+        bottom = 0
+        for kind, col in (("gain", PAL["gain"]), ("loss", PAL["loss"]), ("LOH", PAL["loh"]), ("UPD", PAL["loh"])):
+            k = sum(1 for _, e in rows if e.chrom == c and e.type == kind)
+            if k:
+                ax.bar(xm, k, width=width * genome.length[c], bottom=bottom, color=col, lw=0)
+                bottom += k
+    ax.set_ylabel("events", fontsize=6)
+    ax.text(-0.06, 1.0, "a", transform=ax.transAxes, fontweight="bold", fontsize=8)
+    ax = axes[1]
+    yof = {t: i for i, t in enumerate(trios)}
+    for t, e in rows:
+        if e.chrom not in off:
+            continue
+        col = PAL["gain" if e.type == "gain" else "loss" if e.type == "loss" else "loh"]
+        y = yof[t] + {"child": 0.0, "father": 0.28, "mother": -0.28}.get(e.role, 0.0)
+        ax.plot([off[e.chrom] + e.start, off[e.chrom] + e.end], [y, y], color=col, lw=2.6 if e.role == "child" else 1.2, solid_capstyle="butt", alpha=1.0 if e.role == "child" else 0.75)
+        if e.external:
+            ax.plot([off[e.chrom] + e.start, off[e.chrom] + e.end], [y + 0.14, y + 0.14], color=PAL["ext"], lw=0.5)
+    ax.set_ylim(-0.8, n - 0.2)
+    if n <= max_labels:
+        ax.set_yticks(range(n))
+        ax.set_yticklabels(trios, fontsize=5)
+    else:
+        ax.set_yticks([])
+        ax.set_ylabel("%d trios" % n, fontsize=6)
+    ax.invert_yaxis()
+    ax.set_xlim(0, total)
+    ax.set_xticks([off[c] + genome.length[c] / 2 for c in chroms])
+    ax.set_xticklabels([c[3:] for c in chroms], fontsize=5)
+    ax.set_xlabel("chromosome")
+    ax.text(-0.06, 1.0, "b", transform=ax.transAxes, fontweight="bold", fontsize=8)
+    caption = ("(a) The cohort's events per chromosome, stacked by type (gain, loss, copy-neutral LOH or heterodisomy). (b) One row per trio: each event a "
+               "bar over its span, coloured by type, the child's thick on the row's centre line, the father's thin above it and the mother's below; a "
+               "thin black line over a bar marks an event matched by one given from elsewhere. %d trios, %d events." % (n, len(rows)))
+    return _save(fig, out_dir, name, "The cohort's large chromosomal events", caption, LANDSCAPE_KEYS)
+

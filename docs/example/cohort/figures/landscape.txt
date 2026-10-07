@@ -1,0 +1,8 @@
+title: The cohort's large chromosomal events
+caption: (a) The cohort's events per chromosome, stacked by type (gain, loss, copy-neutral LOH or heterodisomy). (b) One row per trio: each event a bar over its span, coloured by type, the child's thick on the row's centre line, the father's thin above it and the mother's below; a thin black line over a bar marks an event matched by one given from elsewhere. 2 trios, 14 events.
+keys: gain,loss,loh,ext
+key:
+  #D55E00  line  a called gain (line at the segment's mean LRR)
+  #0072B2  line  a called loss
+  #CC79A7  line  a called copy-neutral event - a loss of heterozygosity, or a uniparental heterodisomy (drawn at zero)
+  #000000  bracket  an event given from elsewhere (--events), drawn above the track

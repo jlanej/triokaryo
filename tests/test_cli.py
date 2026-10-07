@@ -30,3 +30,31 @@ def test_cli_members_given_outright(mock, tmp_path):
 def test_cli_entry_point_help():
     r = subprocess.run([sys.executable, "-m", "triokaryo.cli", "--help"], capture_output=True, text=True)
     assert r.returncode == 0 and "gc-track" in r.stdout
+
+
+def test_cohort_report_guide_and_rebuild(mock, run, tmp_path):
+    """The cohort report (counts, the landscape figure, every event, the trios, the concordance, the segments set aside) and
+    the guide beside it; a run's page rebuilt from its tables alone."""
+    import os
+    from triokaryo.cli import main
+    out = tmp_path / "cohort"
+    assert main(["cohort", "--runs", run["out"], "--events", mock["events"], "--out", str(out)]) == 0
+    for f in ("index.html", "guide.html", "events.all.tsv", "summary.all.tsv", "concordance.tsv", "flags.tsv", "rejected.all.tsv", "figures/landscape.png",
+              "figures/landscape.txt", "figures/patterns_copy.png", "figures/patterns_disomy.png", "figures/legends/landscape_legend.png"):
+        assert os.path.exists(os.path.join(str(out), f)), f
+    page = open(os.path.join(str(out), "index.html")).read()
+    assert "sortTable" in page and 'id="filter"' in page and "guide.html" in page and "heterodisomies" in page and "chrom_chr21.png" in page
+    guide = open(os.path.join(str(out), "guide.html")).read()
+    assert "below one half the paternal homologue" in guide and "Pattern cards 2" in guide and "<code>origin_phase</code>" in guide
+    head = open(os.path.join(str(out), "events.all.tsv")).readline().split("\t")
+    assert "homologues" in head and "source" in head and "start_fine" in head
+    # the run's page again, from its tables
+    before = open(os.path.join(run["out"], "index.html")).read()
+    assert main(["report", "--runs", run["out"]]) == 0
+    after = open(os.path.join(run["out"], "index.html")).read()
+    assert "guide.html" in after and "below one half the paternal homologue" in after and after.count("<figure>") == before.count("<figure>")
+    assert os.path.exists(os.path.join(run["out"], "guide.html"))
+    sc = open(os.path.join(run["out"], "figures", "genome.txt")).read()
+    assert "keys: depth,step,baf,phased," in sc
+    g = tmp_path / "guide.html"
+    assert main(["guide", "--out", str(g)]) == 0 and g.stat().st_size > 100_000
