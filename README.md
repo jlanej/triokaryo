@@ -9,8 +9,9 @@ ratio (LRR) from read depth, the B-allele frequency (BAF) at heterozygous sites,
 segments each track and, using the pedigree, phases the child's alleles by transmission to obtain a signed
 allelic-imbalance track. Each event is reported with its type; its mosaic cell fraction *f* estimated independently
 from depth, from the folded BAF bands and from the phased track; its parent of origin; whether the two copies from
-the named parent are one homologue or two (mitotic versus meiotic origin); its boundaries at site resolution; its
-Mendelian-error rate; and whether it is inherited or de novo. Figures are written as PNG, SVG and PDF with separate
+the named parent are one homologue or two, and for a whole-chromosome event the meiotic stage (meiosis I, meiosis II
+or mitotic) with the crossover positions; its boundaries at site resolution; its Mendelian-error rate; and whether it
+is inherited or de novo. Figures are written as PNG, SVG and PDF with separate
 legends, and calls from other methods (a depth-based karyotype such as NGS-DOSE, a CNV caller, a clinical
 karyotype) can be supplied for comparison.
 
@@ -52,11 +53,13 @@ contribution and so attenuates a signal rather than creating one.
 Sites where only one parent is homozygous also phase the child, but only under the assumption that each parent
 contributed one homologue; where the child carries two different homologues of one parent (meiotic trisomy,
 heterodisomy), sites tagged by the other parent's homozygous genotype are misassigned. These are therefore drawn as
-auxiliary tracks: they depart from the main track where the two homologues differ and rejoin it after each crossover,
-which distinguishes meiotic from mitotic (or meiosis II) origin and maps the crossovers. A segmentation scan of the
-main track detects events below the depth detection limit (gains or losses in a few per cent of cells) and
-uniparental heterodisomy, which depth, folded BAF and heterozygosity rate all miss. The raw BAF is retained in every
-figure.
+auxiliary tracks: they depart from the main track where the two homologues differ and rejoin it after each crossover.
+The state nearest the centromere classifies a whole-chromosome event as a meiosis I nondisjunction (heterodisomic at
+the centromere), a meiosis II error (isodisomic at the centromere, heterodisomic beyond a crossover) or a mitotic
+duplication (isodisomic throughout), and each change of state along the chromosome places a crossover. A segmentation
+scan of the main track detects events below the depth detection limit (gains or losses in a few per cent of cells)
+and uniparental heterodisomy, which depth, folded BAF and heterozygosity rate all miss. The raw BAF is retained in
+every figure.
 
 ## Install
 
@@ -121,10 +124,18 @@ mean of |BAF − 1/2|, is unbiased at low depth; it gives a second estimate of *
 sought where depth called nothing: a band deviation above the member's own baseline, or a heterozygosity rate below
 0.35 of the member's own (constitutional). The phased scan then segments the pooled phased track outside the called
 events and reports shifts of ≥ 0.015 (gain or loss in about 6% of cells) over ≥ 2 Mb, typed by the direction of the
-depth over the same bins, or as CN-LOH or heterodisomy when the depth is flat. The X is analysed relative to the
-member's own X copy number (1 or 2, compared with the pedigree sex: 47,XXY is reported as "X copies 2 in a reported
-male"), so X events are mosaic changes of that state; the Y is not analysed. A segment covering ≥ 90% of a
+depth over the same bins, or as CN-LOH or heterodisomy when the depth is flat. A segment covering ≥ 90% of a
 chromosome (arm) is `whole` (`p`, `q`), otherwise a `stretch`.
+
+**Sex chromosomes.** Each member's X and Y copy numbers are read from the depth (raw and rounded) and combined into
+a sex-chromosome complement (XY, XX, XXY, X, XYY, ...) that is checked against the pedigree sex. Against the
+complement the pedigree sex implies, a whole-X or whole-Y deviation of 10% or more is reported as an event with its
+cell fraction: 47,XXY and 46,XY/47,XXY mosaics, 45,X and 45,X/46,XX mosaics, 47,XXX, 47,XYY, and mosaic loss of Y, the
+latter from the panel-corrected Y level or, without a panel, from the father/son Y depth ratio (the two Y chromosomes
+are the same sequence, so mapping cancels). These events receive the parent of origin and, for a child's X, the
+meiotic stage: a paternal extra X in a male is a paternal meiosis I error, a maternal one is staged from the
+centromere like an autosomal trisomy. Segmental X events are called relative to the member's own X level. A male's
+X uses a hemizygous baseline for the parent-of-origin likelihood and for Mendelian errors.
 
 **Parent of origin** is estimated twice. (i) At informative sites (parents opposite homozygotes), the child's alt
 read count is modelled as binomial with a success probability determined by the event type, *f*, and which parent
@@ -148,8 +159,9 @@ none.
   auxiliary tracks); `phased_rejected.tsv`: segments the phased scan rejected, with the reason.
 - `bins.tsv`: per bin, GC, the panel's values and masks, and per member depth, LRR, corrected LRR, call counts,
   heterozygosity rate and band deviation; the within-trio depth tracks.
-- `summary.tsv`, `summary.json`: the trio, the sites used, the X copy number per member with the sex check, the
-  genome-wide Mendelian-error rate, event counts, parameters.
+- `summary.tsv`, `summary.json`: the trio, the sites used, each member's X and Y copy numbers and sex-chromosome
+  complement with the check against the pedigree sex, the father/son Y depth ratio, the genome-wide Mendelian-error
+  rate, event counts, parameters.
 - `external.tsv`: the supplied events (`--events`) and whether each was matched.
 - `guide.html`: how to read every figure row, colour, call and column, with pattern cards of each event type (also
   `triokaryo guide --out`).
@@ -195,8 +207,9 @@ produce those variants.
   extends this to 2 Mb and about 6% where the phased site density allows.
 - Without a reference panel the reference's own depth structure is called as events. A panel of fewer than five
   genomes masks every bin; a panel built from the trio alone follows the trio's own events.
-- The Y chromosome is not analysed. A 46,XY/47,XXY mosaic is reported as a mosaic X gain. Parent of origin is estimated on
-  autosomes only.
+- The Y is analysed as a whole chromosome only (copy number, mosaic loss); it is not segmented. Without a panel that
+  carries Y rows, a male's Y copy number from depth alone is 5–10% low (mappability), and mosaic loss of Y is read
+  from the father/son ratio or not at all. Whole-chromosome sex-chromosome events need the pedigree sex.
 - A constitutional deletion has no heterozygous sites, so `f_baf` is undefined there (`f` comes from depth); its
   Mendelian-error rate and phased fraction of 1 identify it.
 - The parent-of-origin likelihood assumes one event per region and is conditional on an event being present; it does

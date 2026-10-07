@@ -83,13 +83,44 @@ or more), or when its heterozygosity rate is ≤ 0.35 of the member's own over �
 calls (constitutional; f = 1; noted "no heterozygous calls"). With a panel, d is first reduced by the panel's regional
 band-deviation excess.
 
-## The X chromosome
+## Sex chromosomes
 
-Bins overlapping the pseudoautosomal regions are excluded. The member's X copy number is round(2 × 2^median LRR) over
-the X (≥ 5 bins), reported beside the pedigree sex (`x_check`), and the X LRR is re-centred on that median, so X events
-are mosaic changes of the member's constitutional X state. A single X has no heterozygous sites, so no CN-LOH is sought
-there, and a loss on a single X is annotated. The Y is not analysed. The phased scan includes the X only for a member
-recorded as female.
+**Copy number.** Each member's X and Y copy number is 2 × 2^(median corrected LRR) over the chromosome's usable bins
+(outside the pseudoautosomal regions, ≥ 20 sites, unmasked; ≥ 5 bins for the X, ≥ 3 for the Y), kept as a raw value
+(`x_copies_raw`, `y_copies_raw`) and rounded (`x_copies`, `y_copies`). A member with depth at fewer than 5% of the
+VCF's Y sites has 0 Y copies; without Y records in the VCF the Y is unknown. The complement (`sex_karyotype`: XY, XX,
+XXY, X, XYY, XXX, ...) is compared with the pedigree sex (`sex_check`; `x_check` keeps the X-only wording). Read
+against the autosomes alone, a male's Y carries a mappability deficit of roughly 5–10%, so the raw Y copy number of a
+normal male is slightly under 1. A reference panel corrects it: `triokaryo panel` writes each genome's X and Y on the
+diploid scale (a male's X shifted up by its own median; a Y with depth shifted up by exactly one unit, so that the
+panel's Y rows hold the male level with its deficit, which then cancels for a member as the X deficit does). A panel
+written before this convention holds its Y rows at the one-copy level and is lifted by one unit when loaded. Y bins
+need three panel genomes rather than five, since only males contribute. The Y is not segmented.
+
+**Whole-chromosome events.** With the pedigree sex given, the expected complement is XY or XX. An X whose raw copy
+number deviates from the expectation by at least `min_f` is reported as a whole-X gain or loss with cell fraction
+f = |copies − expected|: 47,XXY (f = 1) or a 46,XY/47,XXY mosaic in a reported male; 45,X, a 45,X/46,XX mosaic or
+47,XXX in a reported female. A Y deviating from one copy in a reported male by at least `min_f` is a whole-Y gain
+(47,XYY) or loss (mosaic loss of Y), with f from the panel-corrected level when the panel carries Y rows; otherwise,
+when the child is male, from the father/son ratio; otherwise only beyond a deviation of 0.25. The **father/son Y
+ratio** (`y_father_son_log2`) is the median over Y sites with depth in both of log2 of the father's depth over the
+son's, each relative to its autosomal median depth; the two Y chromosomes are the same sequence, so mapping cancels,
+and the member with the lower raw Y copy number receives the loss, with f = 1 − 2^−|ratio| and the other taken as one
+copy. Segmental X events are called by the ordinary segmentation relative to the member's own X level; the X
+copy-neutral LOH search is skipped for a male and for a whole-X mosaic, whose split bands the copy change explains.
+
+**Parent of origin and Mendelian errors on the X.** For a female child (expected XX) the autosomal models apply, the
+father's haploid call counting as a homozygote. For a reported male (one maternal X) a gain's extra X is maternal when
+the maternal fraction at informative sites stays at 1 (p = 1 or 0 in the likelihood; the phased shift is about 1/2
+and the cell fraction is not readable from the bands) and paternal when it falls to 1/(1 + f) (p = 1/(1+f) or
+f/(1+f); the phased shift is (1 − f)/(2(1 + f)), so f_phase = (1 − 2s)/(1 + 2s)); a paternal extra X implies a
+paternal meiosis I error (X and Y transmitted together), a maternal one is staged like an autosomal trisomy, with
+windows lacking the auxiliary track counted as isodisomic. A male's X loss has no parent to resolve (the single X is
+maternal). Mendelian errors on the X of a child with one X follow the hemizygous rules (a heterozygous call, or an
+allele the mother does not carry); with two X copies the autosomal rules apply, under which a child carrying only
+maternal alleles at informative sites, as in a maternal 47,XXY, shows the errors of a uniparental disomy. In the
+mother's phased track on the X of a son, sites where the father's allele differs from the son's are kept, since the
+son's X is not the father's. The phased scan includes the X of a member with two X copies.
 
 ## Transmission phasing
 
@@ -122,6 +153,16 @@ share of the event's windows (≥ 4 windows with ≥ 5 auxiliary sites each) in 
 disagrees in sign with the main track (for UPD: lies within half the main track's deviation) is `hetero_share`:
 ≥ 0.9 "two different homologues throughout (meiotic)", ≤ 0.1 "one homologue throughout (mitotic, or a meiosis II error
 without a crossover)", otherwise the share is reported (meiotic with crossovers).
+
+**Meiotic stage.** For a child's whole-chromosome gain or heterodisomy with a parent named, the per-window states (two
+different homologues, or one) are smoothed by a running majority over five windows. The state of the eight windows
+nearest the centromere (within 15 Mb of it; at least three, agreeing at 70% or more) classifies the event:
+heterodisomic at the centromere, a meiosis I nondisjunction; isodisomic at the centromere with a heterodisomic segment
+elsewhere, meiosis II; isodisomic throughout, a mitotic duplication or a meiosis II error without a crossover (`stage`,
+`centromere`). Each change of state along the chromosome is a crossover, placed midway between the two windows
+(`n_crossovers`, `crossovers` in Mb). Along a heterodisomy an isodisomic segment has no heterozygous child sites, so a
+window carrying the main track but no auxiliary track counts as isodisomic. Segmental events receive no stage, since
+nondisjunction is a whole-chromosome event.
 
 **Windows and step fit.** Main-class sites are pooled in consecutive windows of w sites, w chosen so that a window
 spans about 400 kb at the member's genome-wide phased-site density (20 ≤ w ≤ 200); a window never spans a gap of more

@@ -1,3 +1,3 @@
-trio	members	sexes	sites_used	records	mie_rate_genome	x_copies	child_x_check	father_x_check	mother_x_check	child_depth	father_depth	mother_depth	child_phased_sites	father_phased_sites	mother_phased_sites	windows_shared	rejected	n_events	n_flagged	seconds	run
-HG01103	HG01103,HG01101,HG01102	F,M,F	5927596	6003641	0.01085	{"child": 2, "father": 1, "mother": 2}	agrees	agrees	agrees	32	34	35	465216	1219271	1292258	25	5	10	7	71.5	docs/example/HG01103
-NA12739	NA12739,NA12748,NA12749	M,M,F	5446523	5516159	0.01041	{"child": 1, "father": 1, "mother": 2}	agrees	agrees	agrees	32	33	30	378808	1114918	1130865	32	6	4	3	59.7	docs/example/NA12739
+trio	members	sexes	sites_used	records	mie_rate_genome	x_copies	sex_karyotypes	child_sex_check	father_sex_check	mother_sex_check	y_father_son_log2	child_depth	father_depth	mother_depth	child_phased_sites	father_phased_sites	mother_phased_sites	windows_shared	rejected	n_events	n_flagged	seconds	run
+HG01103	HG01103,HG01101,HG01102	F,M,F	5927596	6003641	0.01085	{"child": 2, "father": 1, "mother": 2}	XX,XY,XX	agrees	agrees	agrees	NA	32	34	35	465216	1219271	1292258	25	5	10	7	71.5	docs/example/HG01103
+NA12739	NA12739,NA12748,NA12749	M,M,F	5446523	5516159	0.01041	{"child": 1, "father": 1, "mother": 2}	XY,XY,XX	agrees	agrees	agrees	NA	32	33	30	378808	1114918	1130865	32	6	4	3	59.7	docs/example/NA12739

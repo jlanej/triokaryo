@@ -77,7 +77,11 @@
    "edge_sites": 150,
    "homologues": "",
    "hetero_share": NaN,
-   "f": 0.6676657235562256
+   "f": 0.6676657235562256,
+   "stage": "",
+   "centromere": "",
+   "n_crossovers": 0,
+   "crossovers": ""
   },
   {
    "sample": "HG01103",
@@ -116,7 +120,11 @@
    "edge_sites": 204,
    "homologues": "",
    "hetero_share": NaN,
-   "f": 0.31259770202957826
+   "f": 0.31259770202957826,
+   "stage": "",
+   "centromere": "",
+   "n_crossovers": 0,
+   "crossovers": ""
   },
   {
    "sample": "HG01103",
@@ -155,7 +163,11 @@
    "edge_sites": 307,
    "homologues": "",
    "hetero_share": NaN,
-   "f": 1.0
+   "f": 1.0,
+   "stage": "",
+   "centromere": "",
+   "n_crossovers": 0,
+   "crossovers": ""
   },
   {
    "sample": "HG01103",
@@ -194,7 +206,11 @@
    "edge_sites": 420,
    "homologues": "",
    "hetero_share": NaN,
-   "f": 0.6388923907318813
+   "f": 0.6388923907318813,
+   "stage": "",
+   "centromere": "",
+   "n_crossovers": 0,
+   "crossovers": ""
   },
   {
    "sample": "HG01101",
@@ -233,7 +249,11 @@
    "edge_sites": 724,
    "homologues": "",
    "hetero_share": NaN,
-   "f": 0.1020237132516475
+   "f": 0.1020237132516475,
+   "stage": "",
+   "centromere": "",
+   "n_crossovers": 0,
+   "crossovers": ""
   },
   {
    "sample": "HG01101",
@@ -272,7 +292,11 @@
    "edge_sites": 647,
    "homologues": "",
    "hetero_share": NaN,
-   "f": 1.0
+   "f": 1.0,
+   "stage": "",
+   "centromere": "",
+   "n_crossovers": 0,
+   "crossovers": ""
   },
   {
    "sample": "HG01101",
@@ -311,7 +335,11 @@
    "edge_sites": 1219,
    "homologues": "",
    "hetero_share": NaN,
-   "f": 1.0
+   "f": 1.0,
+   "stage": "",
+   "centromere": "",
+   "n_crossovers": 0,
+   "crossovers": ""
   },
   {
    "sample": "HG01101",
@@ -350,7 +378,11 @@
    "edge_sites": 708,
    "homologues": "",
    "hetero_share": NaN,
-   "f": 1.0
+   "f": 1.0,
+   "stage": "",
+   "centromere": "",
+   "n_crossovers": 0,
+   "crossovers": ""
   },
   {
    "sample": "HG01101",
@@ -389,7 +421,11 @@
    "edge_sites": 1133,
    "homologues": "",
    "hetero_share": NaN,
-   "f": 0.1370755840761273
+   "f": 0.1370755840761273,
+   "stage": "",
+   "centromere": "",
+   "n_crossovers": 0,
+   "crossovers": ""
   },
   {
    "sample": "HG01102",
@@ -428,7 +464,11 @@
    "edge_sites": 454,
    "homologues": "",
    "hetero_share": NaN,
-   "f": 1.0
+   "f": 1.0,
+   "stage": "",
+   "centromere": "",
+   "n_crossovers": 0,
+   "crossovers": ""
   }
  ],
  "external": [
@@ -510,5 +550,41 @@
  "skipped": {
   "contig": 76045
  },
- "seconds": 71.5
+ "seconds": 71.5,
+ "sex_chromosomes": {
+  "child": {
+   "x_copies_raw": 1.9835709473725944,
+   "x_copies": 2,
+   "x_bins": 152,
+   "y_copies_raw": 0.0,
+   "y_copies": 0,
+   "y_bins": 0,
+   "x_check": "agrees",
+   "sex_check": "agrees"
+  },
+  "father": {
+   "x_copies_raw": 0.9996188417099767,
+   "x_copies": 1,
+   "x_bins": 152,
+   "y_copies_raw": 1.0114324706053652,
+   "y_copies": 1,
+   "y_bins": 18,
+   "x_check": "agrees",
+   "sex_check": "agrees"
+  },
+  "mother": {
+   "x_copies_raw": 1.973299582717432,
+   "x_copies": 2,
+   "x_bins": 152,
+   "y_copies_raw": 0.0,
+   "y_copies": 0,
+   "y_bins": 0,
+   "x_check": "agrees",
+   "sex_check": "agrees"
+  }
+ },
+ "y_father_son": {
+  "log2": NaN,
+  "sites": 0
+ }
 }

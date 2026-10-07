@@ -39,15 +39,26 @@ def informative(sites, lo, hi, min_dp, min_gq):
     return alt[0][use].astype(float), dp[0][use].astype(float), mat_alt[use]
 
 
-def parent_of_origin(sites, ev, min_dp, min_gq):
+def parent_of_origin(sites, ev, min_dp, min_gq, baseline=2):
     """(origin label, log-likelihood ratio, sites) for a child's gain, loss or LOH; f from the event (the bands' where the
     depth has none). The ratio is maternal-over-paternal for gains and LOH (which copy is extra / retained) and
-    paternal-lost-over-maternal-lost for losses."""
+    paternal-lost-over-maternal-lost for losses. baseline 1 is a hemizygous X (a reported male): its one copy is
+    maternal, so a gain's extra copy is maternal (alt fraction 1 or 0 at every informative site) or paternal
+    (1/(1+f) if the alt allele is maternal, f/(1+f) otherwise), and a loss has no parent to resolve."""
     k, n, mat = informative(sites, ev.start + 1, ev.end, min_dp, min_gq)
     if len(n) < 10:
         return "", NA, int(len(n))
     f = ev.f if np.isfinite(ev.f) else 1.0
     f = float(np.clip(f, 0.02, 1.0))
+    if baseline == 1:
+        if ev.type == "gain":
+            p_m = np.where(mat, 1.0, 0.0)                                 # the extra X maternal: only maternal alleles
+            p_p = np.where(mat, 1 / (1 + f), f / (1 + f))                 # the extra X paternal
+            llr = float((_binom_ll(k, n, p_m) - _binom_ll(k, n, p_p)).sum())
+            return ("extra copy maternal" if llr > 0 else "extra copy paternal"), llr, int(len(n))
+        if ev.type == "loss":
+            return "maternal copy lost (the single X)", NA, int(len(n))
+        return "", NA, int(len(n))
     if ev.type == "gain":
         p_m = np.where(mat, (1 + f) / (2 + f), 1 / (2 + f))          # the extra copy maternal
         p_p = np.where(mat, 1 / (2 + f), (1 + f) / (2 + f))          # paternal
@@ -64,9 +75,10 @@ def parent_of_origin(sites, ev, min_dp, min_gq):
     return ("maternal copy retained (paternal replaced)" if llr > 0 else "paternal copy retained (maternal replaced)"), llr, int(len(n))
 
 
-def mie_rate(sites, lo, hi, min_dp, min_gq):
+def mie_rate(sites, lo, hi, min_dp, min_gq, hemizygous_child=False):
     """Mendelian errors among confident sites in [lo, hi]: a child homozygous for an allele a parent cannot give, or
-    heterozygous where both parents are the same homozygote."""
+    heterozygous where both parents are the same homozygote. For a hemizygous child's X (hemizygous_child): the child's
+    one allele must be the mother's, so an error is a heterozygous call or an allele the mother does not carry."""
     sel = (sites.pos >= lo) & (sites.pos <= hi)
     dp, gt, gq = sites.dp[:, sel], sites.gt[:, sel], sites.gq[:, sel]
     ok = (gt >= GT_HOMREF).all(axis=0)
@@ -75,15 +87,20 @@ def mie_rate(sites, lo, hi, min_dp, min_gq):
     if ok.sum() < 20:
         return NA
     c, f, m = gt[0][ok], gt[1][ok], gt[2][ok]
+    if hemizygous_child:
+        err = (c == GT_HET) | ((c == GT_HOMREF) & (m == GT_HOMALT)) | ((c == GT_HOMALT) & (m == GT_HOMREF))
+        return float(err.mean())
     err = ((c == GT_HOMREF) & ((f == GT_HOMALT) | (m == GT_HOMALT))) | ((c == GT_HOMALT) & ((f == GT_HOMREF) | (m == GT_HOMREF))) | \
           ((c == GT_HET) & (((f == GT_HOMREF) & (m == GT_HOMREF)) | ((f == GT_HOMALT) & (m == GT_HOMALT))))
     return float(err.mean())
 
 
-def read_trio(events, scan, genome, min_dp, min_gq, min_overlap=0.5):
+def read_trio(events, scan, genome, min_dp, min_gq, min_overlap=0.5, child_x_copies=NA, child_x_baseline=2):
     """Annotates the events in place: the child's with inheritance (an event of the same type in a parent with reciprocal
     overlap of at least min_overlap) and the parent of origin; the parents' with whether the child carries the same event;
-    every event with its Mendelian-error rate. Returns the genome-wide Mendelian-error rate."""
+    every event with its Mendelian-error rate. On the X, Mendelian errors follow the hemizygous rules when the child's
+    measured X copy number is 1, and the parent of origin uses child_x_baseline (1 for a reported male, else 2). Returns
+    the genome-wide Mendelian-error rate (autosomes)."""
     kid = [e for e in events if e.role == "child"]
     dad = [e for e in events if e.role == "father"]
     mom = [e for e in events if e.role == "mother"]
@@ -94,10 +111,11 @@ def read_trio(events, scan, genome, min_dp, min_gq, min_overlap=0.5):
             if np.isfinite(r):
                 base[chrom] = r
     base_rate = float(np.median(list(base.values()))) if base else NA
+    hemi = np.isfinite(child_x_copies) and int(child_x_copies) == 1
     for e in events:
         sites = scan.sites(e.chrom)
-        if sites is not None:
-            e.mie_rate = mie_rate(sites, e.start + 1, e.end, min_dp, min_gq)
+        if sites is not None and e.chrom != "chrY":
+            e.mie_rate = mie_rate(sites, e.start + 1, e.end, min_dp, min_gq, hemizygous_child=(e.chrom == "chrX" and hemi))
     for e in kid:
         same = [(p, src) for lst, src in ((dad, "father"), (mom, "mother")) for p in lst
                 if p.chrom == e.chrom and p.type == e.type and e.reciprocal_overlap(p) >= min_overlap]
@@ -109,8 +127,8 @@ def read_trio(events, scan, genome, min_dp, min_gq, min_overlap=0.5):
         else:
             e.inheritance = "new (neither parent carries it)"
         sites = scan.sites(e.chrom)
-        if sites is not None and e.chrom in genome.autosomes:
-            e.origin, e.origin_llr, e.origin_n = parent_of_origin(sites, e, min_dp, min_gq)
+        if sites is not None and (e.chrom in genome.autosomes or e.chrom == "chrX"):
+            e.origin, e.origin_llr, e.origin_n = parent_of_origin(sites, e, min_dp, min_gq, baseline=child_x_baseline if e.chrom == "chrX" else 2)
         if e.type == "LOH" and np.isfinite(e.f) and e.f >= 0.8:
             # in every cell: a uniparental isodisomy breaks Mendel at every site where the parents are opposite homozygotes (the child
             # is homozygous for one parent's allele); a run of homozygosity by descent has no such sites and no errors

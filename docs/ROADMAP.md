@@ -9,6 +9,14 @@ ordered by expected value; "done" items are kept for the record with the commit 
   tables.
 - Inheritance requires reciprocal overlap of at least 50%; supplied events keep the lenient shorter-segment rule.
 - A run of homozygosity receives no parent of origin or homologue count from the phased track.
+- Centromere-anchored meiotic stage (meiosis I, meiosis II, mitotic) with crossover positions for a child's whole-chromosome
+  gain or heterodisomy (`stage`, `centromere`, `n_crossovers`, `crossovers`); simulated meiosis I, II and mitotic trisomies
+  with crossovers test it (`triokaryo mock --meiosis`).
+- The join note names the reason (bins masked by the panel, or without a call) instead of always blaming the panel.
+- Sex chromosomes: X and Y copy number per member (raw and rounded), the complement against the pedigree sex, whole-X and
+  whole-Y events with cell fraction (47,XXY, 45,X, mosaics, loss of Y from the panel or the father/son Y ratio), a
+  hemizygous baseline for a male's X in the parent-of-origin likelihood, the phased reading and the Mendelian rules, the
+  X phased scan gated by measured X copies, Y sites in the simulation, and the panel's Y rows on the diploid scale.
 
 ## Method
 
@@ -24,7 +32,6 @@ ordered by expected value; "done" items are kept for the record with the commit 
   "no event".
 - **Panel-independent control of reference structure.** The within-trio depth tracks cancel shared structure; a
   within-trio segmentation (child over parental mean) could call de novo events without a panel.
-- **Join note.** "joined across n bin(s) the panel left out" is written even when no panel masked the gap.
 
 ## Calibration and evaluation
 
@@ -41,9 +48,12 @@ ordered by expected value; "done" items are kept for the record with the commit 
 
 - **Y segmental events.** The Y is analysed only as a whole chromosome (copy number, mosaic loss); segmental Y events
   would need a male-only panel with Y bins aligned to one copy and a mappability-aware bin mask.
-- **Panel Y rows.** `triokaryo panel` aligns each genome's Y to the two-copy level like the X; the shipped panel
-  predates this and its Y rows, if present, are re-aligned at load time by a heuristic. Rebuild the shipped panel from
-  the twelve VCFs when they are next available.
+- **Panel Y rows.** The shipped panel predates the diploid-scale Y convention; its Y rows are lifted by one unit at load
+  time. Rebuild it from the twelve VCFs when they are next available, ideally with more males (five contribute now).
+- **Mosaic loss of Y in daughters' fathers.** Without a son the father/son ratio is unavailable and, without a panel,
+  a loss of Y needs a 25% deviation; a male-only Y panel built from the cohort's fathers would resolve it.
+- **X parent of origin without pedigree sex.** Whole-X events need the pedigree sex; the complement itself could
+  stand in (XY from the depth implies the hemizygous baseline).
 - **X inactivation and PAR.** The pseudoautosomal regions are excluded throughout; PAR1 could be analysed as autosomal
   (both parents contribute).
 
@@ -51,8 +61,13 @@ ordered by expected value; "done" items are kept for the record with the commit 
 
 - **Karyotype string per trio** in ISCN-like form (e.g. `47,XY,+12 pat`, `mos 46,XY,del(2)(q22q31)[0.67]`), and a
   standard CNV export (BED or VCF) for downstream tools.
-- **Crossover map table** per meiotic event: position, parent, and the auxiliary track that resolved it (the
-  centromere-anchored stage reading computes these; a dedicated table would make them queryable).
+- **Crossover map table** per meiotic event: the `crossovers` column lists positions; a dedicated table with the parent,
+  the resolving auxiliary track and the state on each side would make them queryable, and a crossover track could be
+  drawn on the chromosome figure.
+- **Stage for segmental events and for mosaic meiotic trisomies with rescue.** The stage is read for whole-chromosome
+  events only; a mosaic trisomy from a meiotic error with partial trisomy rescue carries the same signature at a diluted
+  shift, and the centromeric state could also date a uniparental isodisomy (monosomy rescue) when read from the parents'
+  haplotypes.
 - **`triokaryo merge`**: a wrapper around `bcftools merge -0` for per-sample VCFs, with the PASS/biallelic SNV
   reduction, so that the example recipe is a single command.
 - **Throughput for cohorts.** Parallelise the scan and the binning by chromosome; stream sites instead of holding every

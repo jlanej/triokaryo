@@ -77,7 +77,11 @@
    "edge_sites": 635,
    "homologues": "",
    "hetero_share": NaN,
-   "f": 0.12043578818806155
+   "f": 0.12043578818806155,
+   "stage": "",
+   "centromere": "",
+   "n_crossovers": 0,
+   "crossovers": ""
   },
   {
    "sample": "NA12739",
@@ -104,7 +108,7 @@
    "origin_n": 17678,
    "inheritance": "new (neither parent carries it)",
    "external": "NGS-DOSE: +12 (2.99 copies, every cell); DRAGEN CNV: CN 3 (segment mean 1.52); DRAGEN CNV: CN 3 (segment mean 1.49); DRAGEN CNV: CN 3 (segment mean 1.53); DRAGEN CNV: CN 3 (segment mean 1.48); DRAGEN CNV: CN 3 (segment mean 1.53); DRAGEN CNV: CN 3 (segment mean 1.49); DRAGEN CNV: CN 3 (segment mean 1.45); DRAGEN CNV: CN 3 (segment mean 1.44); DRAGEN CNV: CN 3 (segment mean 1.50); DRAGEN CNV: CN 3 (segment mean 1.52); DRAGEN CNV: CN 3 (segment mean 1.53); DRAGEN CNV: CN 3 (segment mean 1.51); DRAGEN CNV: CN 3 (segment mean 1.49)",
-   "note": "joined across 2 bin(s) the panel left out",
+   "note": "joined across 2 bin(s) without a call",
    "source": "depth",
    "phase_shift": -0.16146227070058783,
    "phase_se": 0.000544695597467812,
@@ -116,7 +120,11 @@
    "edge_sites": 0,
    "homologues": "the two paternal copies are one homologue throughout (mitotic, or a meiosis II error without a crossover)",
    "hetero_share": 0.004132231404958678,
-   "f": 0.9568923575887327
+   "f": 0.9568923575887327,
+   "stage": "mitotic, or meiosis II without a crossover",
+   "centromere": "isodisomic",
+   "n_crossovers": 0,
+   "crossovers": ""
   },
   {
    "sample": "NA12748",
@@ -155,7 +163,11 @@
    "edge_sites": 1094,
    "homologues": "",
    "hetero_share": NaN,
-   "f": 0.6929899474767778
+   "f": 0.6929899474767778,
+   "stage": "",
+   "centromere": "",
+   "n_crossovers": 0,
+   "crossovers": ""
   },
   {
    "sample": "NA12748",
@@ -194,7 +206,11 @@
    "edge_sites": 1299,
    "homologues": "",
    "hetero_share": NaN,
-   "f": 0.5921671823181869
+   "f": 0.5921671823181869,
+   "stage": "",
+   "centromere": "",
+   "n_crossovers": 0,
+   "crossovers": ""
   }
  ],
  "external": [
@@ -356,5 +372,41 @@
  "skipped": {
   "contig": 69636
  },
- "seconds": 59.7
+ "seconds": 59.7,
+ "sex_chromosomes": {
+  "child": {
+   "x_copies_raw": 0.9959187825316703,
+   "x_copies": 1,
+   "x_bins": 152,
+   "y_copies_raw": 1.0159997168190287,
+   "y_copies": 1,
+   "y_bins": 18,
+   "x_check": "agrees",
+   "sex_check": "agrees"
+  },
+  "father": {
+   "x_copies_raw": 0.9993763620805106,
+   "x_copies": 1,
+   "x_bins": 152,
+   "y_copies_raw": 0.9836725167159771,
+   "y_copies": 1,
+   "y_bins": 18,
+   "x_check": "agrees",
+   "sex_check": "agrees"
+  },
+  "mother": {
+   "x_copies_raw": 1.9353171401799887,
+   "x_copies": 2,
+   "x_bins": 152,
+   "y_copies_raw": 0.0,
+   "y_copies": 0,
+   "y_bins": 0,
+   "x_check": "agrees",
+   "sex_check": "agrees"
+  }
+ },
+ "y_father_son": {
+  "log2": NaN,
+  "sites": 0
+ }
 }

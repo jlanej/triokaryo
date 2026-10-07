@@ -37,6 +37,25 @@ LOW_SHARE_EVENTS = [
     dict(member=KID, chrom="chr16", start=0, end=None, f=0.08, delta={"pat": +1}, label="mosaic +16 (8% of cells), paternal homologue duplicated: under the depth's threshold, the phased bands' find", type="gain", origin="extra copy paternal", inherited=False),
     dict(member=MOM, chrom="chr16", start=0, end=36_800_000, f=0.08, delta={"h0": -1}, label="mosaic loss of 16p in the mother (8% of cells)", type="loss", origin="", inherited=False),
 ]
+# meiotic-stage patterns for a dense small simulation (triokaryo mock --contigs chr10,chr11,chr12,chr13,chr16,chr17 --sites-per-mb 300 --meiosis;
+# the three normal chromosomes keep the child's autosomal median diploid): a trisomy 13 from a meiosis II error (isodisomic at the centromere,
+# a crossover at 60 Mb), a trisomy 16 from a meiosis I error (heterodisomic at the centromere, a crossover at 70 Mb) and a mitotic trisomy 17
+# (one homologue throughout). Each crossover is two planted segments.
+MEIOSIS_EVENTS = [
+    dict(member=KID, chrom="chr13", start=0, end=60_000_000, f=1.0, delta={"mat": +1}, label="trisomy 13, meiosis II: the transmitted maternal homologue twice to 60 Mb", type="gain", origin="extra copy maternal", inherited=False),
+    dict(member=KID, chrom="chr13", start=60_000_000, end=None, f=1.0, delta={"mat_other": +1}, label="trisomy 13, meiosis II: both maternal homologues beyond the crossover at 60 Mb", type="gain", origin="extra copy maternal", inherited=False),
+    dict(member=KID, chrom="chr16", start=0, end=70_000_000, f=1.0, delta={"pat_other": +1}, label="trisomy 16, meiosis I: both paternal homologues to 70 Mb", type="gain", origin="extra copy paternal", inherited=False),
+    dict(member=KID, chrom="chr16", start=70_000_000, end=None, f=1.0, delta={"pat": +1}, label="trisomy 16, meiosis I: the transmitted paternal homologue twice beyond the crossover at 70 Mb", type="gain", origin="extra copy paternal", inherited=False),
+    dict(member=KID, chrom="chr17", start=0, end=None, f=1.0, delta={"mat": +1}, label="trisomy 17, mitotic (or meiosis II without a crossover): one maternal homologue throughout", type="gain", origin="extra copy maternal", inherited=False),
+]
+# sex-chromosome mosaics (triokaryo mock --sex-chromosomes): a mosaic loss of Y in the father, a mosaic 45,X/46,XX in the mother (her first X
+# homologue lost in 40% of cells; whether it is the transmitted one is in truth.json's transmitted_maternal), and a mosaic 46,XY/47,XXY in the
+# son with the extra X paternal
+SEX_EVENTS = [
+    dict(member=DAD, chrom="chrY", start=0, end=None, f=0.30, delta={"h0": -1}, label="mosaic loss of Y in the father (30% of cells)", type="loss", origin="", inherited=False),
+    dict(member=MOM, chrom="chrX", start=0, end=None, f=0.40, delta={"h0": -1}, label="mosaic 45,X/46,XX in the mother (40% of cells)", type="loss", origin="", inherited=False),
+    dict(member=KID, chrom="chrX", start=0, end=None, f=0.40, delta={"pat": +1}, label="mosaic 46,XY/47,XXY in the son (40% of cells), the extra X paternal", type="gain", origin="extra copy paternal", inherited=False),
+]
 GC_CHROM = {"chr1": 0.0, "chr4": -0.03, "chr13": -0.025, "chr16": 0.03, "chr17": 0.04, "chr19": 0.07, "chr20": 0.02, "chr22": 0.06, "chrX": -0.02}
 
 
@@ -63,6 +82,7 @@ def write_mock(out_dir, seed=1, sites_per_mb=60, no_events=False, xxy=False, dep
     tm = {c: int(rng.integers(2)) for c in G.chroms}
     tp["chr10"] = 1
     tp["chr2"] = 1
+    tp["chrX"] = 0                                                     # the father's one X is his first haplotype; a daughter receives it
     # the GC track
     gc = {}
     with open(os.path.join(out_dir, "gc.tsv"), "w") as fh:
@@ -84,7 +104,7 @@ def write_mock(out_dir, seed=1, sites_per_mb=60, no_events=False, xxy=False, dep
                  '##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read depth">\n##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype quality">\n')
         fh.write("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t%s\t%s\t%s\n" % (nm[KID], nm[DAD], nm[MOM]))
         for c in G.chroms:
-            if c == "chrY" or (contigs and c not in contigs):
+            if contigs and c not in contigs:
                 continue
             L = G.length[c]
             n = int(round(L / 1e6 * sites_per_mb))
@@ -92,17 +112,23 @@ def write_mock(out_dir, seed=1, sites_per_mb=60, no_events=False, xxy=False, dep
             if c == "chrX":
                 pos = pos[(pos > 2_781_479) & (pos < 155_701_383)]
                 n = len(pos)
+            if c == "chrY":                                            # the euchromatic male-specific region only
+                pos = pos[(pos > 2_781_479) & (pos < 26_600_000)]
+                n = len(pos)
             p = np.clip(rng.beta(0.6, 0.6, n), 0.02, 0.98)
             # the four parental homologues
             d0, d1 = (rng.random(n) < p).astype(int), (rng.random(n) < p).astype(int)
             m0, m1 = (rng.random(n) < p).astype(int), (rng.random(n) < p).astype(int)
             hom = {"pat": [d0, d1][tp[c]], "pat_other": [d0, d1][1 - tp[c]], "mat": [m0, m1][tm[c]], "mat_other": [m0, m1][1 - tm[c]]}
-            # base copies per member: the child's inherited pair; each parent's own two; the X: child (male) one maternal X, father one X
+            # base copies per member: the child's inherited pair; each parent's own two; the X: child (male) one maternal X, father one X;
+            # the Y: the father's one Y, inherited by the son as the same sequence; the mother none
             base = {KID: {"pat": 1, "mat": 1}, DAD: {"h0": 1, "h1": 1}, MOM: {"h0": 1, "h1": 1}}
             if c == "chrX":
                 base[KID] = {"mat": 1, "mat_other": 1} if xxy else {"mat": 1}
                 base[DAD] = {"h0": 1}
-            alleles = {KID: dict(hom), DAD: {"h0": d0, "h1": d1}, MOM: {"h0": m0, "h1": m1}}
+            if c == "chrY":
+                base = {KID: {"pat_y": 1}, DAD: {"h0": 1}, MOM: {}}
+            alleles = {KID: dict(hom, pat_y=d0), DAD: {"h0": d0, "h1": d1}, MOM: {"h0": m0, "h1": m1}}
             gcs = np.array([gc[(c, int(x // bin_size) * bin_size)] for x in pos])
             cols = {}
             for mi, member in enumerate((KID, DAD, MOM)):
@@ -156,6 +182,7 @@ def write_mock(out_dir, seed=1, sites_per_mb=60, no_events=False, xxy=False, dep
         truth["events"].append(dict(sample=nm[ev["member"]], chrom=ev["chrom"], start=ev["start"], end=ev["end"] if ev["end"] is not None else G.length[ev["chrom"]],
                                     f=ev["f"], type=ev["type"], label=ev["label"], origin=ev["origin"], inherited=ev["inherited"]))
     truth["x_copies"] = {nm[KID]: 2 if xxy else 1, nm[DAD]: 1, nm[MOM]: 2}
+    truth["y_copies"] = {nm[KID]: 1, nm[DAD]: 1, nm[MOM]: 0}
     with open(os.path.join(out_dir, "truth.json"), "w") as fh:
         json.dump(truth, fh, indent=1)
     with open(os.path.join(out_dir, "mock.trios.tsv"), "w") as fh:

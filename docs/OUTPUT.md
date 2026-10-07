@@ -18,11 +18,12 @@
 | origin, origin_llr, origin_n | parent of origin from the informative sites (child, autosomes), the log-likelihood ratio and the site count |
 | origin_phase | from the sign of the phased shift: the parent of the extra, lost or retained copy (child), or whether the event lies on the transmitted homologue (parent) |
 | homologues, hetero_share | for a child's gain, LOH or UPD with a parent named: whether that parent's two copies are one homologue or two, and the share of the event's windows in which they differ |
+| stage, centromere, n_crossovers, crossovers | for a child's whole-chromosome gain or heterodisomy with a parent named: the meiotic stage (meiosis I, meiosis II, or mitotic / meiosis II without a crossover) from the state of the two copies nearest the centromere, that centromeric state, and the crossovers as changes of state along the chromosome (positions in Mb) |
 | het_rate, het_rate_rel, n_het, n_called | heterozygosity rate in the segment, its ratio to the member's own (or to the panel's), and the counts |
 | mie_rate | Mendelian-error rate among the segment's confident sites (the genome-wide rate is in the summary) |
 | inheritance | child: inherited from the father / the mother, or new; parent: passed to the child or not |
 | external | labels of the supplied events (`--events`) overlapping the segment |
-| note | annotations: run of homozygosity; isodisomy; no heterozygous calls; pieces joined; phased-versus-depth disagreement; phased-scan typing; heterodisomy; parent-of-origin disagreement; loss on a single X |
+| note | annotations: run of homozygosity; isodisomy; no heterozygous calls; pieces joined; phased-versus-depth disagreement; phased-scan typing; heterodisomy; parent-of-origin disagreement; loss on a single X; whole-chromosome X or Y against the pedigree sex (47,XXY, 45,X, mosaics, loss of Y) with the source of the Y estimate |
 
 ## phased.tsv
 
@@ -46,10 +47,12 @@ band mask; per member `n_sites`, `depth`, `lrr`, `lrr_gc` (GC- and panel-correct
 ## summary.tsv and summary.json
 
 The trio, its members and their sexes; records read, sites used and records skipped by reason; the genome-wide
-Mendelian-error rate; per member the event counts by type, the X copy number with the check against the pedigree
-sex, the median autosomal depth, the phased-site count, the window size, the reference bias, the number of
-phased-scan events and of shared windows; the parameters. `summary.json` also holds every event and every supplied
-event.
+Mendelian-error rate; per member the event counts by type, the X and Y copy numbers (`x_copies`, `y_copies`; raw
+values `x_copies_raw`, `y_copies_raw`), the sex-chromosome complement (`sex_karyotype`) with its check against the
+pedigree sex (`sex_check`; `x_check` the X-only wording), the median autosomal depth, the phased-site count, the
+window size, the reference bias, the number of phased-scan events and of shared windows; the father/son Y depth
+ratio (`y_father_son_log2`, `y_father_son_sites`) and whether the panel carried Y rows (`y_panel`); the parameters.
+`summary.json` also holds every event, every supplied event and the per-member sex-chromosome state.
 
 ## figures/
 

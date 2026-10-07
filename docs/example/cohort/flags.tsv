@@ -7,5 +7,5 @@ HG01103	HG01101	father	chr17	43000000	50000000	LOH	bands	1	no heterozygous calls
 HG01103	HG01101	father	chr19	0	5000000	gain	depth	0.1371	the phased bands read a share of 3% against the depth's 14%: the depth's call may be an artefact (GC, the panel's edge) rather than a copy change
 HG01103	HG01102	mother	chr7	79000000	87000000	LOH	bands	1	no heterozygous calls: in every cell (a uniparental disomy, or a deletion the depth missed); in every cell: a run of homozygosity (identical by descent) unless the depth says otherwise
 NA12739	NA12739	child	chr1	0	5000000	gain	depth	0.1204	the phased bands read a share of 4% against the depth's 12%: the depth's call may be an artefact (GC, the panel's edge) rather than a copy change
-NA12739	NA12739	child	chr12	0	133275309	gain	depth	0.9569	joined across 2 bin(s) the panel left out
+NA12739	NA12739	child	chr12	0	133275309	gain	depth	0.9569	joined across 2 bin(s) without a call
 NA12739	NA12748	father	chr21	42761648	46699598	loss	phased	0.5922	from the phased bands: the depth leans the same way (-55.0 standard errors) but under its own threshold

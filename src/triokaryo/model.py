@@ -78,6 +78,7 @@ def _median_or_nan(v):
 
 PANEL_MAX_RSD = 0.25        # a bin whose LRR robust SD across the panel's genomes exceeds this is not called
 PANEL_MIN_N = 5             # minimum genomes per bin: a median over fewer follows one genome's own event
+PANEL_MIN_N_Y = 3           # the same for the Y, to which only the panel's males contribute
 PANEL_BDEV_EXCESS = 0.03    # a bin whose panel band deviation exceeds the panel's genome-wide median by this much (paralogous sequence,
                             # where the alleles of two loci are counted as one) is excluded from the loss-of-heterozygosity search
 
@@ -161,7 +162,7 @@ def make_bins(scan, genome, bin_size=1_000_000, min_dp=8, min_gq=20, gc_track=No
                 continue
             n_, med_, rsd_ = e[:3]
             pmed[i], prsd[i] = med_, rsd_
-            masked[i] = n_ < PANEL_MIN_N or not np.isfinite(med_) or (np.isfinite(rsd_) and rsd_ > PANEL_MAX_RSD)
+            masked[i] = n_ < (PANEL_MIN_N_Y if r[0] == "chrY" else PANEL_MIN_N) or not np.isfinite(med_) or (np.isfinite(rsd_) and rsd_ > PANEL_MAX_RSD)
             if len(e) > 4 and np.isfinite(e[4]):
                 pbdev[i] = e[4]
                 masked_bands[i] = bool(np.isfinite(typical) and e[4] > typical + PANEL_BDEV_EXCESS)
@@ -210,6 +211,21 @@ def gc_correct(lrr, gc, fit_mask, window=41):
     med = np.median(out[fit_mask & np.isfinite(out)]) if (fit_mask & np.isfinite(out)).any() else 0.0
     out[np.isfinite(out)] -= med
     return out
+
+
+def chrom_level(bins, m, chrom, min_sites=20, min_bins=5):
+    """A chromosome's copy number from the member's corrected LRR over its usable bins (outside the pseudoautosomal regions,
+    with at least min_sites sites): (raw copies 2 x 2^median LRR, rounded copies, usable bins); (NaN, NaN, bins) with fewer
+    than min_bins usable bins."""
+    sl = bins.of(chrom)
+    if sl.start == sl.stop:
+        return NA, NA, 0
+    y = bins.lrr_gc[m][sl]
+    ok = np.isfinite(y) & (bins.n_dp[m][sl] >= min_sites) & ~bins.par[sl]
+    if ok.sum() < min_bins:
+        return NA, NA, int(ok.sum())
+    raw = 2.0 * 2.0 ** float(np.median(y[ok]))
+    return raw, int(round(raw)), int(ok.sum())
 
 
 def d_grid():

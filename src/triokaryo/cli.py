@@ -4,7 +4,7 @@
   triokaryo run --vcf trio.vcf.gz --child KID --father DAD --mother MOM --sex M,M,F --out out/KID
   triokaryo panel --vcfs a.vcf.gz b.vcf.gz ... --out panel.tsv        # or --runs 'out/*' from earlier runs
   triokaryo gc-track --fasta ref.fa --out gc.tsv [--bin 1000000]
-  triokaryo mock --out mock_dir [--seed 1] [--no-events] [--xxy] [--contigs chr15,chr16,chr17 --sites-per-mb 1000 --low-share]
+  triokaryo mock --out mock_dir [--seed 1] [--no-events] [--xxy] [--contigs chr15,chr16,chr17 --sites-per-mb 1000 --low-share | --meiosis]
   triokaryo cohort --runs 'out/*' --out cohort [--events other_calls.tsv]   # cohort report and guide
   triokaryo report --runs 'out/*'                   # rebuild a run's page from its tables (no VCF needed)
   triokaryo guide --out guide.html                  # the meaning of every figure row, colour and column
@@ -86,6 +86,12 @@ def cmd_mock(a):
     if a.low_share:
         from .mock import LOW_SHARE_EVENTS
         events = LOW_SHARE_EVENTS
+    if a.meiosis:
+        from .mock import MEIOSIS_EVENTS
+        events = (events or []) + MEIOSIS_EVENTS
+    if a.sex_chromosomes:
+        from .mock import SEX_EVENTS
+        events = (events or []) + SEX_EVENTS
     paths = write_mock(a.out, seed=a.seed, sites_per_mb=a.sites_per_mb, no_events=a.no_events, xxy=a.xxy, prefix=a.prefix, events=events,
                        contigs=a.contigs.split(",") if a.contigs else None)
     _log("mock trio -> %s" % paths["vcf"])
@@ -170,6 +176,8 @@ def main(argv=None):
     m.add_argument("--prefix", default="", help="prefix for the sample names KID, DAD, MOM (several simulated trios in one cohort)")
     m.add_argument("--contigs", default="", help="restrict to these chromosomes, comma-separated (a small dense simulation)")
     m.add_argument("--low-share", action="store_true", help="plant the low-cell-fraction events (below the depth threshold) instead of the default set")
+    m.add_argument("--meiosis", action="store_true", help="plant the meiotic-stage trisomies (meiosis I and II with a crossover, mitotic) on chr13, chr16, chr17; use with --contigs chr10,chr11,chr12,chr13,chr16,chr17")
+    m.add_argument("--sex-chromosomes", action="store_true", help="plant the sex-chromosome mosaics: loss of Y in the father, 45,X/46,XX in the mother, 46,XY/47,XXY in the son")
     m.set_defaults(fn=cmd_mock)
     c = sub.add_parser("cohort", help="cohort report over many runs: counts, landscape figure, every event, per-trio metrics, concordance, guide")
     c.add_argument("--runs", nargs="+", required=True, help="run directories (globs)")

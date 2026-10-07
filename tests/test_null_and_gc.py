@@ -37,5 +37,11 @@ def test_xxy_child_reads_two_x_copies(tmp_path):
     m = write_mock(str(tmp_path / "xxy"), seed=5, no_events=True, xxy=True)
     trio = read_trios(m["trios"])[0]
     res = run_trio(m["vcf"], trio, str(tmp_path / "out"), gc_track=m["gc"], figures=False, log=lambda s: None)
-    assert res["x_copies"]["child"] == 2 and res["summary"]["child_x_check"].startswith("X copies 2 in a reported male")
-    assert not [e for e in res["events"] if e.chrom == "chrX"]
+    s = res["summary"]
+    assert res["x_copies"]["child"] == 2 and s["child_x_check"].startswith("X copies 2 in a reported male")
+    assert s["child_sex_karyotype"] == "XXY" and s["child_sex_check"].startswith("XXY in a reported male") and s["child_y_copies"] == 1
+    # the 47,XXY is a whole-X gain against the pedigree sex: both X copies maternal (the mock gives both maternal homologues), a meiosis I error
+    (ex,) = [e for e in res["events"] if e.chrom == "chrX"]
+    assert ex.sample == "KID" and ex.type == "gain" and ex.span == "whole" and abs(ex.f - 1.0) < 0.1 and "47,XXY" in ex.note
+    assert ex.origin == "extra copy maternal" and ex.origin_phase == "extra copy maternal" and ex.stage == "meiosis I" and ex.centromere == "heterodisomic"
+    assert not [e for e in res["events"] if e.chrom != "chrX"]

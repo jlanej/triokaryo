@@ -8,13 +8,16 @@ own CNV calls. Sample IDs are the public ones. The landing page [`../index.html`
 this file lists the results.
 
 Both runs used the shipped reference panel (`--panel 1kg-dragen`) and no GC track (`gc_corrected = 0` in the
-summaries). Run time was 60 s (NA12739, 5.4 million sites) and 72 s (HG01103, 5.9 million sites).
+summaries). Run time was 60 s (NA12739, 5.4 million sites) and 72 s (HG01103, 5.9 million sites). The meiotic-stage
+and sex-chromosome columns added later were computed from the committed phased windows and bins (`triokaryo report`
+rebuilds the pages from the tables); the father/son Y depth ratio needs site-level depths and is not available for
+these runs.
 
 ## Results
 
 | trio (child) | NGS-DOSE | triokaryo |
 | --- | --- | --- |
-| CEU 1444, **NA12739** (father NA12748, mother NA12749) | `47,XY,+12` (2.99 copies, every cell) | gain of the whole of chromosome 12, f = 0.96 by depth, 0.94 by the folded bands, 0.95 by the phased track. Extra copy **paternal** (17,630 phased sites; the likelihood ratio over 17,678 informative sites agrees). The two paternal copies are **one homologue throughout** (hetero_share 0.004): a mitotic duplication or a meiosis II error, not a meiosis I nondisjunction. De novo. DRAGEN: CN 3 in thirteen segments |
+| CEU 1444, **NA12739** (father NA12748, mother NA12749) | `47,XY,+12` (2.99 copies, every cell) | gain of the whole of chromosome 12, f = 0.96 by depth, 0.94 by the folded bands, 0.95 by the phased track. Extra copy **paternal** (17,630 phased sites; the likelihood ratio over 17,678 informative sites agrees). The two paternal copies are **one homologue throughout** (hetero_share 0.004), isodisomic at the centromere with no crossover: stage "mitotic, or meiosis II without a crossover", not a meiosis I nondisjunction. De novo. DRAGEN: CN 3 in thirteen segments |
 | the father NA12748 | `46,XY` | gain of 13q from 88 Mb (87.62 Mb at site resolution) to the telomere, f = 0.69 by depth, 0.67 by the folded bands, 0.56 by the phased track, on the homologue transmitted to the child, who did not inherit the gain. DRAGEN: CN 3 in four segments. NGS-DOSE reported 1.999 copies of chromosome 13 |
 | the father NA12748 | not reported | **loss of the terminal 21q, 42.8 Mb (42.64 Mb at site resolution) to the telomere at 46.7 Mb, f = 0.59, from the phased scan alone**: four bins, under the depth segmentation's five-bin floor, although the depth deviates in the same direction (−55 SE). On the transmitted homologue, which the child received intact. The segment's Mendelian-error rate (0.077 against 0.010 genome-wide) is consistent with the father's heterozygous sites being called homozygous where the lost allele's read fraction falls to 0.29. DRAGEN: CN 1 over 44.2–46.7 Mb (segment mean 0.68) |
 | NA12739 | not reported | a 12% gain of chr1:0–5 Mb by depth that the phased track puts at 4%: flagged as a possible depth artefact |
@@ -22,6 +25,7 @@ summaries). Run time was 60 s (NA12739, 5.4 million sites) and 72 s (HG01103, 5.
 | HG01103 | not reported | loss of 14q 35–41 Mb, f = 0.64 (0.62 by both allelic estimates), paternal copy. DRAGEN: CN 1 in two segments over 35.3–41.2 Mb |
 | HG01103, HG01101, HG01102 | | five homozygous segments of 5 to 15 Mb (the child's 10p; the father's 11p, pericentromeric 11 and 17q; the mother's 7q) classified as **runs of homozygosity**: heterozygosity rate ≤ 0.09 of the member's own, no excess of Mendelian errors, few phased sites. Not uniparental disomies |
 | HG01101 | | two gains by depth (9q34 f = 0.10, 19p13 f = 0.14) that the phased track puts at 0.01–0.03: flagged |
+| all six members | | sex-chromosome complements XY, XY, XX (NA12739 trio) and XX, XY, XX (HG01103 trio), all agreeing with the pedigree; the males' Y reads 0.98–1.02 copies against the panel's male Y level and the females' 0; no whole-X or whole-Y event (X copy numbers 1.00, 1.00, 1.94 and 1.98, 1.00, 1.97) |
 
 The pages: [`NA12739/index.html`](NA12739/index.html), [`HG01103/index.html`](HG01103/index.html), and the cohort
 report with the concordance against the supplied events, [`cohort/index.html`](cohort/index.html): 27 of the 28

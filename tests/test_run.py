@@ -58,10 +58,16 @@ def test_inheritance_and_mendelian_errors(run):
     assert run["summary"]["mie_rate_genome"] < 0.01
 
 
-def test_x_copies_and_sex_check(run):
+def test_sex_chromosomes_and_sex_check(run, mock):
     s = run["summary"]
     assert s["child_x_copies"] == 1 and s["father_x_copies"] == 1 and s["mother_x_copies"] == 2
     assert s["child_x_check"] == "agrees" and s["mother_x_check"] == "agrees"
+    assert (s["child_y_copies"], s["father_y_copies"], s["mother_y_copies"]) == (1, 1, 0) == tuple(mock["truth_data"]["y_copies"][k] for k in ("KID", "DAD", "MOM"))
+    assert [s["%s_sex_karyotype" % r] for r in ("child", "father", "mother")] == ["XY", "XY", "XX"]
+    assert all(s["%s_sex_check" % r] == "agrees" for r in ("child", "father", "mother"))
+    assert abs(s["child_x_copies_raw"] - 1) < 0.1 and abs(s["mother_x_copies_raw"] - 2) < 0.1 and abs(s["father_y_copies_raw"] - 1) < 0.12 and s["mother_y_copies_raw"] == 0
+    assert abs(s["y_father_son_log2"]) < 0.1 and s["y_father_son_sites"] > 500
+    assert not [e for e in run["events"] if e.chrom in ("chrX", "chrY")]
 
 
 def test_external_events_matched(run):

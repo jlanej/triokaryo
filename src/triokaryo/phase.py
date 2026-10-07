@@ -50,6 +50,10 @@ HOMOLOGUE_MIN_WINDOWS = 4    # windows an event needs for the one-or-two-homolog
 HOMOLOGUE_MIN_SHIFT = 0.05   # ... and the shift it needs (a gain in a fifth of the cells): below it the auxiliary tracks' signs are noise
 SHARED_SHIFT = 0.05          # a window deviating this far from 1/2 in two or more members at once (the other's at least half of this member's) is shared (paralogy): no member's event
 DISAGREE_SITES = 500         # minimum phased sites before an event's phased cell fraction is compared with the depth's
+STAGE = dict(cen_windows=8,          # windows nearest the centromere whose state classifies the meiotic stage ...
+             cen_max_bp=15_000_000,  # ... within this distance of the centromere
+             smooth=5,               # running majority over this many windows before states and crossovers are read
+             state_frac=0.7)         # share of the centromeric windows that must agree for a centromeric state
 SCAN = dict(min_len=8,       # windows per segment of the phased scan
             min_bp=2_000_000,  # a phased find spans at least this (a dense cluster of sites makes many windows of a few hundred kb)
             z=5.0,           # the split statistic (binary segmentation, as the depth's)
@@ -86,13 +90,15 @@ class PhasedTrack:
     w_rejected: np.ndarray = None # windows inside a segment the scan rejected (paralogy, a dense cluster): no copy number drawn there
 
 
-def phase_classes(sites, m, min_dp, min_gq):
+def phase_classes(sites, m, min_dp, min_gq, x_hemizygous_child=False):
     """The member's phased site classes over one chromosome: {name: (indices, tag_alt)}.
     The child: 'main' - the parents opposite homozygotes, the child any confident call; tag the mother's allele.
                'mother_hom' - the mother homozygous, the father heterozygous, the child heterozygous; tag the mother's allele.
                'father_hom' - the father homozygous, the mother heterozygous, the child heterozygous; tag the allele the father did not give.
     A parent: 'main' - the parent heterozygous, the child homozygous; tag the child's allele.
-              'child_het' - the parent and the child heterozygous, the other parent homozygous; tag the allele the other parent did not give."""
+              'child_het' - the parent and the child heterozygous, the other parent homozygous; tag the allele the other parent did not give.
+    x_hemizygous_child: the X of a son, whose one X is maternal, so a father's allele differing from the son's is not an error
+    and the mother's main class keeps those sites."""
     gt, dp, gq = sites.gt, sites.dp, sites.gq
     conf = [_confident(dp[i], gq[i], gt[i], min_dp, min_gq) & (gt[i] >= GT_HOMREF) for i in range(3)]
     hom = [conf[i] & (gt[i] != GT_HET) for i in range(3)]
@@ -110,7 +116,9 @@ def phase_classes(sites, m, min_dp, min_gq):
         out["father_hom"] = (np.flatnonzero(c3), (gt[1] == GT_HOMREF)[c3])
     else:
         o = 3 - m
-        main = het[m] & hom[0] & ~(hom[o] & (gt[o] != gt[0]))          # a homozygous child opposite to the other parent: not this parent's to phase
+        main = het[m] & hom[0]
+        if not (x_hemizygous_child and m == 2):
+            main &= ~(hom[o] & (gt[o] != gt[0]))                      # a homozygous child opposite to the other parent: not this parent's to phase
         out["main"] = (np.flatnonzero(main), (gt[0] == GT_HOMALT)[main])
         cb = het[m] & het[0] & hom[o]
         out["child_het"] = (np.flatnonzero(cb), (gt[o] == GT_HOMREF)[cb])
@@ -190,16 +198,18 @@ def _pool_by_windows(pos_all, frac_all, dp_all, w_start, w_end):
     return out, cnt
 
 
-def phased_tracks(scan, bins, genome, m, min_dp, min_gq, sex=""):
-    """The member's phased track per chromosome (autosomes, and the X of a member with two), with the pooled windows,
-    the step fit, the auxiliary tracks and the parental copies. Returns ({chrom: PhasedTrack}, info)."""
+def phased_tracks(scan, bins, genome, m, min_dp, min_gq, sex="", child_x_copies=NA):
+    """The member's phased track per chromosome (autosomes and the X), with the pooled windows, the step fit, the auxiliary
+    tracks and the parental copies. child_x_copies: the child's measured X copy number (1: a son, whose X is maternal).
+    Returns ({chrom: PhasedTrack}, info)."""
     b = ref_bias(scan, genome, m, min_dp, min_gq)
     per = {}
     n_total, span = 0, 0
+    hemi = np.isfinite(child_x_copies) and int(child_x_copies) == 1
     for c, s in scan.chroms.items():
         if c == "chrY" or c not in bins.index:
             continue
-        cls = phase_classes(s, m, min_dp, min_gq)
+        cls = phase_classes(s, m, min_dp, min_gq, x_hemizygous_child=(c == "chrX" and hemi))
         keep = np.ones(s.n, dtype=bool)
         if c in genome.par or c == "chrX":
             keep &= ~s.par
@@ -282,15 +292,18 @@ def mask_rejected(tracks_by_member, bins, rejected):
         fit_tracks(tracks, bins, m)
 
 
-def mask_shared(tracks_by_member, bins):
+def mask_shared(tracks_by_member, bins, x_copies=None):
     """Windows deviating from 1/2 by SHARED_SHIFT or more in two or more members at once indicate paralogous sequence or an
-    imbalance shared by the family, not a member's event: marked as shared on each member's track, and the fits redone."""
+    imbalance shared by the family, not a member's event: marked as shared on each member's track, and the fits redone.
+    x_copies: {role: X copies}; a member with one X has a maternal fraction of 1 along the X by construction, which does
+    not count against the others' X windows."""
+    hemi = {i for i, role in enumerate(MEMBERS) if x_copies and np.isfinite(x_copies.get(role, NA)) and int(x_copies[role]) == 1}
     for m, tracks in enumerate(tracks_by_member):
         for c, t in tracks.items():
             mine = np.abs(t.w_frac - 0.5)
             n_parted = (mine >= SHARED_SHIFT).astype(int)
             for o, others in enumerate(tracks_by_member):
-                if o == m or c not in others:
+                if o == m or c not in others or (c == "chrX" and o in hemi):
                     continue
                 u = others[c]
                 j = np.searchsorted(u.w_start, t.w_mid, side="right") - 1          # the other member's window holding this one's middle
@@ -338,32 +351,100 @@ def origin_from_shift(role, kind, shift):
     return "the retained homologue is the one passed to the child" if up else "the retained homologue is the one not passed to the child"
 
 
-def homologues_reading(ev, track):
-    """For a child's gain, LOH or heterodisomy with a parent named: are the parent's two copies in the child one homologue (the
-    auxiliary track read at the other parent's homozygous sites follows the main one) or two (it departs: 1/3 against 2/3
-    along a trisomy)? Returns (text, share of the event's windows in which the copies differ)."""
+def _homologue_states(ev, track, absent_is_iso=False, upd_like=None):
+    """Per window inside a child's event: True where the named parent's two copies in the child are different homologues, False
+    where they are one, from the auxiliary track read at the other parent's homozygous sites (it departs from the main track,
+    1/3 against 2/3 along a trisomy, where the copies differ; along a heterodisomy it sits at 1/2). Windows without that track
+    are dropped, or counted as one homologue when absent_is_iso: a heterodisomy's isodisomic segments have no heterozygous
+    child sites, so the track is absent there while the main track is present. Returns (window positions, states) or None."""
     if ev.role != "child" or ev.type not in ("gain", "LOH", "UPD") or not np.isfinite(ev.phase_shift) or track is None or abs(ev.phase_shift) < HOMOLOGUE_MIN_SHIFT:
-        return "", NA
+        return None
     name = "father_hom" if ev.phase_shift > 0 else "mother_hom"          # a maternal event: the sites tagged by the father's homozygosity
     if name not in track.aux:
-        return "", NA
+        return None
     af, an = track.aux[name]
-    sel = (track.w_mid > ev.start) & (track.w_mid <= ev.end) & np.isfinite(af) & (an >= 5) & np.isfinite(track.w_frac)
-    if sel.sum() < HOMOLOGUE_MIN_WINDOWS:
-        return "", NA
-    main = track.w_frac[sel] - 0.5
-    other = af[sel] - 0.5
-    if ev.type == "UPD":
-        differ = np.abs(other) < np.abs(main) / 2                           # a heterodisomy: the auxiliary track sits at one half
+    inside = (track.w_mid > ev.start) & (track.w_mid <= ev.end) & np.isfinite(track.w_frac)
+    have = inside & np.isfinite(af) & (an >= 5)
+    main = track.w_frac - 0.5
+    other = np.where(np.isfinite(af), af, 0.5) - 0.5
+    if (ev.type == "UPD") if upd_like is None else upd_like:
+        differ = np.abs(other) < np.abs(main) / 2                           # both copies from one parent: the auxiliary track sits at one half
     else:
         differ = np.sign(other) != np.sign(main)
-    share = float(differ.mean())
+    sel = inside if absent_is_iso else have
+    if sel.sum() < HOMOLOGUE_MIN_WINDOWS:
+        return None
+    states = np.where(have, differ, False)[sel] if absent_is_iso else differ[sel]
+    order = np.argsort(track.w_mid[sel])
+    return track.w_mid[sel][order], states[order]
+
+
+def homologues_reading(ev, track, upd_like=None):
+    """For a child's gain, LOH or heterodisomy with a parent named: are the parent's two copies in the child one homologue or two?
+    Returns (text, share of the event's windows in which the copies differ)."""
+    st = _homologue_states(ev, track, absent_is_iso=bool(upd_like), upd_like=upd_like)
+    if st is None:
+        return "", NA
+    share = float(st[1].mean())
     parent = "maternal" if ev.phase_shift > 0 else "paternal"
     if share >= 0.9:
         return "the two %s copies are different homologues throughout (meiotic)" % parent, share
     if share <= 0.1:
         return "the two %s copies are one homologue throughout (mitotic, or a meiosis II error without a crossover)" % parent, share
     return "the two %s copies differ over %.0f%% of the event and are one homologue over the rest (a meiotic error with crossovers)" % (parent, 100 * share), share
+
+
+def running_majority(b, k=5):
+    """The majority of a boolean sequence over a window of k around each point; a tie keeps the point's own value."""
+    b = np.asarray(b, dtype=bool)
+    out = b.copy()
+    h = k // 2
+    for i in range(len(b)):
+        v = b[max(0, i - h):i + h + 1]
+        s = int(v.sum())
+        if 2 * s != len(v):
+            out[i] = 2 * s > len(v)
+    return out
+
+
+def stage_reading(ev, track, genome, absent_is_iso=None, upd_like=None):
+    """The meiotic stage of a child's whole-chromosome gain or heterodisomy, anchored at the centromere. The per-window states
+    (two different homologues, or one) are smoothed by a running majority; the state of the windows nearest the centromere
+    classifies the event: heterodisomic there, a meiosis I nondisjunction; isodisomic there with a heterodisomic segment
+    elsewhere, meiosis II; isodisomic throughout, a mitotic duplication or a meiosis II error without a crossover. Each change
+    of state along the chromosome is a crossover, placed midway between the two windows. Returns a dict (stage, centromere,
+    n_crossovers, crossovers in Mb, n_windows) or None."""
+    if ev.span != "whole":
+        return None
+    if absent_is_iso is None:
+        absent_is_iso = (ev.type == "UPD") if upd_like is None else upd_like
+    st = _homologue_states(ev, track, absent_is_iso=absent_is_iso, upd_like=upd_like)
+    if st is None:
+        return None
+    mid, differ = st
+    state = running_majority(differ, STAGE["smooth"])
+    cen = genome.p_end.get(ev.chrom, 0)
+    dist = np.abs(mid - cen)
+    near = np.argsort(dist)[:STAGE["cen_windows"]]
+    near = near[dist[near] <= STAGE["cen_max_bp"]]
+    centro = ""
+    if len(near) >= 3:
+        h = float(state[near].mean())
+        centro = "heterodisomic" if h >= STAGE["state_frac"] else "isodisomic" if h <= 1 - STAGE["state_frac"] else "mixed"
+    change = np.flatnonzero(state[1:] != state[:-1])
+    xo = [(mid[i] + mid[i + 1]) / 2.0 for i in change]
+    het_any, iso_any = bool(state.any()), bool((~state).any())
+    if centro == "heterodisomic":
+        stage = "meiosis I"
+    elif centro == "isodisomic":
+        stage = "meiosis II" if het_any else "mitotic, or meiosis II without a crossover"
+    elif not het_any:
+        stage = "mitotic, or meiosis II without a crossover"                # isodisomic throughout, the centromere unresolved
+    elif not iso_any:
+        stage = "meiosis I"                                                 # heterodisomic throughout
+    else:
+        stage = ""                                                          # mixed, the centromere unresolved
+    return dict(stage=stage, centromere=centro, n_crossovers=len(xo), crossovers=";".join("%.2f" % (x / 1e6) for x in xo), n_windows=int(len(mid)))
 
 
 def refine_edges(ev, track, sites, bins, genome):
@@ -406,10 +487,36 @@ def refine_edges(ev, track, sites, bins, genome):
     return out[0], out[1], n_min
 
 
-def annotate_events(events, tracks_by_member, scan, bins, genome):
-    """Every event's phased statistics, parent of origin by the sign of the shift, homologue count, and boundaries at
-    site resolution; a note where the phased sign and the informative-site likelihood name different parents. An event
-    annotated as a run of homozygosity receives no parent of origin or homologue count."""
+def _hemizygous_x_reading(e, track):
+    """The phased reading of a reported male's whole-X or segmental X event, whose baseline is one maternal X. A gain's extra
+    X is maternal when the maternal fraction stays at 1 (shift about 1/2; the cell fraction is then not readable from the
+    bands) and paternal when it falls to 1/(1+f) (shift (1-f)/(2(1+f)); f = (1-2s)/(1+2s)). A loss leaves the fraction at 1
+    and has no parent to resolve. Sets f_phase, origin_phase, stage, homologues; returns True when handled."""
+    if e.type == "gain":
+        s = e.phase_shift
+        if e.n_phased >= ORIGIN_MIN_SITES and (0.5 - s) >= ORIGIN_MIN_Z * e.phase_se and s < 0.4:
+            e.origin_phase = "extra copy paternal"
+            e.f_phase = float(np.clip((1 - 2 * s) / max(1 + 2 * s, 1e-9), 0, 2))
+            if e.span == "whole":
+                e.stage = "meiosis I (paternal: X and Y transmitted together)"
+                e.centromere = ""
+        elif e.n_phased >= ORIGIN_MIN_SITES and s >= 0.4:
+            e.origin_phase = "extra copy maternal"
+            e.f_phase = NA                                                  # the maternal fraction is 1 whatever the cell fraction
+            e.homologues, e.hetero_share = homologues_reading(e, track, upd_like=True)
+        return True
+    if e.type == "loss":
+        e.f_phase = NA
+        e.origin_phase = "maternal copy lost (the single X)" if e.n_phased >= ORIGIN_MIN_SITES else ""
+        return True
+    return False
+
+
+def annotate_events(events, tracks_by_member, scan, bins, genome, child_x_baseline=2):
+    """Every event's phased statistics, parent of origin by the sign of the shift, homologue count, meiotic stage, and
+    boundaries at site resolution; a note where the phased sign and the informative-site likelihood name different parents.
+    An event annotated as a run of homozygosity receives no parent of origin or homologue count. child_x_baseline 1 (a
+    reported male) reads the child's X events against one maternal X (_hemizygous_x_reading)."""
     for e in events:
         m = MEMBERS.index(e.role)
         track = tracks_by_member[m].get(e.chrom)
@@ -419,6 +526,14 @@ def annotate_events(events, tracks_by_member, scan, bins, genome):
         e.phase_shift, e.phase_se, e.n_phased = phased_reading(e, track, sites, m)
         if not np.isfinite(e.phase_shift):
             continue
+        if e.role == "child" and e.chrom == "chrX" and child_x_baseline == 1:
+            if _hemizygous_x_reading(e, track):
+                if e.origin_phase == "extra copy maternal":
+                    st = stage_reading(e, track, genome, upd_like=True)
+                    if st:
+                        e.stage, e.centromere, e.n_crossovers, e.crossovers = st["stage"], st["centromere"], st["n_crossovers"], st["crossovers"]
+                e.start_fine, e.end_fine, e.edge_sites = refine_edges(e, track, sites, bins, genome) if e.span != "whole" else (NA, NA, 0)
+                continue
         e.f_phase = f_from_d(abs(e.phase_shift), e.type)
         if e.source == "depth" and e.n_phased >= DISAGREE_SITES and np.isfinite(e.f_lrr) and np.isfinite(e.f_phase):
             if e.f_phase < 0.5 * e.f_lrr and e.f_lrr - e.f_phase > 0.05:
@@ -432,10 +547,13 @@ def annotate_events(events, tracks_by_member, scan, bins, genome):
             if e.role == "child" and e.origin and e.type != "UPD" and e.origin != e.origin_phase:
                 e.note = (e.note + "; " if e.note else "") + "the phased bands and the opposite-homozygote sites name different parents"
             e.homologues, e.hetero_share = homologues_reading(e, track)
+            st = stage_reading(e, track, genome)
+            if st:
+                e.stage, e.centromere, e.n_crossovers, e.crossovers = st["stage"], st["centromere"], st["n_crossovers"], st["crossovers"]
         e.start_fine, e.end_fine, e.edge_sites = refine_edges(e, track, sites, bins, genome)
 
 
-def phased_scan(tracks, bins, scan, m, sample, genome, events, params, min_dp, min_gq, sex="", base_het=NA, rejected=None):
+def phased_scan(tracks, bins, scan, m, sample, genome, events, params, min_dp, min_gq, sex="", base_het=NA, rejected=None, x_copies=NA):
     """Events in the phased track not called by the depth: segments of the pooled windows shifted from 1/2, typed by the
     depth's deviation over the same bins (gain or loss); with flat depth, copy-neutral LOH at a cell fraction of 2d or,
     with a shift near 1/2 and heterozygosity retained, uniparental heterodisomy. Windows shared by two or more members
@@ -445,9 +563,10 @@ def phased_scan(tracks, bins, scan, m, sample, genome, events, params, min_dp, m
     role = MEMBERS[m]
     out = []
     rejected = rejected if rejected is not None else []
+    two_x = (np.isfinite(x_copies) and int(x_copies) == 2) if np.isfinite(x_copies) else (sex == "F")
     for chrom, t in tracks.items():
-        if chrom not in genome.autosomes and not (chrom == "chrX" and sex == "F"):
-            continue
+        if chrom not in genome.autosomes and not (chrom == "chrX" and two_x):
+            continue                                                       # the X is scanned where the member has two copies
         mine = [e for e in events if e.sample == sample and e.chrom == chrom]
         free = np.ones(len(t.w_mid), dtype=bool)                            # the windows no event of the member's covers yet
         for e in mine:

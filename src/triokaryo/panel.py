@@ -13,10 +13,29 @@ from .model import NA
 from .vcfscan import scan_vcf
 
 
+def align_sex_chromosomes(lrr):
+    """A genome's X and Y LRR on the diploid scale, in place: a male's X (median under -0.5) is shifted up by its own median,
+    and a Y with depth (median under -0.5: one copy) is shifted up by exactly one unit, so that the panel's Y rows hold the
+    male Y level with its mappability deficit, which then cancels for a member as the X deficit does."""
+    xs = [v for (c, _), v in lrr.items() if c == "chrX"]
+    if len(xs) >= 20:
+        xmed = float(np.median(xs))
+        if xmed < -0.5:
+            for key in list(lrr):
+                if key[0] == "chrX":
+                    lrr[key] -= xmed
+    ys = [v for (c, _), v in lrr.items() if c == "chrY"]
+    if len(ys) >= 3 and float(np.median(ys)) < -0.5:
+        for key in list(lrr):
+            if key[0] == "chrY":
+                lrr[key] += 1.0
+    return lrr
+
+
 def sample_profile(sites_by_chrom, genome, bin_size, member=0, min_sites=20, min_dp=8, min_gq=20, min_het=5):
-    """One sample's self-normalised bin LRR (log2 of the bin's median depth over the autosomal median), the X aligned to
-    two copies by the sample's own X median, and its band deviation per bin (the median |BAF - 1/2| at heterozygous sites):
-    and its heterozygosity rate per bin (heterozygous over confident calls):
+    """One sample's self-normalised bin LRR (log2 of the bin's median depth over the autosomal median), the X and Y on the
+    diploid scale (align_sex_chromosomes), its band deviation per bin (the median |BAF - 1/2| at heterozygous sites) and its
+    heterozygosity rate per bin (heterozygous over confident calls):
     ({(chrom, start): lrr}, {(chrom, start): bdev}, {(chrom, start): het_rate})."""
     out, depth, bdev, hetr = {}, {}, {}, {}
     for chrom, s in sites_by_chrom.items():
@@ -42,14 +61,7 @@ def sample_profile(sites_by_chrom, genome, bin_size, member=0, min_sites=20, min
     med = float(np.median(auto))
     for key, v in depth.items():
         out[key] = float(np.log2(v / med))
-    xs = [v for (c, _), v in out.items() if c == "chrX"]
-    if len(xs) >= 20:
-        xmed = float(np.median(xs))
-        shift = -xmed if xmed < -0.5 else 0.0            # a male's X read as two copies
-        for key in list(out):
-            if key[0] == "chrX":
-                out[key] += shift
-    return out, bdev, hetr
+    return align_sex_chromosomes(out), bdev, hetr
 
 
 def build_panel(genome, bin_size, vcfs=(), samples=None, runs=(), log=None, thin=1):
@@ -78,24 +90,19 @@ def build_panel(genome, bin_size, vcfs=(), samples=None, runs=(), log=None, thin
         rows = list(csv.DictReader(open(bpath), delimiter="\t"))
         for role in ("child", "father", "mother"):
             name = summ.get(role, role)
-            try:
-                xc = float(summ.get("%s_x_copies" % role, "NA"))
-            except ValueError:
-                xc = NA
-            shift = float(np.log2(2.0 / xc)) if np.isfinite(xc) and xc > 0 else 0.0
             prof, bd, hr = {}, {}, {}
             for r in rows:
                 key = (r["chrom"], int(r["start"]))
                 v = r.get("%s_lrr" % role, "NA")
                 if v != "NA":
-                    prof[key] = float(v) + (shift if r["chrom"] == "chrX" else 0.0)
+                    prof[key] = float(v)
                 b = r.get("%s_bdev" % role, "NA")
                 if b != "NA":
                     bd[key] = float(b)
                 h = r.get("%s_het_rate" % role, "NA")
                 if h != "NA" and int(r.get("%s_n_called" % role, 0) or 0) >= 20:
                     hr[key] = float(h)
-            profiles.append((name, prof, bd, hr))
+            profiles.append((name, align_sex_chromosomes(prof), bd, hr))
             if log:
                 log("panel: %s from %s (%d bins)" % (name, d, len(prof)))
     keys = sorted({k for _, p, _, _ in profiles for k in p} | {k for _, _, b, _ in profiles for k in b},
@@ -128,7 +135,9 @@ def write_panel(path, rows, samples, bin_size):
 
 
 def load_panel(path):
-    """{(chrom, start): (n, median, rsd, n_bdev, bdev_median, n_het, het_rate_median)}"""
+    """{(chrom, start): (n, median, rsd, n_bdev, bdev_median, n_het, het_rate_median)}. A panel written before the Y was
+    put on the diploid scale holds its Y rows at the male's one-copy level (median under -0.5): they are shifted up by one
+    unit here, so that `triokaryo panel` output of either vintage reads the same."""
     out = {}
     fl = lambda x: float(x) if x != "NA" else NA
     with open(path) as fh:
@@ -140,4 +149,10 @@ def load_panel(path):
             nb, bmed = (parts[6], parts[7]) if len(parts) >= 8 else ("0", "NA")
             nh, hmed = (parts[8], parts[9]) if len(parts) >= 10 else ("0", "NA")
             out[(c, int(s))] = (int(n), fl(med), fl(rsd), int(nb), fl(bmed), int(nh), fl(hmed))
+    ys = [v[1] for (c, _), v in out.items() if c == "chrY" and v[0] >= 3 and np.isfinite(v[1])]
+    if len(ys) >= 3 and float(np.median(ys)) < -0.5:
+        for key in list(out):
+            if key[0] == "chrY":
+                v = out[key]
+                out[key] = (v[0], v[1] + 1.0 if np.isfinite(v[1]) else v[1]) + v[2:]
     return out

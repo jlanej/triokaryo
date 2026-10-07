@@ -116,3 +116,26 @@ def test_dense_mock_low_share_events_come_from_the_phased_scan(tmp_path):
     assert g.source == "phased" and abs(g.f - 0.08) < 0.04 and g.origin_phase == "extra copy paternal" and "under its own threshold" in g.note
     l = [e for e in ev if e.sample == "MOM"][0]
     assert l.source == "phased" and abs(l.f - 0.08) < 0.04
+
+
+def test_meiotic_stage_from_the_centromere_and_the_crossovers(tmp_path):
+    """Three whole-chromosome trisomies at a real genome's site density: a meiosis II error (isodisomic at the centromere, one
+    crossover), a meiosis I error (heterodisomic at the centromere, one crossover) and a mitotic duplication (one homologue
+    throughout), each classified from the auxiliary track's state along the chromosome, with the crossover placed."""
+    from triokaryo.mock import MEIOSIS_EVENTS
+    # three normal chromosomes keep the autosomal median diploid; no GC bias, since three trisomies covering 40% of the bins would
+    # confound a GC running median (no real child carries that)
+    paths = write_mock(str(tmp_path / "meiosis"), seed=11, sites_per_mb=300, contigs=["chr10", "chr11", "chr12", "chr13", "chr16", "chr17"], events=MEIOSIS_EVENTS,
+                       gc_beta=(0.0, 0.0, 0.0))
+    trio = read_trios(paths["trios"])[0]
+    res = run_trio(paths["vcf"], trio, str(tmp_path / "out"), figures=False, log=lambda s: None)
+    ev = {(e.sample, e.chrom): e for e in res["events"]}
+    assert sorted(ev) == [("KID", "chr13"), ("KID", "chr16"), ("KID", "chr17")], [(e.sample, e.chrom, e.type, e.span) for e in res["events"]]
+    e13, e16, e17 = ev[("KID", "chr13")], ev[("KID", "chr16")], ev[("KID", "chr17")]
+    assert all(e.type == "gain" and e.span == "whole" for e in (e13, e16, e17))
+    assert e13.origin_phase == "extra copy maternal" and e13.centromere == "isodisomic" and e13.stage == "meiosis II"
+    assert e13.n_crossovers == 1 and abs(float(e13.crossovers) - 60) < 3, (e13.n_crossovers, e13.crossovers)
+    assert e16.origin_phase == "extra copy paternal" and e16.centromere == "heterodisomic" and e16.stage == "meiosis I"
+    assert e16.n_crossovers == 1 and abs(float(e16.crossovers) - 70) < 3, (e16.n_crossovers, e16.crossovers)
+    assert e17.centromere == "isodisomic" and e17.stage.startswith("mitotic") and e17.n_crossovers == 0 and e17.hetero_share < 0.05
+    assert e13.homologues.startswith("the two maternal copies differ over") and e17.homologues.startswith("the two maternal copies are one homologue")

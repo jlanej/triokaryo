@@ -5,7 +5,7 @@ from dataclasses import dataclass, field, asdict
 
 import numpy as np
 
-from .model import NA, MEMBERS, f_from_d, f_from_lrr, site_stats
+from .model import NA, MEMBERS, chrom_level, f_from_d, f_from_lrr, site_stats
 
 PARAMS = dict(min_abs=0.07,      # minimum |mean LRR| of a gain or loss: log2(1 + 0.10/2), a cell fraction of about 10%
               z=5.0,             # minimum split statistic for a segment boundary (binary segmentation)
@@ -57,6 +57,10 @@ class Event:
     edge_sites: int = 0
     homologues: str = ""        # a child's gain, LOH or heterodisomy: the parent's two copies one homologue or two (the auxiliary track)
     hetero_share: float = NA    # the share of the event's windows where they differ
+    stage: str = ""             # a child's whole-chromosome gain or heterodisomy: meiosis I, meiosis II, or mitotic (centromere-anchored)
+    centromere: str = ""        # the state of the two copies nearest the centromere: heterodisomic, isodisomic, mixed
+    n_crossovers: int = 0       # changes of state along the chromosome ...
+    crossovers: str = ""        # ... and their positions in Mb
 
     @property
     def f(self):
@@ -192,6 +196,11 @@ def join_pieces(events, bins, genome, max_gap_bins=3, max_dlrr=0.08, frac=0.90):
             gap = (e.start - last.end) / bins.bin_size
             if gap <= max_gap_bins and (abs(e.lrr - last.lrr) <= max_dlrr if e.type != "LOH" else abs(e.f_baf - last.f_baf) <= 0.15):
                 n1, n2 = last.n_bins, e.n_bins
+                if gap > 0:                                        # the bins between the pieces: masked by the panel, or without a call
+                    sl = bins.of(e.chrom)
+                    between = (bins.start[sl] >= last.end) & (bins.start[sl] < e.start)
+                    masked = bins.masked is not None and between.any() and bool(bins.masked[sl][between].all())
+                    last.note = (last.note + "; " if last.note else "") + "joined across %d bin(s) %s" % (int(round(gap)), "masked by the panel" if masked else "without a call")
                 last.lrr = (last.lrr * n1 + e.lrr * n2) / (n1 + n2)
                 last.lrr_se = last.lrr_se * np.sqrt(n1) / np.sqrt(n1 + n2)
                 last.n_bins = n1 + n2
@@ -202,7 +211,6 @@ def join_pieces(events, bins, genome, max_gap_bins=3, max_dlrr=0.08, frac=0.90):
                     last.d_hat, last.llr_baf, last.f_baf = e.d_hat, e.llr_baf, e.f_baf
                 if last.type in ("gain", "loss"):
                     last.f_lrr = f_from_lrr(last.lrr, last.type)
-                last.note = (last.note + "; " if last.note else "") + "joined across %d bin(s) the panel left out" % int(round(gap)) if gap > 0 else last.note
             else:
                 merged.append(e)
         out += merged
@@ -216,8 +224,9 @@ def join_pieces(events, bins, genome, max_gap_bins=3, max_dlrr=0.08, frac=0.90):
 
 
 def call_member(bins, scan, m, sample, genome, params=None, sex=""):
-    """Every event of one member, chromosome by chromosome. Returns (events, x_copies) - x_copies the copies of X the member's
-    X depth reads (1 or 2; the X events are read against that baseline, so a 47,XXY's X is '2 copies', not a gain)."""
+    """Every segmental event of one member, chromosome by chromosome. Returns (events, x_copies): x_copies the member's X copy
+    number from the X depth (1 or 2; segmental X events are read against that level, and whole-chromosome X and Y events
+    against the pedigree sex's expectation in sexchrom.sex_chromosome_events). The Y is not segmented."""
     P = dict(PARAMS, **(params or {}))
     role = MEMBERS[m]
     events = []
@@ -230,18 +239,20 @@ def call_member(bins, scan, m, sample, genome, params=None, sex=""):
     base_bdev = float(np.nanmedian(bins.bdev[m][auto])) if np.isfinite(bins.bdev[m][auto]).any() else NA
     base_het = float(np.nanmedian(bins.het_rate[m][auto & (bins.n_called[m] >= min_called)])) if (auto & (bins.n_called[m] >= min_called)).any() else NA
     x_copies = NA
+    x_mosaic = False                                               # a whole-X copy number off an integer: a whole-X mosaic (sexchrom), whose split bands are not an LOH
     for chrom in bins.index:
         sl = bins.of(chrom)
         y_all = bins.lrr_gc[m][sl].copy()
         valid = np.isfinite(y_all) & (bins.n_dp[m][sl] >= P["min_sites"])
         if chrom == "chrY":
-            continue                                           # too few sites in a VCF to read; the depth tool's job
+            continue                                           # analysed as a whole chromosome only (sexchrom): too few usable bins to segment
         if chrom == "chrX":
             v = valid & ~bins.par[sl]
-            if v.sum() >= P["min_len"]:
-                med = float(np.median(y_all[v]))
-                x_copies = int(round(2 * 2 ** med))
-                y_all = y_all - med                            # the X read against the member's own X copy state
+            x_raw, xc, _ = chrom_level(bins, m, chrom, P["min_sites"], P["min_len"])
+            if np.isfinite(x_raw):
+                x_copies = xc
+                x_mosaic = abs(x_raw - round(x_raw)) >= P["min_f"]
+                y_all = y_all - np.log2(x_raw / 2.0)           # the X read against the member's own X level: segmental events only
             valid = v
         if valid.sum() < P["min_len"]:
             continue
@@ -277,8 +288,8 @@ def call_member(bins, scan, m, sample, genome, params=None, sex=""):
             covered[a:b] = True
         # copy-neutral loss of heterozygosity: bands split (bdev above the member's own) or no heterozygous calls,
         # over bins the depth did not call
-        if chrom == "chrX" and x_copies == 1:
-            continue                                           # a single X has no heterozygous sites to read
+        if chrom == "chrX" and (x_copies == 1 or sex == "M" or x_mosaic):
+            continue                                           # a single X has no heterozygous sites; a male's second X and a whole-X mosaic are whole-X events (sexchrom)
         banned = bins.masked_bands[sl][valid] if bins.masked_bands is not None else np.zeros(int(valid.sum()), dtype=bool)
         use_panel = bins.het_rel is not None and np.isfinite(bins.het_rel[m][auto]).sum() > 100
         if use_panel:                                              # the member's own baselines on the panel-relative tracks
