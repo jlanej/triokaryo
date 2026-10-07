@@ -188,3 +188,18 @@ def test_reference_bias_is_the_pooled_fraction():
     scan = types.SimpleNamespace(chroms={"chr1": sites})
     b = ref_bias(scan, genome(), 0, 8, 20)
     assert -0.03 < b < -0.01, b
+
+
+def test_short_state_runs_are_not_crossovers():
+    """Along a whole-chromosome event, a state run (two homologues or one) shorter than the minimum run is noise near the floor of
+    the homologue test, not a crossover: it takes its neighbour's state."""
+    from triokaryo.phase import flatten_short_runs
+    s = np.array([0] * 20 + [1] * 3 + [0] * 20, bool)
+    assert not flatten_short_runs(s, 5).any()
+    s = np.array([0] * 20 + [1] * 8 + [0] * 20, bool)
+    assert flatten_short_runs(s, 5).sum() == 8                                # a real segment keeps both of its crossovers
+    s = np.array([1] * 2 + [0] * 30, bool)
+    assert not flatten_short_runs(s, 5).any()
+    s = np.array([0] * 3 + [1] * 3, bool)
+    assert len(set(flatten_short_runs(s, 5).tolist())) == 1                   # two short runs: one state is left
+    assert flatten_short_runs(np.zeros(0, bool), 5).size == 0

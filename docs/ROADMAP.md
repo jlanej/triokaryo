@@ -42,6 +42,8 @@ ordered by expected value; "done" items are kept for the record with the commit 
   optional) are documented and enforced.
 - Guide pattern cards and table rows for 47,XXY (maternal, paternal), a mosaic 46,XY/47,XXY, 45,X and 47,XXX.
 - A structural-variant VCF of the events (`events.vcf`) beside the BED.
+- The homologue test's shift floor is 0.03 (a gain in about 13% of cells) with a five-window minimum run for a state, so
+  mosaic trisomies and XXY from 15% receive a stage; tested against one- and two-homologue mosaics at 15-30%.
 
 ## Method
 

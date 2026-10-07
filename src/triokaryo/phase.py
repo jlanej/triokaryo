@@ -47,12 +47,13 @@ EDGE_MIN_SIDE = 3            # sites each side of the split itself
 ORIGIN_MIN_SITES = 40        # phased sites a parent-of-origin reading needs ...
 ORIGIN_MIN_Z = 3.0           # ... and the shift's size in standard errors
 HOMOLOGUE_MIN_WINDOWS = 4    # windows an event needs for the one-or-two-homologues reading ...
-HOMOLOGUE_MIN_SHIFT = 0.05   # ... and the shift it needs (a gain in a fifth of the cells): below it the auxiliary tracks' signs are noise
+HOMOLOGUE_MIN_SHIFT = 0.03   # ... and the shift it needs (a gain in about 13% of cells): below it the auxiliary tracks' signs are noise
 SHARED_SHIFT = 0.05          # a window deviating this far from 1/2 in two or more members at once (the other's at least half of this member's) is shared (paralogy): no member's event
 DISAGREE_SITES = 500         # minimum phased sites before an event's phased cell fraction is compared with the depth's
 STAGE = dict(cen_windows=8,          # windows nearest the centromere whose state classifies the meiotic stage ...
              cen_max_bp=15_000_000,  # ... within this distance of the centromere
              smooth=5,               # running majority over this many windows before states and crossovers are read
+             min_run=5,              # a state must persist over this many smoothed windows to count; shorter runs are noise, not crossovers
              state_frac=0.7)         # share of the centromeric windows that must agree for a centromeric state
 SCAN = dict(min_len=8,       # windows per segment of the phased scan
             min_bp=2_000_000,  # a phased find spans at least this (a dense cluster of sites makes many windows of a few hundred kb)
@@ -415,6 +416,28 @@ def running_majority(b, k=5):
     return out
 
 
+def flatten_short_runs(state, min_run):
+    """Runs of a state shorter than min_run take the state of their longer neighbour, longest runs first, until every run is at
+    least min_run long or only one run is left: a brief sign change of the auxiliary track near the noise floor is not a crossover."""
+    state = np.asarray(state, dtype=bool).copy()
+    while True:
+        runs = []
+        i = 0
+        while i < len(state):
+            j = i
+            while j < len(state) and state[j] == state[i]:
+                j += 1
+            runs.append((i, j))
+            i = j
+        short = [r for r in runs if r[1] - r[0] < min_run]
+        if len(runs) <= 1 or not short:
+            return state
+        a, b = min(short, key=lambda r: r[1] - r[0])
+        state[a:b] = not state[a]
+        if len(runs) == 2 and a == 0:                                  # two runs, the first short: it joins the second
+            continue
+
+
 def stage_reading(ev, track, genome, absent_is_iso=None, upd_like=None):
     """The meiotic stage of a child's whole-chromosome gain or heterodisomy, anchored at the centromere. The per-window states
     (two different homologues, or one) are smoothed by a running majority; the state of the windows nearest the centromere
@@ -430,7 +453,7 @@ def stage_reading(ev, track, genome, absent_is_iso=None, upd_like=None):
     if st is None:
         return None
     mid, differ = st
-    state = running_majority(differ, STAGE["smooth"])
+    state = flatten_short_runs(running_majority(differ, STAGE["smooth"]), STAGE["min_run"])
     cen = genome.p_end.get(ev.chrom, 0)
     dist = np.abs(mid - cen)
     near = np.argsort(dist)[:STAGE["cen_windows"]]

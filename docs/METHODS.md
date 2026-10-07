@@ -176,14 +176,16 @@ error (a genotype error elsewhere in the trio) flips one site's contribution and
 contributed one homologue. Where the child carries two different homologues of one parent (meiotic trisomy,
 heterodisomy), the class tagged by the other parent's homozygous genotype is misassigned: along a maternal meiotic
 trisomy the `father_hom` track reads 1/3 where the two maternal homologues differ and returns to the main track's 2/3
-where a crossover has made them identical. For a child's gain, LOH or UPD with a parent named and |shift| ≥ 0.05, the
-share of the event's windows (≥ 4 windows with ≥ 5 auxiliary sites each) in which the relevant auxiliary track
+where a crossover has made them identical. For a child's gain, LOH or UPD with a parent named and |shift| ≥ 0.03 (a gain
+in about 13% of cells), the share of the event's windows (≥ 4 windows with ≥ 5 auxiliary sites each) in which the relevant auxiliary track
 disagrees in sign with the main track (for UPD: lies within half the main track's deviation) is `hetero_share`:
 ≥ 0.9 "two different homologues throughout (meiotic)", ≤ 0.1 "one homologue throughout (mitotic, or a meiosis II error
 without a crossover)", otherwise the share is reported (meiotic with crossovers).
 
 **Meiotic stage.** For a child's whole-chromosome gain or heterodisomy with a parent named, the per-window states (two
-different homologues, or one) are smoothed by a running majority over five windows. The state of the eight windows
+different homologues, or one) are smoothed by a running majority over five windows, and a state must then persist over
+at least five windows (about 2 Mb) to count: a shorter run is a sign change of the auxiliary track near its noise floor,
+not a crossover, and takes its neighbour's state. The state of the eight windows
 nearest the centromere (within 15 Mb of it; at least three, agreeing at 70% or more) classifies the event:
 heterodisomic at the centromere, a meiosis I nondisjunction; isodisomic at the centromere with a heterodisomic segment
 elsewhere, meiosis II; isodisomic throughout, a mitotic duplication or a meiosis II error without a crossover (`stage`,

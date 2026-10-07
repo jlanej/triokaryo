@@ -151,7 +151,7 @@ def write_summary(out, rows, fractions, depths, sizes, fps=(), replicates=1, who
         lines.append("## Whole-chromosome events")
         lines.append("")
         lines.append("A maternal meiosis I trisomy (both maternal homologues) and a maternal heterodisomy; a heterodisomy below f = 1 is read as copy-neutral LOH, "
-                     "which counts as found. Staged: the share of found trisomies with a stage (none below a phased shift of 0.05, about a cell fraction of 0.22, "
+                     "which counts as found. Staged: the share of found trisomies with a stage (none below a phased shift of 0.03, about a cell fraction of 0.13, "
                      "where the homologue test is not attempted); meiosis I: the share of the staged ones read as meiosis I.")
         lines.append("")
         lines.append("| depth | f | trisomy found | staged | meiosis I | origin correct | heterodisomy found | read as |")
