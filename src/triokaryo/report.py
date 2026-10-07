@@ -46,6 +46,60 @@ def write_bed(path, events, label="triokaryo", trio_of=None):
             fh.write("%s\t%d\t%d\t%s\t%d\t.\n" % (e.chrom, e.start, e.end, name, int(round(1000 * min(f, 1.0)))))
 
 
+def write_vcf(path, events, trio, genome):
+    """The events as a structural-variant VCF (one record per event; ALT <DUP>, <DEL>, <CNLOH> or <UPD>; INFO END, SVLEN, SVTYPE,
+    CF the cell fraction, SOURCE, ORIGIN, STAGE, BANDS, INHERITANCE, DOUBT for a depth call the phased track doubts) with the
+    three members as samples: the carrier has GT 0/1 (1/1 for a constitutional UPD or LOH), CN the copy number implied by the
+    cell fraction and CF; the others ./.. For tools that take CNV or SV VCFs (annotation, filtering, browsers)."""
+    members = list(trio.members)
+    with open(path, "w") as fh:
+        fh.write("##fileformat=VCFv4.2\n##source=triokaryo\n")
+        for c in genome.chroms:
+            fh.write("##contig=<ID=%s,length=%d>\n" % (c, genome.length[c]))
+        for alt, desc in (("DUP", "gain of one copy (whole chromosome, arm or segment)"), ("DEL", "loss of one copy"), ("CNLOH", "copy-neutral loss of heterozygosity"),
+                          ("UPD", "uniparental heterodisomy")):
+            fh.write("##ALT=<ID=%s,Description=\"%s\">\n" % (alt, desc))
+        fh.write('##INFO=<ID=END,Number=1,Type=Integer,Description="End position">\n'
+                 '##INFO=<ID=SVLEN,Number=1,Type=Integer,Description="Length">\n'
+                 '##INFO=<ID=SVTYPE,Number=1,Type=String,Description="DUP, DEL, CNLOH or UPD">\n'
+                 '##INFO=<ID=CF,Number=1,Type=Float,Description="Cell fraction carrying the event">\n'
+                 '##INFO=<ID=SOURCE,Number=1,Type=String,Description="depth, bands or phased">\n'
+                 '##INFO=<ID=ORIGIN,Number=1,Type=String,Description="Parent of the extra, lost or retained copy (mat or pat) for the child">\n'
+                 '##INFO=<ID=STAGE,Number=1,Type=String,Description="Meiotic stage of a whole-chromosome event (MI, MII, MII/mit)">\n'
+                 '##INFO=<ID=BANDS,Number=1,Type=String,Description="Cytogenetic bands spanned">\n'
+                 '##INFO=<ID=INHERITANCE,Number=1,Type=String,Description="inherited, new, passed or not_passed">\n'
+                 '##INFO=<ID=DOUBT,Number=0,Type=Flag,Description="A depth call whose phased cell fraction is under half the depth one">\n'
+                 '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype: 0/1 carrier, 1/1 constitutional UPD or LOH, ./. not the carrier">\n'
+                 '##FORMAT=<ID=CN,Number=1,Type=Float,Description="Copy number implied by the cell fraction (2 for copy-neutral events)">\n'
+                 '##FORMAT=<ID=CF,Number=1,Type=Float,Description="Cell fraction">\n')
+        fh.write("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t%s\n" % "\t".join(members))
+        from .sexchrom import _short_origin, _short_stage
+        for e in sorted(events, key=lambda e: (genome.chroms.index(e.chrom) if e.chrom in genome.chroms else 99, e.start)):
+            svtype = {"gain": "DUP", "loss": "DEL", "LOH": "CNLOH", "UPD": "UPD"}[e.type]
+            f = e.f if np.isfinite(e.f) else 1.0
+            cn = 2 + f if e.type == "gain" else 2 - f if e.type == "loss" else 2.0
+            if e.chrom == "chrX" and e.span == "whole" and e.role != "mother" and "expected for a reported male" in e.note:
+                cn = 1 + f if e.type == "gain" else 1 - f                       # a male's X: one copy expected
+            if e.chrom == "chrY":
+                cn = 1 + f if e.type == "gain" else 1 - f
+            inh = "inherited" if e.inheritance.startswith("inherited") else "new" if e.inheritance.startswith("new") else "passed" if e.inheritance == "passed to the child" else "not_passed" if e.inheritance else ""
+            info = ["END=%d" % e.end, "SVLEN=%d" % (e.end - e.start), "SVTYPE=%s" % svtype, "CF=%.3f" % f, "SOURCE=%s" % e.source]
+            o, stg = _short_origin(e), _short_stage(e.stage)
+            if o:
+                info.append("ORIGIN=%s" % o)
+            if stg:
+                info.append("STAGE=%s" % stg.replace("/", "_"))
+            if e.bands:
+                info.append("BANDS=%s" % e.bands)
+            if inh:
+                info.append("INHERITANCE=%s" % inh)
+            if "may be an artefact" in e.note:
+                info.append("DOUBT")
+            gt = "1/1" if (e.type in ("LOH", "UPD") and f >= 0.9) else "0/1"
+            cols = ["%s:%.2f:%.3f" % (gt, cn, f) if m == e.sample else "./.:.:." for m in members]
+            fh.write("%s\t%d\t%s\tN\t<%s>\t.\tPASS\t%s\tGT:CN:CF\t%s\n" % (e.chrom, e.start + 1, "%s_%s_%d_%s" % (e.sample, e.chrom, e.start + 1, svtype), svtype, ";".join(info), "\t".join(cols)))
+
+
 CROSSOVER_COLS = ["trio", "sample", "role", "chrom", "position", "position_mb", "from_state", "to_state", "event_type", "event_f", "stage", "parent"]
 
 
@@ -118,6 +172,8 @@ def write_tables(out, trio, bins, events, x_copies, scan, base_mie, params, trac
     write_tsv(os.path.join(out, "bins.tsv"), cols, rows)
     write_tsv(os.path.join(out, "events.tsv"), list(EVENT_COLS), [e.as_dict() for e in events])
     write_bed(os.path.join(out, "events.bed"), events, label="triokaryo %s" % trio.name)
+    if genome is not None:
+        write_vcf(os.path.join(out, "events.vcf"), events, trio, genome)
     write_tsv(os.path.join(out, "crossovers.tsv"), CROSSOVER_COLS, crossover_rows(events, trio.name))
     summ = dict(trio=trio.name, child=trio.kid, father=trio.dad, mother=trio.mom, child_sex=trio.kid_sex, father_sex=trio.dad_sex, mother_sex=trio.mom_sex,
                 records=scan.n_records, sites_used=scan.n_used, skipped="; ".join("%s %d" % kv for kv in sorted(scan.skipped.items())),

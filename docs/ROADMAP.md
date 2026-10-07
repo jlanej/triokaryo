@@ -41,6 +41,7 @@ ordered by expected value; "done" items are kept for the record with the commit 
 - `triokaryo merge` builds the trio VCF from per-sample VCFs with bcftools; the input requirements (AD required, DP and GQ
   optional) are documented and enforced.
 - Guide pattern cards and table rows for 47,XXY (maternal, paternal), a mosaic 46,XY/47,XXY, 45,X and 47,XXX.
+- A structural-variant VCF of the events (`events.vcf`) beside the BED.
 
 ## Method
 
@@ -75,7 +76,6 @@ ordered by expected value; "done" items are kept for the record with the commit 
 
 ## Outputs and usability
 
-- **VCF export** of events (the BED export exists) for downstream tools that take structural-variant VCFs.
 - **Stage for segmental events and for mosaic meiotic trisomies with rescue.** The stage is read for whole-chromosome
   events only; a mosaic trisomy from a meiotic error with partial trisomy rescue carries the same signature at a diluted
   shift, and the centromeric state could also date a uniparental isodisomy (monosomy rescue) when read from the parents'

@@ -97,6 +97,15 @@ def test_outputs_written(run):
     bed = open(os.path.join(out, "events.bed")).read().splitlines()
     assert bed[0].startswith("track name=") and len(bed) == 1 + len(run["events"]) and all(len(l.split("\t")) == 6 for l in bed[1:])
     assert any("KID|child|gain|p13.2q22.3|f=1.00|extra_copy_maternal" in l or ("KID|child|gain|" in l and "|f=1.00|extra_copy_maternal" in l) for l in bed[1:] if l.startswith("chr21"))
+    import pysam
+    vf = pysam.VariantFile(os.path.join(out, "events.vcf"))
+    recs = list(vf)
+    assert list(vf.header.samples) == ["KID", "DAD", "MOM"] and len(recs) == len(run["events"])
+    r21 = [r for r in recs if r.chrom == "chr21"][0]
+    assert r21.alts == ("<DUP>",) and r21.info["SVTYPE"] == "DUP" and r21.info["ORIGIN"] == "mat" and r21.info["STAGE"] == "MI" and abs(r21.info["CF"] - 1.0) < 0.1
+    assert r21.samples["KID"]["GT"] == (0, 1) and abs(r21.samples["KID"]["CN"] - 3.0) < 0.2 and r21.samples["DAD"]["GT"] == (None, None)
+    r7 = [r for r in recs if r.chrom == "chr7"][0]
+    assert r7.alts == ("<CNLOH>",) and r7.samples["KID"]["GT"] == (1, 1) and r7.info["INHERITANCE"] == "new"
     xo = open(os.path.join(out, "crossovers.tsv")).read().splitlines()
     assert xo[0].split("\t")[:4] == ["trio", "sample", "role", "chrom"] and len(xo) == 1          # no crossover in the default simulation
     figs = run["figures"]

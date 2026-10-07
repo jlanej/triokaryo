@@ -157,7 +157,7 @@ def write_guide(out_html, figures_dir=None):
                  "the parameters. <code>bins.tsv</code>: every bin's depth, LRR, call counts, heterozygosity rate and band deviation per member, with the panel's "
                  "values and masks. <code>phased.tsv</code>: every window of the phased tracks (fraction, error, step fit, per-homologue copy number, auxiliary "
                  "tracks). <code>phased_rejected.tsv</code>: the phased scan's rejected segments, with the reason. <code>external.tsv</code>: the supplied events "
-                 "and their matches. <code>events.bed</code>: the events as BED6 for a genome browser (score 1000 x cell fraction). "
+                 "and their matches. <code>events.bed</code> and <code>events.vcf</code>: the events as BED6 (score 1000 x cell fraction) and as a structural-variant VCF. "
                  "<code>crossovers.tsv</code>: one row per crossover of the staged events, with the state on each side.</p>")
         w.append("<h2 id=\"cohort\">The cohort report</h2><p>Written by <code>triokaryo cohort</code> over many runs: counts (trios; events by type, member and "
                  "source; de novo and inherited; phased-scan events; depth calls doubted by the phased track; X copy numbers disagreeing with the pedigree); the "

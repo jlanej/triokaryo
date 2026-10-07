@@ -175,8 +175,9 @@ none.
   complement with the check against the pedigree sex, and karyotype string, the father/son Y depth ratio, the
   genome-wide Mendelian-error rate, event counts, parameters.
 - `external.tsv`: the supplied events (`--events`) and whether each was matched.
-- `events.bed`: the events as BED6 (score 1000 × cell fraction) for a genome browser; `crossovers.tsv`: one row per
-  crossover of the staged whole-chromosome events, with the state on each side.
+- `events.bed` and `events.vcf`: the events as BED6 (score 1000 × cell fraction) and as a structural-variant VCF
+  (`<DUP>`, `<DEL>`, `<CNLOH>`, `<UPD>` with the cell fraction, origin, stage, bands and inheritance in INFO);
+  `crossovers.tsv`: one row per crossover of the staged whole-chromosome events, with the state on each side.
 - `guide.html`: how to read every figure row, colour, call and column, with pattern cards of each event type, the
   sex-chromosome aneuploidies included (also `triokaryo guide --out`).
 - `figures/`: `genome` (per member LRR with step fit and BAF with the pooled phased fraction; child vs parental mean;

@@ -32,6 +32,14 @@ The events as BED6 for genome browsers and interval tools: chrom, start, end, na
 (spaces as underscores), score 1000 × cell fraction, strand `.`; a `track` header line. The cohort writes `events.all.bed` with
 the trio prefixed to the name.
 
+## events.vcf
+
+The events as a structural-variant VCF for tools that take CNV or SV VCFs: one record per event, `REF` N, `ALT` `<DUP>`,
+`<DEL>`, `<CNLOH>` or `<UPD>`, INFO `END`, `SVLEN`, `SVTYPE`, `CF` (cell fraction), `SOURCE`, `ORIGIN` (mat or pat), `STAGE`
+(MI, MII, MII_mit), `BANDS`, `INHERITANCE` (inherited, new, passed, not_passed) and the flag `DOUBT`; the three members as
+samples with `GT` (0/1 carrier, 1/1 constitutional UPD or LOH, ./. otherwise), `CN` (the copy number the cell fraction
+implies; one copy expected on a male's X and on the Y) and `CF`.
+
 ## crossovers.tsv
 
 One row per crossover of the staged events (the child's whole-chromosome gains and heterodisomies): trio, sample, role, chrom,
