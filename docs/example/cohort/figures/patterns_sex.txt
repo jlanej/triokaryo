@@ -1,0 +1,17 @@
+title: Expected appearance of each event type (sex chromosomes)
+caption: The X chromosome, position in Mb; a son's X normally sits at LRR -1 (one maternal copy) with no heterozygous sites and a maternal fraction of 1, a daughter's at 0 with a maternal fraction of 1/2. 47,XXY from a maternal meiosis I error: the X at LRR 0 (two copies), heterozygous wherever the mother is, the maternal fraction 1 (every allele maternal) with the auxiliary track read at the father's sites at 1/2 (two different maternal homologues), copy numbers maternal 2 and paternal 0, and Mendelian errors at the informative sites under the autosomal rules. 47,XXY with the extra X paternal (a paternal meiosis I error: X and Y transmitted together): the X at 0, bands at 1/2, the maternal fraction 1/2, copy numbers 1 and 1. A mosaic 46,XY/47,XXY with the extra X paternal in 40% of cells: the X at log2(1.4/2), bands at 0.29 and 0.71, the maternal fraction 0.71, the paternal copy number 0.4. 45,X with the paternal X lost: the X at -1 in a daughter, no heterozygous calls, the maternal fraction 1, copy numbers 1 and 0.
+keys: depth,step,baf,psite,phased,aux_mat,aux_pat,cmat,cpat,gain,loss,loh,ref
+key:
+  #444444  filled circle  LRR per bin: log2 of the bin's trimmed-mean depth over the member's autosomal median (GC- and panel-corrected where applicable)
+  #000000  line  step fit of the track (exact total-variation denoising)
+  #9C9C9C  filled circle  BAF: alt-allele read fraction at the member's heterozygous sites (subsampled)
+  #C8C8C8  filled circle  phased fraction at one site: maternal allele (child) or transmitted allele (parent), reference bias removed
+  #009E73  filled circle  phased fraction pooled over a window of sites (depth-weighted): 1/2 with equal homologue copy, 1/2 +/- d along an event with the sign giving the parent (child: below 1/2 the paternal homologue is in excess, above 1/2 the maternal; parent: below 1/2 the event lies on the untransmitted homologue, above 1/2 on the transmitted one); hollow where the window deviates in two or more members (paralogy; excluded from fits and scan)
+  #CC79A7  line  child's maternal fraction at sites where the father is homozygous and the mother heterozygous; departs from the main track where the child carries two different maternal homologues (maternal meiotic trisomy or heterodisomy) and rejoins it after a crossover
+  #E69F00  line  the same at sites where the mother is homozygous and the father heterozygous; departs where the child carries two different paternal homologues
+  #CC79A7  line  child's maternal copy number: the LRR step fit's copy number (2 x 2^LRR) times the maternal fraction's step fit
+  #E69F00  line  child's paternal copy number, likewise
+  #D55E00  line  called gain (line at the segment's mean LRR)
+  #0072B2  line  called loss
+  #CC79A7  line  called copy-neutral event: loss of heterozygosity or uniparental heterodisomy (drawn at LRR 0)
+  #7F7F7F  line  reference lines: LRR 0; BAF 1/2, 1/3 and 2/3; the centromere

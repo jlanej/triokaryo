@@ -55,6 +55,19 @@ def _cards():
         dict(title="maternal mitotic\n(or meiosis II) trisomy", span=(0.0, L), kind="gain", lrr=_const(np.log2(1.5)),
              bands=lambda x: [1 / 3, 2 / 3], main=_const(2 / 3), aux_f=_const(2 / 3), aux_m=_const(2 / 3),
              copies=(_const(2.0), _const(1.0)), het=_const(1.0)),
+        # the sex chromosomes: the X of a son (baseline one maternal X: LRR -1, no heterozygous sites) or of a daughter (baseline 0)
+        dict(title="47,XXY, maternal (a son)\nmeiosis I", span=(0.0, L), kind="gain", lrr=_const(0.0),
+             bands=lambda x: [0.5], main=_const(1.0), aux_f=_const(0.5), aux_m=None,
+             copies=(_const(2.0), _const(0.0)), het=_const(1.0)),
+        dict(title="47,XXY, paternal (a son)\nX and Y transmitted together", span=(0.0, L), kind="gain", lrr=_const(0.0),
+             bands=lambda x: [0.5], main=_const(0.5), aux_f=_const(0.5), aux_m=None,
+             copies=(_const(1.0), _const(1.0)), het=_const(1.0)),
+        dict(title="mosaic 46,XY/47,XXY (a son)\nextra X paternal, 40% of cells", span=(0.0, L), kind="gain", lrr=_const(np.log2(1.4 / 2)),
+             bands=lambda x: [0.4 / 1.4, 1 / 1.4], main=_const(1 / 1.4), aux_f=_const(1 / 1.4), aux_m=None,
+             copies=(_const(1.0), _const(0.4)), het=_const(0.8)),
+        dict(title="45,X (a daughter)\npaternal X lost", span=(0.0, L), kind="loss", lrr=_const(-1.0),
+             bands=lambda x: None, main=_const(1.0), aux_f=None, aux_m=None,
+             copies=(_const(1.0), _const(0.0)), het=_const(0.0)),
     ]
     return cards
 
@@ -74,7 +87,7 @@ def _draw_card(axes, card, rng, dp=30):
         yv = None
     if yv is not None:
         ax.plot([lo, hi], [yv, yv], color=col, lw=2.2, solid_capstyle="butt")
-    ax.set_ylim(-1.0, 1.0)
+    ax.set_ylim(-1.2, 1.0)
     ax.set_yticks([-1, 0, 1])
     # raw BAF
     ax = axes[1]
@@ -138,8 +151,9 @@ def _draw_card(axes, card, rng, dp=30):
 
 
 def fig_patterns(out_dir):
-    """Two figures of four cards each: patterns_copy (gain, loss, copy-neutral LOH, isodisomy) and patterns_disomy
-    (heterodisomy, a run of homozygosity, a meiotic and a mitotic trisomy). Returns the two figure records."""
+    """Three figures of four cards each: patterns_copy (gain, loss, copy-neutral LOH, isodisomy), patterns_disomy (heterodisomy,
+    a run of homozygosity, a meiotic and a mitotic trisomy) and patterns_sex (47,XXY maternal and paternal, a mosaic 46,XY/47,XXY,
+    45,X). Returns the figure records."""
     os.makedirs(out_dir, exist_ok=True)
     cards = _cards()
     out = []
@@ -152,13 +166,21 @@ def fig_patterns(out_dir):
                                         "bands at (1 +- f)/2, maternal fraction (1 + f)/2, copy numbers 1.4 and 0.6, heterozygosity retained. Maternal isodisomy: LRR flat, no "
                                         "heterozygous calls, maternal fraction 1 (the child homozygous for the maternal allele at every informative site), copy numbers 2 and "
                                         "0, Mendelian errors at every informative site."),
-            ("patterns_disomy", cards[4:], "Maternal heterodisomy: LRR flat and heterozygosity retained (the child heterozygous wherever the mother is), yet the maternal "
+            ("patterns_disomy", cards[4:8], "Maternal heterodisomy: LRR flat and heterozygosity retained (the child heterozygous wherever the mother is), yet the maternal "
                                           "fraction is 1 and the copy numbers 2 and 0; the track read at the father's homozygous sites (pink line) stays at 1/2, since both of "
                                           "the child's alleles there are maternal. Run of homozygosity: no heterozygous calls, no Mendelian errors, no sites for the maternal "
                                           "fraction (the parents share the haplotype), copy number not drawn. Maternal meiotic trisomy with a crossover at 60 Mb: LRR at "
                                           "log2(1.5), bands at 1/3 and 2/3, maternal fraction 2/3, and the pink auxiliary track at 1/3 where the two maternal copies are "
                                           "different homologues (heterozygosity raised there), returning to 2/3 beyond the crossover where they are identical. Mitotic or "
-                                          "meiosis II trisomy: the same, with the auxiliary track on the main track throughout.")):
+                                          "meiosis II trisomy: the same, with the auxiliary track on the main track throughout."),
+            ("patterns_sex", cards[8:12], "The X chromosome, position in Mb; a son's X normally sits at LRR -1 (one maternal copy) with no heterozygous sites and a maternal "
+                                         "fraction of 1, a daughter's at 0 with a maternal fraction of 1/2. 47,XXY from a maternal meiosis I error: the X at LRR 0 (two "
+                                         "copies), heterozygous wherever the mother is, the maternal fraction 1 (every allele maternal) with the auxiliary track read at the "
+                                         "father's sites at 1/2 (two different maternal homologues), copy numbers maternal 2 and paternal 0, and Mendelian errors at the "
+                                         "informative sites under the autosomal rules. 47,XXY with the extra X paternal (a paternal meiosis I error: X and Y transmitted "
+                                         "together): the X at 0, bands at 1/2, the maternal fraction 1/2, copy numbers 1 and 1. A mosaic 46,XY/47,XXY with the extra X "
+                                         "paternal in 40% of cells: the X at log2(1.4/2), bands at 0.29 and 0.71, the maternal fraction 0.71, the paternal copy number 0.4. "
+                                         "45,X with the paternal X lost: the X at -1 in a daughter, no heterozygous calls, the maternal fraction 1, copy numbers 1 and 0.")):
         fig, axes = plt.subplots(5, 4, figsize=(180 * MM, 120 * MM), sharex=True, gridspec_kw=dict(height_ratios=[1, 1, 1, 0.8, 0.5], hspace=0.18, wspace=0.28))
         rng = np.random.default_rng(7)
         for j, card in enumerate(sel):
@@ -170,7 +192,8 @@ def fig_patterns(out_dir):
         for ext in ("png", "svg", "pdf"):
             fig.savefig(os.path.join(out_dir, "%s.%s" % (name, ext)), bbox_inches="tight")
         plt.close(fig)
-        write_sidecar(out_dir, name, "Expected appearance of each event type" + (" (copy number)" if name.endswith("copy") else " (disomies, trisomies)"), caption, PATTERN_KEYS)
+        sub = {"patterns_copy": " (copy number)", "patterns_disomy": " (disomies, trisomies)", "patterns_sex": " (sex chromosomes)"}[name]
+        write_sidecar(out_dir, name, "Expected appearance of each event type" + sub, caption, PATTERN_KEYS)
         write_legend(out_dir, name, PATTERN_KEYS)
-        out.append(dict(name=name, title="Expected appearance of each event type", caption=caption, keys=PATTERN_KEYS, png=os.path.join(out_dir, name + ".png")))
+        out.append(dict(name=name, title="Expected appearance of each event type" + sub, caption=caption, keys=PATTERN_KEYS, png=os.path.join(out_dir, name + ".png")))
     return out

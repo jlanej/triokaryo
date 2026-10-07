@@ -151,10 +151,11 @@ def write_summary(out, rows, fractions, depths, sizes, fps=(), replicates=1, who
         lines.append("## Whole-chromosome events")
         lines.append("")
         lines.append("A maternal meiosis I trisomy (both maternal homologues) and a maternal heterodisomy; a heterodisomy below f = 1 is read as copy-neutral LOH, "
-                     "which counts as found. Stage: the share of found trisomies staged meiosis I.")
+                     "which counts as found. Staged: the share of found trisomies with a stage (none below a phased shift of 0.05, about a cell fraction of 0.22, "
+                     "where the homologue test is not attempted); meiosis I: the share of the staged ones read as meiosis I.")
         lines.append("")
-        lines.append("| depth | f | trisomy found | staged meiosis I | origin correct | heterodisomy found | read as |")
-        lines.append("| --- | --- | --- | --- | --- | --- | --- |")
+        lines.append("| depth | f | trisomy found | staged | meiosis I | origin correct | heterodisomy found | read as |")
+        lines.append("| --- | --- | --- | --- | --- | --- | --- | --- |")
         for depth in depths:
             for f in fractions:
                 tri = [r for r in rows if r["depth"] == depth and r["f"] == f and r["size_mb"] == "whole" and r["type"] == "gain"]
@@ -162,9 +163,11 @@ def write_summary(out, rows, fractions, depths, sizes, fps=(), replicates=1, who
                 if not tri and not upd:
                     continue
                 found_tri = [r for r in tri if r["detected"]]
+                staged = [r for r in found_tri if r["stage"]]
                 read_as = sorted({r["type_called"] for r in upd if r["detected"]})
-                lines.append("| %g× | %.2f | %s | %s | %s | %s | %s |" % (
-                    depth, f, _rate(tri, ci), ("%.0f%%" % (100 * np.mean([r["stage_ok"] is True for r in found_tri]))) if found_tri else "",
+                lines.append("| %g× | %.2f | %s | %s | %s | %s | %s | %s |" % (
+                    depth, f, _rate(tri, ci), ("%.0f%%" % (100 * len(staged) / len(found_tri))) if found_tri else "",
+                    ("%.0f%%" % (100 * np.mean([r["stage_ok"] is True for r in staged]))) if staged else "",
                     ("%.0f%%" % (100 * np.mean([r["origin_ok"] for r in found_tri]))) if found_tri else "", _rate(upd, ci), ", ".join(read_as)))
         lines.append("")
     lines.append("## Calls on unaffected chromosomes")

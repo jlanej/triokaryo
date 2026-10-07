@@ -87,7 +87,7 @@ untransmitted `#56B4E9`; supplied events are black brackets; reference lines dot
 
 Written beside every trio page and the cohort report: the meaning of every figure row, colour, event type (pattern
 cards drawn from idealised tracks: gain, loss, CN-LOH, isodisomy, heterodisomy, run of homozygosity, meiotic and
-mitotic trisomy), calling rule and column. Also `triokaryo guide --out guide.html [--figures dir]`.
+mitotic trisomy, 47,XXY maternal and paternal, mosaic 46,XY/47,XXY, 45,X), calling rule and column. Also `triokaryo guide --out guide.html [--figures dir]`.
 
 ## cohort/ (`triokaryo cohort`)
 

@@ -40,6 +40,7 @@ ordered by expected value; "done" items are kept for the record with the commit 
   `docs/calibration/`.
 - `triokaryo merge` builds the trio VCF from per-sample VCFs with bcftools; the input requirements (AD required, DP and GQ
   optional) are documented and enforced.
+- Guide pattern cards and table rows for 47,XXY (maternal, paternal), a mosaic 46,XY/47,XXY, 45,X and 47,XXX.
 
 ## Method
 

@@ -177,8 +177,8 @@ none.
 - `external.tsv`: the supplied events (`--events`) and whether each was matched.
 - `events.bed`: the events as BED6 (score 1000 × cell fraction) for a genome browser; `crossovers.tsv`: one row per
   crossover of the staged whole-chromosome events, with the state on each side.
-- `guide.html`: how to read every figure row, colour, call and column, with pattern cards of each event type (also
-  `triokaryo guide --out`).
+- `guide.html`: how to read every figure row, colour, call and column, with pattern cards of each event type, the
+  sex-chromosome aneuploidies included (also `triokaryo guide --out`).
 - `figures/`: `genome` (per member LRR with step fit and BAF with the pooled phased fraction; child vs parental mean;
   the child's maternal and paternal copy number; calls; supplied events) and `chrom_<chrom>` for every chromosome
   with an event (per member: LRR with calls, BAF with informative sites coloured by parent, phased fraction with
@@ -225,10 +225,11 @@ unaffected chromosome (`false_positives.tsv`), and detection-rate tables with Wi
 (`calibration.md`) and a figure. The default grid (cell fractions
 0.05–1, 30×, 5–50 Mb, 60 sites per Mb) runs in a few minutes; real WGS carries about 1,000 PASS SNVs per Mb, so
 `--sites-per-mb 600 --contigs chr1,...,chr16` gives a realistic phased scan at a fraction of the cost of whole
-genomes. The grid in [`docs/calibration/`](docs/calibration/README.md) (30×, 600 sites per Mb, one replicate) finds
-every planted event of 5 Mb and up from a cell fraction of 0.3, events of 10 Mb and up at 0.2, 20 Mb and up at 0.1 and
-nothing at 0.05, with the cell fraction within 0.02, the parent of origin always correct and no false call on the
-unaffected chromosomes.
+genomes. The grid in [`docs/calibration/`](docs/calibration/README.md) (15×, 30× and 60×, 600 sites per Mb, two
+replicates) finds segmental events of 10 Mb and up from a cell fraction of 0.2 at every depth and from 0.1 at 60×,
+5-Mb events from 0.5 at 15×, 0.3 at 30× and 0.2 at 60×, whole-chromosome trisomy and heterodisomy from 0.1 at every
+depth, and nothing at 0.05; the cell fraction is within 0.01–0.03, the parent of origin is always correct, the meiotic
+stage is assigned from a cell fraction of 0.3, and no false call appears on the unaffected chromosomes in 36 runs.
 
 ## Limitations
 
