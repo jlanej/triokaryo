@@ -9,7 +9,8 @@ this file lists the results.
 
 Both runs used the shipped reference panel (`--panel 1kg-dragen`) and no GC track (`gc_corrected = 0` in the
 summaries). Run time was 60 s (NA12739, 5.4 million sites) and 72 s (HG01103, 5.9 million sites). The tables were
-computed when the bin depth was the median over the bin's sites; the current trimmed mean differs from it by under 2%.
+computed when the bin depth was the median over the bin's sites (the current trimmed mean differs by under 2%) and the
+reference bias was a median (it read 0; the pooled fraction now measures a bias of a few thousandths).
 The meiotic-stage
 and sex-chromosome columns added later were computed from the committed phased windows and bins (`triokaryo report`
 rebuilds the pages from the tables); the father/son Y depth ratio needs site-level depths and is not available for
@@ -71,6 +72,9 @@ docs/example/fetch_1kg_trio.sh NA12739 NA12748 NA12749 1 1 2 out/NA12739 --panel
 docs/example/fetch_1kg_trio.sh HG01103 HG01101 HG01102 2 1 2 out/HG01103 --panel 1kg-dragen --events docs/example/events.external.tsv
 triokaryo cohort --runs out/NA12739 out/HG01103 --events docs/example/events.external.tsv --out out/cohort
 ```
+
+The script's bcftools steps (PASS biallelic SNVs per sample, `merge -0`, index) are what `triokaryo merge --child --father
+--mother --out` does in one command.
 
 `events.external.tsv` holds NGS-DOSE's karyotype events for the two trios and DRAGEN's CNV calls of 2 Mb and more
 (PASS `DRAGEN:GAIN`/`LOSS` records from each sample's `cnv.vcf.gz`, with the integer copy number and the segment mean)

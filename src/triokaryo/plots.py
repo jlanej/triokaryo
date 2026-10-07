@@ -37,10 +37,11 @@ KEY = {
     "cpat": (PAL["pat"], "line", "child's paternal copy number, likewise"),
     "ctrans": (PAL["trans"], "line", "parent's copy number of the transmitted homologue, likewise"),
     "cuntrans": (PAL["untrans"], "line", "parent's copy number of the untransmitted homologue"),
+    "xover": (PAL["step"], "line", "a crossover: where the auxiliary track's state (two different homologues, or one) changes along a whole-chromosome event (dashed vertical line)"),
 }
 MARK = {"point": "filled circle", "line": "line", "bracket": "bracket"}
 GENOME_KEYS = ["depth", "step", "baf", "phased", "gain", "loss", "loh", "trio", "cmat", "cpat", "ext", "ref"]
-CHROM_KEYS = ["depth", "step", "baf", "mat", "pat", "psite", "phased", "aux_mat", "aux_pat", "aux_par", "cmat", "cpat", "ctrans", "cuntrans", "gain", "loss", "loh", "ext", "ref"]
+CHROM_KEYS = ["depth", "step", "baf", "mat", "pat", "psite", "phased", "aux_mat", "aux_pat", "aux_par", "xover", "cmat", "cpat", "ctrans", "cuntrans", "gain", "loss", "loh", "ext", "ref"]
 LANDSCAPE_KEYS = ["gain", "loss", "loh", "ext"]
 DIRECTION = ("Sign convention: in the child, a phased fraction below 1/2 means the paternal homologue is in excess (paternal gain or maternal loss) and above 1/2 the "
              "maternal homologue; in a parent, below 1/2 means the event lies on the untransmitted homologue and above 1/2 on the transmitted one.")
@@ -198,7 +199,8 @@ def chrom_caption(chrom, trio_name, bin_size, events):
             "parent of the alt allele. Row 3: the phased fraction (maternal allele along the child at informative sites; transmitted allele along a parent "
             "where the child is homozygous) per site (faint), pooled by window, with its step fit: 1/2 with equal homologue copy, 1/2 +/- d along an event "
             "with the sign giving the parent of origin (%s). Thin lines: the auxiliary tracks (child: sites where one parent is homozygous; parent: sites "
-            "where the child is heterozygous), which depart from the main track where the child carries two different homologues of one parent. Row 4: "
+            "where the child is heterozygous), which depart from the main track where the child carries two different homologues of one parent; dashed "
+            "vertical lines mark the crossovers where that state changes along a whole-chromosome event. Row 4: "
             "per-homologue copy number, the LRR-derived copy number split by the phased fraction (maternal and paternal in the child; transmitted and "
             "untransmitted in a parent). Row 5: heterozygosity rate per bin, zero under a constitutional loss of heterozygosity. Dashed line: centromere. "
             "Calls: %s." % (chrom, trio_name, bin_size // 1000, DIRECTION, what))
@@ -357,6 +359,10 @@ def fig_chrom(trio, chrom, bins, scan, events, external, genome, out_dir, min_dp
             if sh.any():
                 ax.scatter(t.w_mid[sh] / 1e6, t.w_frac[sh], s=4, facecolors="none", edgecolors=PAL["phased"], lw=0.4, rasterized=True)
             ax.step(t.w_mid / 1e6, t.w_step, where="mid", color=PAL["step"], lw=0.8)
+        for e in [e for e in events if e.role == role and e.chrom == chrom and e.crossovers]:
+            for xo in e.crossovers.split(";"):
+                if xo:
+                    ax.axvline(float(xo), color=PAL["step"], lw=0.7, ls="--")               # a crossover placed by the auxiliary track
         for yv in (1 / 3, 0.5, 2 / 3):
             ax.axhline(yv, color=PAL["ref"], lw=0.4, ls=":")
         ax.axvline(pe / 1e6, color=PAL["ref"], lw=0.5, ls="--")

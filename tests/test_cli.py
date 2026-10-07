@@ -39,7 +39,7 @@ def test_cohort_report_guide_and_rebuild(mock, run, tmp_path):
     from triokaryo.cli import main
     out = tmp_path / "cohort"
     assert main(["cohort", "--runs", run["out"], "--events", mock["events"], "--out", str(out)]) == 0
-    for f in ("index.html", "guide.html", "events.all.tsv", "summary.all.tsv", "concordance.tsv", "flags.tsv", "rejected.all.tsv", "figures/landscape.png",
+    for f in ("index.html", "guide.html", "events.all.tsv", "events.all.bed", "crossovers.all.tsv", "summary.all.tsv", "concordance.tsv", "flags.tsv", "rejected.all.tsv", "figures/landscape.png",
               "figures/landscape.txt", "figures/patterns_copy.png", "figures/patterns_disomy.png", "figures/legends/landscape_legend.png"):
         assert os.path.exists(os.path.join(str(out), f)), f
     page = open(os.path.join(str(out), "index.html")).read()

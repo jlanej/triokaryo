@@ -10,7 +10,7 @@ import numpy as np
 from .model import MEMBERS, NA
 
 EVENT_COLS = ("sample", "role", "chrom", "start", "end", "span", "bands", "type", "source", "f", "f_lrr", "f_baf", "f_phase", "lrr", "lrr_se", "n_bins", "d_hat", "llr_baf",
-              "phase_shift", "phase_se", "n_phased", "homologues", "hetero_share", "stage", "centromere", "n_crossovers", "crossovers", "start_fine", "end_fine", "edge_sites",
+              "phase_shift", "phase_se", "n_phased", "homologues", "hetero_share", "stage", "centromere", "n_crossovers", "crossovers", "crossover_states", "start_fine", "end_fine", "edge_sites",
               "het_rate", "het_rate_rel", "n_het", "n_called", "mie_rate", "origin", "origin_llr", "origin_n", "origin_phase", "inheritance", "external", "note")
 
 
@@ -31,6 +31,39 @@ def write_tsv(path, cols, rows):
         fh.write("\t".join(cols) + "\n")
         for r in rows:
             fh.write("\t".join(fmt(r.get(c)) for c in cols) + "\n")
+
+
+def write_bed(path, events, label="triokaryo", trio_of=None):
+    """BED6 of the events for genome browsers and interval tools: name sample|role|type|bands|f|origin (spaces as underscores),
+    score 1000 x the cell fraction. trio_of: an event -> trio name, prefixed to the name in a cohort file."""
+    with open(path, "w") as fh:
+        fh.write('track name="%s" description="large chromosomal events (triokaryo)" useScore=1\n' % label)
+        for e in events:
+            f = e.f if np.isfinite(e.f) else 0.0
+            parts = [trio_of(e)] if trio_of else []
+            parts += [e.sample, e.role, e.type, e.bands or e.span, "f=%.2f" % f, e.origin_phase or e.origin]
+            name = "|".join(x for x in parts if x).replace(" ", "_")
+            fh.write("%s\t%d\t%d\t%s\t%d\t.\n" % (e.chrom, e.start, e.end, name, int(round(1000 * min(f, 1.0)))))
+
+
+CROSSOVER_COLS = ["trio", "sample", "role", "chrom", "position", "position_mb", "from_state", "to_state", "event_type", "event_f", "stage", "parent"]
+
+
+def crossover_rows(events, trio=""):
+    """One row per crossover of the events that carry them (the child's whole-chromosome gains and heterodisomies)."""
+    out = []
+    for e in events:
+        if not e.crossovers:
+            continue
+        pos = [float(x) for x in e.crossovers.split(";") if x]
+        states = (e.crossover_states or "").split(";")
+        parent = "maternal" if "maternal" in (e.origin_phase or e.origin) else "paternal" if "paternal" in (e.origin_phase or e.origin) else ""
+        for i, x in enumerate(pos):
+            fr, to = (states[i].split(">") + ["", ""])[:2] if i < len(states) and states[i] else ("", "")
+            out.append(dict(trio=trio, sample=e.sample, role=e.role, chrom=e.chrom, position=int(round(x * 1e6)), position_mb=x,
+                            from_state={"hetero": "heterodisomic", "iso": "isodisomic"}.get(fr, fr), to_state={"hetero": "heterodisomic", "iso": "isodisomic"}.get(to, to),
+                            event_type=e.type, event_f=e.f, stage=e.stage, parent=parent))
+    return out
 
 
 PHASED_COLS = ("role", "chrom", "start", "end", "mid", "n_sites", "depth", "frac", "se", "shared", "step", "lrr", "copies_tagged", "copies_other",
@@ -84,6 +117,8 @@ def write_tables(out, trio, bins, events, x_copies, scan, base_mie, params, trac
            ["%s_%s" % (role, k) for role in MEMBERS for k in ("n_sites", "depth", "lrr", "lrr_gc", "n_called", "n_het", "het_rate", "bdev", "het_rel")] + ["child_vs_mid", "father_vs_mother"]
     write_tsv(os.path.join(out, "bins.tsv"), cols, rows)
     write_tsv(os.path.join(out, "events.tsv"), list(EVENT_COLS), [e.as_dict() for e in events])
+    write_bed(os.path.join(out, "events.bed"), events, label="triokaryo %s" % trio.name)
+    write_tsv(os.path.join(out, "crossovers.tsv"), CROSSOVER_COLS, crossover_rows(events, trio.name))
     summ = dict(trio=trio.name, child=trio.kid, father=trio.dad, mother=trio.mom, child_sex=trio.kid_sex, father_sex=trio.dad_sex, mother_sex=trio.mom_sex,
                 records=scan.n_records, sites_used=scan.n_used, skipped="; ".join("%s %d" % kv for kv in sorted(scan.skipped.items())),
                 mie_rate_genome=base_mie, bin_size=bins.bin_size, gc_corrected=bool(np.isfinite(bins.gc).any()),
@@ -333,7 +368,7 @@ if (box) box.addEventListener('input', () => { const q = box.value.toLowerCase()
 """
 
 COHORT_COLS = ["trio", "sample", "role", "chrom", "start", "end", "start_fine", "end_fine", "span", "bands", "type", "source", "f", "f_lrr", "f_baf", "f_phase", "lrr", "d_hat",
-               "phase_shift", "n_phased", "homologues", "hetero_share", "stage", "centromere", "n_crossovers", "crossovers", "het_rate_rel", "mie_rate", "origin", "origin_llr",
+               "phase_shift", "n_phased", "homologues", "hetero_share", "stage", "centromere", "n_crossovers", "crossovers", "crossover_states", "het_rate_rel", "mie_rate", "origin", "origin_llr",
                "origin_n", "origin_phase", "inheritance", "external", "note"]
 
 
@@ -372,6 +407,9 @@ def write_cohort(out, run_dirs, events_path=None, genome_name="grch38", log=None
     if not summaries:
         raise SystemExit("no run with a summary.json under: " + " ".join(run_dirs))
     write_tsv(os.path.join(out, "events.all.tsv"), COHORT_COLS, rows)
+    trio_by_sample = {e.sample: t for t, e in events}
+    write_bed(os.path.join(out, "events.all.bed"), [e for _, e in events], label="triokaryo cohort", trio_of=lambda e: trio_by_sample.get(e.sample, ""))
+    write_tsv(os.path.join(out, "crossovers.all.tsv"), CROSSOVER_COLS, [r for t, e in events for r in crossover_rows([e], t)])
     # the concordance with the supplied events
     conc, ext = None, []
     if events_path:

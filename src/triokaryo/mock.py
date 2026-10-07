@@ -73,12 +73,12 @@ def _gt(alt, dp):
 
 
 def write_mock(out_dir, seed=1, sites_per_mb=60, no_events=False, xxy=False, depth=(30.0, 32.0, 28.0), gc_beta=(-0.8, -0.5, -1.0), bin_size=1_000_000,
-               events=None, prefix="", contigs=None, child_sex="M", xxx=False, sex_deficit=(1.0, 1.0)):
+               events=None, prefix="", contigs=None, child_sex="M", xxx=False, sex_deficit=(1.0, 1.0), with_gq=True):
     """prefix: a tag before the sample names (KID, DAD, MOM), so that several mock trios can sit in one cohort.
     contigs: only these chromosomes (a dense small mock), else all. child_sex: M (one maternal X, the father's Y) or F (one X
     from each parent, no Y). xxy: a son with both maternal X homologues (a maternal meiosis I 47,XXY); xxx: a daughter with
     both maternal X homologues and the paternal X (a maternal meiosis I 47,XXX). sex_deficit: depth factors on the X and
-    the Y, imitating the mappability deficit of real data (e.g. 0.93, 0.90)."""
+    the Y, imitating the mappability deficit of real data (e.g. 0.93, 0.90). with_gq=False writes no GQ, as some callers do."""
     os.makedirs(out_dir, exist_ok=True)
     nm = {KID: prefix + KID, DAD: prefix + DAD, MOM: prefix + MOM}
     son = child_sex.upper().startswith("M")
@@ -110,7 +110,9 @@ def write_mock(out_dir, seed=1, sites_per_mb=60, no_events=False, xxy=False, dep
             fh.write("##contig=<ID=%s,length=%d>\n" % (c, G.length[c]))
         fh.write('##FILTER=<ID=PASS,Description="All filters passed">\n##FILTER=<ID=VQSRTrancheSNP99.90to100.00,Description="mock tranche">\n')
         fh.write('##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">\n##FORMAT=<ID=AD,Number=R,Type=Integer,Description="Allelic depths">\n'
-                 '##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read depth">\n##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype quality">\n')
+                 '##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read depth">\n')
+        if with_gq:
+            fh.write('##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype quality">\n')
         fh.write("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t%s\t%s\t%s\n" % (nm[KID], nm[DAD], nm[MOM]))
         for c in G.chroms:
             if contigs and c not in contigs:
@@ -181,8 +183,8 @@ def write_mock(out_dir, seed=1, sites_per_mb=60, no_events=False, xxy=False, dep
                 for member in (KID, DAD, MOM):
                     dp, al, gq = cols[member]
                     d, a, q = int(dp[i]), int(al[i]), int(gq[i])
-                    fields.append("%s:%d,%d:%d:%s" % (_gt(a, d), d - a, a, d, q if d else "."))
-                fh.write("%s\t%d\t.\t%s\t%s\t100\t%s\t.\tGT:AD:DP:GQ\t%s\n" % (c, int(pos[i]), ref, alt_allele, filt, "\t".join(fields)))
+                    fields.append(("%s:%d,%d:%d:%s" % (_gt(a, d), d - a, a, d, q if d else ".")) if with_gq else ("%s:%d,%d:%d" % (_gt(a, d), d - a, a, d)))
+                fh.write("%s\t%d\t.\t%s\t%s\t100\t%s\t.\t%s\t%s\n" % (c, int(pos[i]), ref, alt_allele, filt, "GT:AD:DP:GQ" if with_gq else "GT:AD:DP", "\t".join(fields)))
     vcf_gz = vcf_txt + ".gz"
     pysam.tabix_compress(vcf_txt, vcf_gz, force=True)
     pysam.tabix_index(vcf_gz, preset="vcf", force=True)

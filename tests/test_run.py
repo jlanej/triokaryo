@@ -92,8 +92,13 @@ def test_external_events_matched(run):
 def test_outputs_written(run):
     import os
     out = run["out"]
-    for f in ("events.tsv", "bins.tsv", "summary.tsv", "summary.json", "index.html", "external.tsv"):
+    for f in ("events.tsv", "bins.tsv", "summary.tsv", "summary.json", "index.html", "external.tsv", "events.bed", "crossovers.tsv"):
         assert os.path.getsize(os.path.join(out, f)) > 0
+    bed = open(os.path.join(out, "events.bed")).read().splitlines()
+    assert bed[0].startswith("track name=") and len(bed) == 1 + len(run["events"]) and all(len(l.split("\t")) == 6 for l in bed[1:])
+    assert any("KID|child|gain|p13.2q22.3|f=1.00|extra_copy_maternal" in l or ("KID|child|gain|" in l and "|f=1.00|extra_copy_maternal" in l) for l in bed[1:] if l.startswith("chr21"))
+    xo = open(os.path.join(out, "crossovers.tsv")).read().splitlines()
+    assert xo[0].split("\t")[:4] == ["trio", "sample", "role", "chrom"] and len(xo) == 1          # no crossover in the default simulation
     figs = run["figures"]
     names = {f["name"] for f in figs}
     assert "genome" in names and "chrom_chr21" in names and "chrom_chr7" in names

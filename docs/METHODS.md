@@ -14,7 +14,9 @@ n-th usable record. A homozygous-reference genotype with no `AD`, `DP` or `GQ`, 
 a sample without a record, is flagged and accepted as a confident genotype wherever a genotype rather than an
 allelic fraction is required (parental genotypes at informative sites, Mendelian-error counting, phasing tags).
 
-A call is *confident* when DP ≥ `--min-dp` (8) and GQ ≥ `--min-gq` (20).
+A call is *confident* when DP ≥ `--min-dp` (8) and GQ ≥ `--min-gq` (20). `AD` is required (a VCF without it is refused);
+without `DP` the depth is the sum of `AD`; without `GQ` in the header a called genotype with reads is taken as confident,
+with a warning. `triokaryo merge` builds the trio VCF from per-sample VCFs with bcftools (PASS biallelic SNVs, `merge -0`).
 
 ## Bins and per-bin statistics
 
@@ -159,8 +161,10 @@ homozygous for the opposite allele; the tagged allele is the child's, that is th
 the allele the other parent did not transmit. Sites in pseudoautosomal regions and in bins excluded by the panel for
 paralogy are dropped, and the member whose fraction is read must have DP ≥ `min_dp` at the site.
 
-**Reference bias.** The member's genome-wide median of (alt fraction − 1/2) over every seventh confident autosomal
-heterozygous site (≥ 200 sites) is subtracted from every site's alt fraction with the sign of the tag.
+**Reference bias.** The member's pooled alt-allele fraction over every seventh confident autosomal heterozygous site
+(≥ 200 sites), minus 1/2, is subtracted from every site's alt fraction with the sign of the tag. The pooled fraction is a
+depth-weighted mean; the median of k/n at 30× is quantised to 1/60 and read exactly 0 for any smaller bias. Events shift
+the two bands symmetrically and leave the pooled fraction unchanged.
 
 **Phased fraction.** Per site, the fraction of reads carrying the tagged allele: the maternal fraction along the
 child, the transmitted-allele fraction along a parent. Expected values: 1/2 where the two homologues are present in
@@ -184,7 +188,8 @@ nearest the centromere (within 15 Mb of it; at least three, agreeing at 70% or m
 heterodisomic at the centromere, a meiosis I nondisjunction; isodisomic at the centromere with a heterodisomic segment
 elsewhere, meiosis II; isodisomic throughout, a mitotic duplication or a meiosis II error without a crossover (`stage`,
 `centromere`). Each change of state along the chromosome is a crossover, placed midway between the two windows
-(`n_crossovers`, `crossovers` in Mb). Along a heterodisomy an isodisomic segment has no heterozygous child sites, so a
+(`n_crossovers`, `crossovers` in Mb, `crossover_states` as hetero>iso or iso>hetero; one row per crossover in
+`crossovers.tsv`, and a dashed line on the chromosome figure). Along a heterodisomy an isodisomic segment has no heterozygous child sites, so a
 window carrying the main track but no auxiliary track counts as isodisomic. Segmental events receive no stage, since
 nondisjunction is a whole-chromosome event.
 
@@ -288,8 +293,10 @@ indicates otherwise.
 `triokaryo calibrate` describes performance without changing the method: for each cell fraction and depth of a grid,
 one simulated trio carries a gain, a loss and a copy-neutral LOH of each size on separate autosomes (the duplicated,
 lost or replaced copy paternal; each event starts 20 Mb into the q arm). A planted event is detected when a child's
-call of the same type intersects at least half of it; the row records the source, the three cell-fraction estimates
-and whether the parent of origin matched. `calibration.md` tabulates the detection rate by type, size and cell
+call of the same type intersects at least half of it (a heterodisomy planted below f = 1 is read as copy-neutral LOH and
+counts as found); the row records the source, the three cell-fraction estimates, the parent of origin and the stage.
+With `--whole`, a whole-chromosome maternal meiosis I trisomy and a maternal heterodisomy are planted as well; the
+child's calls on chromosomes without a planted event are the false positives; replicates give Wilson 95% intervals. `calibration.md` tabulates the detection rate by type, size and cell
 fraction per depth and the median absolute error of each estimate; the figure shows the same grid. The simulated site
 density matters: the phased scan and the site-resolution boundaries scale with it, and real WGS carries about 1,000
 PASS SNVs per Mb against the simulator's default 60.

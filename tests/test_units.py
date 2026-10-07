@@ -135,3 +135,56 @@ def test_trimmed_mean_and_noise_floor_keep_a_quantised_depth_track_segmentable()
     segs = binary_segmentation(y, 5, 5.0, sd=max(robust_sd(y), floor))
     assert (40, 60) in segs, segs
     assert binary_segmentation(y, 5, 5.0, sd=0.0) == [(0, 100)]            # without the floor nothing is segmented
+
+
+def test_vcf_without_gq_is_analysed_on_depth_alone(tmp_path):
+    """A caller that writes no GQ: the scan says so, every called genotype with reads counts as confident, and the planted events
+    are still found; a VCF without AD is refused with a clear message."""
+    import pytest
+    from triokaryo.mock import write_mock
+    from triokaryo.pipeline import run_trio
+    from triokaryo.vcfscan import scan_vcf
+    m = write_mock(str(tmp_path / "nogq"), seed=1, with_gq=False)
+    trio = read_trios(m["trios"])[0]
+    logs = []
+    scan = scan_vcf(m["vcf"], trio.members, genome(), thin=4, log=logs.append)
+    assert not scan.gq_in_header and any("no GQ" in l for l in logs)
+    s = scan.sites("chr21")
+    assert (s.gq[0][s.dp[0] > 0] == 99).all()
+    res = run_trio(m["vcf"], trio, str(tmp_path / "out"), gc_track=m["gc"], figures=False, thin=2, log=logs.append)
+    found = {(e.sample, e.chrom, e.type) for e in res["events"]}
+    assert ("KID", "chr21", "gain") in found and ("KID", "chr7", "LOH") in found and ("KID", "chr18", "loss") in found
+    # no AD at all: refused
+    import gzip
+    p = tmp_path / "noad.vcf"
+    with gzip.open(m["vcf"], "rt") as fh, open(p, "w") as out:
+        for line in fh:
+            if line.startswith("##FORMAT=<ID=AD"):
+                continue
+            if line.startswith("#"):
+                out.write(line)
+                continue
+            f = line.rstrip("\n").split("\t")
+            f[8] = "GT:DP"
+            f[9:] = [":".join(x.split(":")[i] for i in (0, 2)) for x in f[9:]]
+            out.write("\t".join(f) + "\n")
+            break                                                     # one record is enough: the header decides
+    with pytest.raises(SystemExit, match="no AD"):
+        scan_vcf(str(p), trio.members, genome())
+
+
+def test_reference_bias_is_the_pooled_fraction():
+    """A 2% deficit of alt reads at heterozygous sites is measured (the median of k/n would read 0 at this depth)."""
+    import types
+    from triokaryo.phase import ref_bias
+    from triokaryo.vcfscan import Sites
+    rng = np.random.default_rng(3)
+    n = 7 * 400
+    dp = np.full((3, n), 30)
+    alt = np.array([rng.binomial(30, 0.48, n), np.zeros(n, int), np.zeros(n, int)])
+    gt = np.array([np.ones(n, int), np.zeros(n, int), np.zeros(n, int)])
+    gq = np.full((3, n), 99)
+    sites = Sites("chr1", np.arange(1, n + 1) * 1000, dp, alt, gt, gq, np.zeros(n, bool))
+    scan = types.SimpleNamespace(chroms={"chr1": sites})
+    b = ref_bias(scan, genome(), 0, 8, 20)
+    assert -0.03 < b < -0.01, b

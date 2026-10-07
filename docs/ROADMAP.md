@@ -32,6 +32,14 @@ ordered by expected value; "done" items are kept for the record with the commit 
 - The bin depth is a 20% trimmed mean (continuous; the median of hundreds of integer depths was quantised to one read, which
   the calibration grid exposed as a zero noise scale that silently skipped whole chromosomes), and the noise scale has a
   counting-noise floor.
+- A VCF without GQ is analysed on depth alone with a warning; one without AD is refused. The reference bias is the pooled
+  alt fraction (depth-weighted). Events are exported as BED; crossovers have their own table with the state on each
+  side and dashed marks on the chromosome figure.
+- The calibration grid plants whole-chromosome trisomy and heterodisomy (`--whole`), checks the stage, lists the calls on
+  unaffected chromosomes and gives Wilson intervals over replicates; a depth sweep (15, 30, 60×) with two replicates is in
+  `docs/calibration/`.
+- `triokaryo merge` builds the trio VCF from per-sample VCFs with bcftools; the input requirements (AD required, DP and GQ
+  optional) are documented and enforced.
 
 ## Method
 
@@ -39,9 +47,6 @@ ordered by expected value; "done" items are kept for the record with the commit 
   fraction, parent) per segment, replacing the post-hoc typing of phased-scan segments by the depth's deviation. This
   also yields confidence intervals for the cell fraction instead of three point estimates (`f_lrr`, `f_baf`,
   `f_phase`), and a combined estimate with weights.
-- **Reference-bias estimator.** The median of alt/depth − 1/2 over heterozygous sites is quantised to ±1/(2·depth) and
-  returned exactly 0 for all six example members, so the correction is a no-op at 30×. Replace with a depth-weighted
-  mean or a binomial maximum-likelihood estimate.
 - **Conditional likelihood ratio.** `origin_llr` assumes the event exists; a flagged depth artefact still receives a
   large ratio. Report it only when the event is supported by the phased track, or add a model-comparison term against
   "no event".
@@ -50,9 +55,7 @@ ordered by expected value; "done" items are kept for the record with the commit 
 
 ## Calibration and evaluation
 
-- **Calibration grid extensions.** `triokaryo calibrate` covers cell fraction, depth and size for gains, losses and
-  CN-LOH; add uniparental disomy and whole-chromosome events, a site-density sweep, more replicates for rates with
-  confidence intervals, and a false-positive count per run from the unaffected chromosomes.
+- **Calibration grid extensions.** A site-density sweep (60, 300, 600, 1000 sites per Mb) and segmental events on the X.
 - **False-discovery control for the phased scan.** A tag-permutation null (shuffle the parental tags within windows)
   gives an empirical distribution of segment shifts under no event; report an FDR per threshold.
 - **Leave-trio-out evaluation.** Run more 1000 Genomes trios with a panel that excludes the evaluated trio; the
@@ -71,17 +74,10 @@ ordered by expected value; "done" items are kept for the record with the commit 
 
 ## Outputs and usability
 
-- **Standard CNV export** (BED or VCF) for downstream tools.
-- **Crossover map table** per meiotic event: the `crossovers` column lists positions; a dedicated table with the parent,
-  the resolving auxiliary track and the state on each side would make them queryable, and a crossover track could be
-  drawn on the chromosome figure.
+- **VCF export** of events (the BED export exists) for downstream tools that take structural-variant VCFs.
 - **Stage for segmental events and for mosaic meiotic trisomies with rescue.** The stage is read for whole-chromosome
   events only; a mosaic trisomy from a meiotic error with partial trisomy rescue carries the same signature at a diluted
   shift, and the centromeric state could also date a uniparental isodisomy (monosomy rescue) when read from the parents'
   haplotypes.
-- **`triokaryo merge`**: a wrapper around `bcftools merge -0` for per-sample VCFs, with the PASS/biallelic SNV
-  reduction, so that the example recipe is a single command.
 - **Throughput for cohorts.** Parallelise the scan and the binning by chromosome; stream sites instead of holding every
   chromosome's arrays; a `--regions` option for a quick look at one chromosome.
-- **Caller coverage.** Document which callers' VCFs carry `AD`, `DP` and `GQ` as required (GATK, DRAGEN, DeepVariant
-  with `--vcf_stats`); accept `AD`-only VCFs by deriving `DP`.

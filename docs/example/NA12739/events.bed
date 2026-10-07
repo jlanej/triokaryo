@@ -1,0 +1,5 @@
+track name="triokaryo NA12739" description="large chromosomal events (triokaryo)" useScore=1
+chr1	0	5000000	NA12739|child|gain|p36.33p36.32|f=0.12|extra_copy_maternal	120	.
+chr12	0	133275309	NA12739|child|gain|p13.33q24.33|f=0.96|extra_copy_paternal	957	.
+chr13	88000000	114364328	NA12748|father|gain|q31.2q34|f=0.69|the_duplicated_homologue_is_the_one_passed_to_the_child	693	.
+chr21	42761648	46699598	NA12748|father|loss|q22.3|f=0.59|the_lost_homologue_is_the_one_passed_to_the_child	592	.

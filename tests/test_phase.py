@@ -139,3 +139,7 @@ def test_meiotic_stage_from_the_centromere_and_the_crossovers(tmp_path):
     assert e16.n_crossovers == 1 and abs(float(e16.crossovers) - 70) < 3, (e16.n_crossovers, e16.crossovers)
     assert e17.centromere == "isodisomic" and e17.stage.startswith("mitotic") and e17.n_crossovers == 0 and e17.hetero_share < 0.05
     assert e13.homologues.startswith("the two maternal copies differ over") and e17.homologues.startswith("the two maternal copies are one homologue")
+    assert e13.crossover_states == "iso>hetero" and e16.crossover_states == "hetero>iso"
+    xo = [l.split("\t") for l in open(os.path.join(str(tmp_path / "out"), "crossovers.tsv")).read().splitlines()]
+    rows = [dict(zip(xo[0], r)) for r in xo[1:]]
+    assert [(r["chrom"], r["from_state"], r["to_state"], r["parent"]) for r in rows] == [("chr13", "isodisomic", "heterodisomic", "maternal"), ("chr16", "heterodisomic", "isodisomic", "paternal")]

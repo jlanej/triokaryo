@@ -1,0 +1,11 @@
+track name="triokaryo HG01103" description="large chromosomal events (triokaryo)" useScore=1
+chr2	141000000	173000000	HG01103|child|loss|q22.1q31.1|f=0.67|paternal_copy_lost	668	.
+chr2	173000000	180000000	HG01103|child|loss|q31.1q31.2|f=0.31|paternal_copy_lost	313	.
+chr10	25000000	34000000	HG01103|child|LOH|p12.2p11.22|f=1.00	1000	.
+chr14	35000000	41000000	HG01103|child|loss|q13.2q21.1|f=0.64|paternal_copy_lost	639	.
+chr9	127000000	138394717	HG01101|father|gain|q34.11q34.3|f=0.10	102	.
+chr11	21000000	26000000	HG01101|father|LOH|p15.1p14.2|f=1.00	1000	.
+chr11	44000000	59000000	HG01101|father|LOH|p11.2q12.2|f=1.00	1000	.
+chr17	43000000	50000000	HG01101|father|LOH|q21.2q21.33|f=1.00	1000	.
+chr19	0	5000000	HG01101|father|gain|p13.3|f=0.14|the_duplicated_homologue_is_the_one_passed_to_the_child	137	.
+chr7	79000000	87000000	HG01102|mother|LOH|q21.11q21.12|f=1.00	1000	.

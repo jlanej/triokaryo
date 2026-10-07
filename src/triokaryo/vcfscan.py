@@ -1,6 +1,7 @@
 """One pass over the trio's VCF: for every PASS biallelic SNV, per member, the depth, the alt-allele depth, the genotype
 class and the genotype quality, stored per chromosome as arrays. No other record field is read, so an annotated VCF
-costs no more than a bare one beyond its size."""
+costs no more than a bare one beyond its size. AD is required; DP falls back to the sum of AD; without GQ in the
+header a called genotype with reads is taken as confident."""
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -31,6 +32,7 @@ class Scan:
     n_records: int = 0
     n_used: int = 0
     skipped: dict = field(default_factory=dict)     # why records were left out
+    gq_in_header: bool = True                       # False: the caller writes no GQ; a called genotype with reads is then taken as confident
 
     def sites(self, chrom):
         return self.chroms.get(chrom)
@@ -59,7 +61,16 @@ def scan_vcf(path, samples, genome, thin=1, pass_only=True, log=None, contigs=No
     if missing:
         raise SystemExit("samples not in %s: %s (it holds: %s)" % (path, ", ".join(missing), ", ".join(list(have)[:6]) + (" ..." if len(have) > 6 else "")))
     vf.subset_samples(list(samples))
-    scan = Scan(samples=tuple(samples))
+    formats = set(vf.header.formats.keys())
+    if "AD" not in formats:
+        raise SystemExit("%s: no AD (allelic depths) in FORMAT; triokaryo needs per-sample GT, AD and DP (GQ optional). Callers writing other "
+                         "allelic-depth tags (freebayes AO/RO) need conversion" % path)
+    if "DP" not in formats and log:
+        log("WARNING: no DP in FORMAT; the depth is the sum of AD")
+    has_gq = "GQ" in formats
+    if not has_gq and log:
+        log("WARNING: no GQ in FORMAT; a called genotype with reads is taken as confident on depth alone (--min-gq has no effect)")
+    scan = Scan(samples=tuple(samples), gq_in_header=has_gq)
     skipped = scan.skipped
     buf = None
     cur = None
@@ -111,8 +122,10 @@ def scan_vcf(path, samples, genome, thin=1, pass_only=True, log=None, contigs=No
             d = s.get("DP")
             if d is None:
                 d = sum(x for x in ad if x is not None) if ad is not None else 0
-            q = s.get("GQ")
+            q = s.get("GQ") if has_gq else None
             g = _gt_class(s.get("GT"))
+            if not has_gq and g != GT_MISSING and (d or 0) > 0:
+                q = 99                                     # no GQ anywhere: a called genotype with reads passes the confidence test
             # a per-sample VCF merged with `bcftools merge -0` writes 0/0 with no AD, DP or GQ where the sample had no record: a
             # homozygous reference call by convention, marked GQ -2 so that the trio reading can take it as confident
             if g == GT_HOMREF and d == 0 and q is None and (ad is None or all(x is None for x in ad)):

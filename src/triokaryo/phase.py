@@ -126,19 +126,23 @@ def phase_classes(sites, m, min_dp, min_gq, x_hemizygous_child=False):
 
 
 def ref_bias(scan, genome, m, min_dp, min_gq, step=7):
-    """The member's reference bias: the median of (alt fraction - 1/2) over its confident autosomal heterozygous sites."""
-    v = []
+    """The member's reference bias: the pooled alt-allele fraction over every step-th confident autosomal heterozygous site,
+    minus 1/2 (a depth-weighted mean; the median of k/n at 30x is quantised to 1/60 and read exactly 0 for any smaller bias).
+    Events shift the two bands symmetrically and so leave the pooled fraction unchanged."""
+    alt = dp = 0.0
+    n = 0
     for c, s in scan.chroms.items():
         if c not in genome.autosomes:
             continue
         het = (s.gt[m] == GT_HET) & (s.dp[m] >= min_dp) & (s.gq[m] >= min_gq)
         i = np.flatnonzero(het)[::step]
         if len(i):
-            v.append(s.alt[m][i] / s.dp[m][i] - 0.5)
-    if not v:
+            alt += float(s.alt[m][i].sum())
+            dp += float(s.dp[m][i].sum())
+            n += len(i)
+    if n < 200 or dp <= 0:
         return 0.0
-    v = np.concatenate(v)
-    return float(np.median(v)) if len(v) >= 200 else 0.0
+    return float(alt / dp - 0.5)
 
 
 def _window_size(n_sites, span_bp):
@@ -437,6 +441,7 @@ def stage_reading(ev, track, genome, absent_is_iso=None, upd_like=None):
         centro = "heterodisomic" if h >= STAGE["state_frac"] else "isodisomic" if h <= 1 - STAGE["state_frac"] else "mixed"
     change = np.flatnonzero(state[1:] != state[:-1])
     xo = [(mid[i] + mid[i + 1]) / 2.0 for i in change]
+    xo_states = ["%s>%s" % (("hetero" if state[i] else "iso"), ("hetero" if state[i + 1] else "iso")) for i in change]
     het_any, iso_any = bool(state.any()), bool((~state).any())
     if centro == "heterodisomic":
         stage = "meiosis I"
@@ -448,7 +453,8 @@ def stage_reading(ev, track, genome, absent_is_iso=None, upd_like=None):
         stage = "meiosis I"                                                 # heterodisomic throughout
     else:
         stage = ""                                                          # mixed, the centromere unresolved
-    return dict(stage=stage, centromere=centro, n_crossovers=len(xo), crossovers=";".join("%.2f" % (x / 1e6) for x in xo), n_windows=int(len(mid)))
+    return dict(stage=stage, centromere=centro, n_crossovers=len(xo), crossovers=";".join("%.2f" % (x / 1e6) for x in xo), crossover_states=";".join(xo_states),
+                n_windows=int(len(mid)))
 
 
 def refine_edges(ev, track, sites, bins, genome):
@@ -535,7 +541,7 @@ def annotate_events(events, tracks_by_member, scan, bins, genome, child_x_baseli
                 if e.origin_phase == "extra copy maternal":
                     st = stage_reading(e, track, genome, upd_like=True)
                     if st:
-                        e.stage, e.centromere, e.n_crossovers, e.crossovers = st["stage"], st["centromere"], st["n_crossovers"], st["crossovers"]
+                        e.stage, e.centromere, e.n_crossovers, e.crossovers, e.crossover_states = st["stage"], st["centromere"], st["n_crossovers"], st["crossovers"], st["crossover_states"]
                 e.start_fine, e.end_fine, e.edge_sites = refine_edges(e, track, sites, bins, genome) if e.span != "whole" else (NA, NA, 0)
                 continue
         if e.role == "child" and e.chrom == "chrX" and e.type == "gain" and e.phase_shift < 0 and e.n_phased >= ORIGIN_MIN_SITES and -e.phase_shift >= ORIGIN_MIN_Z * e.phase_se:
@@ -563,7 +569,7 @@ def annotate_events(events, tracks_by_member, scan, bins, genome, child_x_baseli
             e.homologues, e.hetero_share = homologues_reading(e, track)
             st = stage_reading(e, track, genome)
             if st:
-                e.stage, e.centromere, e.n_crossovers, e.crossovers = st["stage"], st["centromere"], st["n_crossovers"], st["crossovers"]
+                e.stage, e.centromere, e.n_crossovers, e.crossovers, e.crossover_states = st["stage"], st["centromere"], st["n_crossovers"], st["crossovers"], st["crossover_states"]
         e.start_fine, e.end_fine, e.edge_sites = refine_edges(e, track, sites, bins, genome)
 
 

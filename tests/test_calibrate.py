@@ -14,3 +14,19 @@ def test_calibration_grid_runs_and_reports(tmp_path):
     assert "## gain, 30×" in md and "| 1.00 | 100% |" in md and "parent of origin correct" in md
     head = open(os.path.join(str(tmp_path), "calibration.tsv")).readline().split("\t")
     assert head[:8] == ["replicate", "depth", "f", "type", "size_mb", "chrom", "detected", "source"]
+
+
+def test_calibration_whole_chromosome_events_and_false_positive_table(tmp_path):
+    """--whole adds a maternal meiosis I trisomy and a heterodisomy: found, staged and attributed at f = 1; the false-positive table and
+    the replicate interval are written."""
+    rows = run_calibration(str(tmp_path), fractions=(1.0,), depths=(30,), sizes=(10,), replicates=2, seed=4, log=lambda s: None, figures=False, whole=True,
+                           contigs=["chr1", "chr2", "chr3", "chr13", "chr14", "chr15", "chr16", "chr17", "chr18"])
+    whole = [r for r in rows if r["size_mb"] == "whole"]
+    assert len(whole) == 4 and all(r["detected"] for r in whole), [(r["type"], r["detected"], r["type_called"]) for r in whole]
+    tri = [r for r in whole if r["type"] == "gain"]
+    assert all(r["stage_ok"] is True and r["origin_ok"] and r["origin"] == "extra copy maternal" for r in tri), [(r["stage"], r["origin"]) for r in tri]
+    upd = [r for r in whole if r["type"] == "UPD"]
+    assert all(r["type_called"] == "UPD" and r["origin_ok"] for r in upd), [(r["type_called"], r["origin"]) for r in upd]
+    md = open(os.path.join(str(tmp_path), "calibration.md")).read()
+    assert "## Whole-chromosome events" in md and "Wilson 95% interval" in md and "## Calls on unaffected chromosomes" in md
+    assert os.path.exists(os.path.join(str(tmp_path), "false_positives.tsv"))

@@ -61,7 +61,8 @@ class Event:
     stage: str = ""             # a child's whole-chromosome gain or heterodisomy: meiosis I, meiosis II, or mitotic (centromere-anchored)
     centromere: str = ""        # the state of the two copies nearest the centromere: heterodisomic, isodisomic, mixed
     n_crossovers: int = 0       # changes of state along the chromosome ...
-    crossovers: str = ""        # ... and their positions in Mb
+    crossovers: str = ""        # ... and their positions in Mb ...
+    crossover_states: str = ""  # ... and the state on each side (hetero>iso: two homologues before, one after)
 
     @property
     def f(self):

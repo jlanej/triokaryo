@@ -2,6 +2,7 @@
 
   triokaryo run --vcf trio.vcf.gz --pedigree trios.tsv --child KID --out out/KID [--gc-track gc.tsv] [--panel panel.tsv] [--events other_calls.tsv]
   triokaryo run --vcf trio.vcf.gz --child KID --father DAD --mother MOM --sex M,M,F --out out/KID
+  triokaryo merge --child kid.vcf.gz --father dad.vcf.gz --mother mom.vcf.gz --out trio.vcf.gz   # per-sample VCFs, with bcftools
   triokaryo panel --vcfs a.vcf.gz b.vcf.gz ... --out panel.tsv        # or --runs 'out/*' from earlier runs
   triokaryo gc-track --fasta ref.fa --out gc.tsv [--bin 1000000]
   triokaryo mock --out mock_dir [--seed 1] [--no-events] [--xxy] [--contigs chr15,chr16,chr17 --sites-per-mb 1000 --low-share | --meiosis]
@@ -107,11 +108,18 @@ def cmd_mock(a):
     return 0
 
 
+def cmd_merge(a):
+    from .merge import merge_trio
+    out = merge_trio([a.child, a.father, a.mother], a.out, log=_log, keep_intermediate=a.keep_intermediate, threads=a.threads)
+    _log("trio VCF -> %s" % out)
+    return 0
+
+
 def cmd_calibrate(a):
     from .calibrate import run_calibration
     fl = lambda s: tuple(float(x) for x in s.split(",") if x.strip())  # noqa: E731
     rows = run_calibration(a.out, fractions=fl(a.cell_fractions), depths=fl(a.depths), sizes=fl(a.sizes), replicates=a.replicates, seed=a.seed,
-                           sites_per_mb=a.sites_per_mb, log=_log, figures=not a.no_figures, contigs=a.contigs.split(",") if a.contigs else None)
+                           sites_per_mb=a.sites_per_mb, log=_log, figures=not a.no_figures, contigs=a.contigs.split(",") if a.contigs else None, whole=a.whole)
     _log("%d planted events, %d detected -> %s" % (len(rows), sum(1 for r in rows if r["detected"]), a.out))
     return 0
 
@@ -208,6 +216,14 @@ def main(argv=None):
     c.add_argument("--events", help="events from another method to match (as for run)")
     c.add_argument("--genome", default="grch38")
     c.set_defaults(fn=cmd_cohort)
+    mg = sub.add_parser("merge", help="per-sample VCFs into one trio VCF with bcftools: PASS biallelic SNVs, merged with -0 (absent = homozygous reference), indexed")
+    mg.add_argument("--child", required=True, help="the child's VCF (bgzipped and indexed)")
+    mg.add_argument("--father", required=True)
+    mg.add_argument("--mother", required=True)
+    mg.add_argument("--out", required=True, help="the trio VCF to write (.vcf.gz)")
+    mg.add_argument("--threads", type=int, default=1)
+    mg.add_argument("--keep-intermediate", action="store_true", help="keep the per-sample SNV VCFs")
+    mg.set_defaults(fn=cmd_merge)
     cb = sub.add_parser("calibrate", help="detection and cell-fraction accuracy on the simulator over a grid of cell fractions, depths and event sizes")
     cb.add_argument("--out", required=True)
     cb.add_argument("--cell-fractions", default="0.05,0.1,0.2,0.3,0.5,1", help="comma-separated cell fractions (default 0.05,0.1,0.2,0.3,0.5,1)")
@@ -216,7 +232,8 @@ def main(argv=None):
     cb.add_argument("--replicates", type=int, default=1)
     cb.add_argument("--seed", type=int, default=1)
     cb.add_argument("--sites-per-mb", type=int, default=60, help="simulated site density (real WGS: about 1000 per Mb; 60 is quick but understates the phased scan)")
-    cb.add_argument("--contigs", default="", help="restrict the simulation to these chromosomes, e.g. chr1,...,chr16 with a dense --sites-per-mb")
+    cb.add_argument("--contigs", default="", help="restrict the simulation to these chromosomes, e.g. chr1,...,chr16 with a dense --sites-per-mb (chr1-18 with --whole)")
+    cb.add_argument("--whole", action="store_true", help="add a whole-chromosome maternal meiosis I trisomy (chr17) and a maternal heterodisomy (chr18) at each cell fraction")
     cb.add_argument("--no-figures", action="store_true")
     cb.set_defaults(fn=cmd_calibrate)
     g = sub.add_parser("guide", help="the guide: the meaning of every figure row, colour, call and column, with pattern cards (one self-contained page)")

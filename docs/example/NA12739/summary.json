@@ -82,7 +82,8 @@
    "stage": "",
    "centromere": "",
    "n_crossovers": 0,
-   "crossovers": ""
+   "crossovers": "",
+   "crossover_states": ""
   },
   {
    "sample": "NA12739",
@@ -126,7 +127,8 @@
    "stage": "mitotic, or meiosis II without a crossover",
    "centromere": "isodisomic",
    "n_crossovers": 0,
-   "crossovers": ""
+   "crossovers": "",
+   "crossover_states": ""
   },
   {
    "sample": "NA12748",
@@ -170,7 +172,8 @@
    "stage": "",
    "centromere": "",
    "n_crossovers": 0,
-   "crossovers": ""
+   "crossovers": "",
+   "crossover_states": ""
   },
   {
    "sample": "NA12748",
@@ -214,7 +217,8 @@
    "stage": "",
    "centromere": "",
    "n_crossovers": 0,
-   "crossovers": ""
+   "crossovers": "",
+   "crossover_states": ""
   }
  ],
  "external": [

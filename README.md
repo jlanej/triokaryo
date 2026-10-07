@@ -77,6 +77,9 @@ Python ≥ 3.9 with pysam, numpy and matplotlib.
 # a GC track, once per reference and bin size (1 Mb)
 triokaryo gc-track --fasta GRCh38.fa --out gc.grch38.1mb.tsv
 
+# per-sample VCFs: one trio VCF of PASS biallelic SNVs (bcftools merge -0; needs bcftools)
+triokaryo merge --child kid.vcf.gz --father dad.vcf.gz --mother mom.vcf.gz --out family.vcf.gz
+
 # one trio: the VCF holds the three members; the trios file names them (#kid dad mom kid_sex dad_sex mom_sex)
 triokaryo run --vcf family.vcf.gz --pedigree trios.tsv --child KID --gc-track gc.grch38.1mb.tsv \
               --panel 1kg-dragen --events ngsdose/karyotype/events.tsv --out out/KID
@@ -100,9 +103,12 @@ and heterozygosity rate of other genomes processed the same way and masks bins t
 Build a panel from any genomes called the same way (`triokaryo panel --vcfs ...`; five or more), or, with many trios,
 from a first pass's `bins.tsv` files (`--runs 'out/*'`; `--roles father,child` takes the males, whose Y rows let a
 father without a son be read for mosaic loss of Y). `--panel 1kg-dragen` is a shipped panel of twelve public
-1000 Genomes genomes for data called by DRAGEN 3.7.6. Per-sample VCFs are merged into a trio VCF with
-`bcftools merge -0`; a sample with no record at a site is then written as homozygous reference, which the trio
-analysis accepts as a confident parental genotype.
+1000 Genomes genomes for data called by DRAGEN 3.7.6. Per-sample VCFs are merged into a trio VCF by `triokaryo merge`
+(`bcftools merge -0` after reducing each to PASS biallelic SNVs); a sample with no record at a site is then written as
+homozygous reference, which the trio analysis accepts as a confident parental genotype. The input needs per-sample
+`GT`, `AD` and `DP`; without `GQ` in the header (some callers) a called genotype with reads counts as confident, with a
+warning; GATK, DRAGEN and DeepVariant write all four, while callers with other allelic-depth tags (freebayes `AO`/`RO`)
+need conversion to `AD`.
 
 ## Signals
 
@@ -169,6 +175,8 @@ none.
   complement with the check against the pedigree sex, and karyotype string, the father/son Y depth ratio, the
   genome-wide Mendelian-error rate, event counts, parameters.
 - `external.tsv`: the supplied events (`--events`) and whether each was matched.
+- `events.bed`: the events as BED6 (score 1000 × cell fraction) for a genome browser; `crossovers.tsv`: one row per
+  crossover of the staged whole-chromosome events, with the state on each side.
 - `guide.html`: how to read every figure row, colour, call and column, with pattern cards of each event type (also
   `triokaryo guide --out`).
 - `figures/`: `genome` (per member LRR with step fit and BAF with the pooled phased fraction; child vs parental mean;
@@ -182,7 +190,7 @@ none.
 (events per chromosome; one row per trio), a sortable table of every event linked to its trio's page and figure,
 per-trio quality metrics with karyotype strings, a sex-chromosome aneuploidy table with counts by complement, parent
 of origin and meiotic stage, concordance with the supplied events, and the rejected phased segments by region; with
-`events.all.tsv`, `summary.all.tsv`, `sex_aneuploidies.tsv`, `concordance.tsv`, `flags.tsv` and `rejected.all.tsv`. `triokaryo report
+`events.all.tsv`, `events.all.bed`, `summary.all.tsv`, `sex_aneuploidies.tsv`, `crossovers.all.tsv`, `concordance.tsv`, `flags.tsv` and `rejected.all.tsv`. `triokaryo report
 --runs 'out/*'` rebuilds a run's page, sidecars, legends and guide from its tables without the VCF.
 
 ## Supplied events (`--events`)
@@ -210,9 +218,11 @@ produce those variants.
 ## Calibration
 
 `triokaryo calibrate --out calib` plants a gain, a loss and a copy-neutral LOH of each size on separate autosomes of a
-simulated trio at each cell fraction and depth of a grid, runs the method, and reports per planted event whether it
-was detected, by which source, the three cell-fraction estimates and whether the parent of origin was named
-(`calibration.tsv`), with detection-rate tables (`calibration.md`) and a figure. The default grid (cell fractions
+simulated trio at each cell fraction and depth of a grid (with `--whole`, a whole-chromosome maternal meiosis I trisomy
+and a heterodisomy as well), runs the method, and reports per planted event whether it was detected, by which source,
+the three cell-fraction estimates, the parent of origin and the meiotic stage (`calibration.tsv`), every call on an
+unaffected chromosome (`false_positives.tsv`), and detection-rate tables with Wilson intervals over `--replicates`
+(`calibration.md`) and a figure. The default grid (cell fractions
 0.05–1, 30×, 5–50 Mb, 60 sites per Mb) runs in a few minutes; real WGS carries about 1,000 PASS SNVs per Mb, so
 `--sites-per-mb 600 --contigs chr1,...,chr16` gives a realistic phased scan at a fraction of the cost of whole
 genomes. The grid in [`docs/calibration/`](docs/calibration/README.md) (30×, 600 sites per Mb, one replicate) finds

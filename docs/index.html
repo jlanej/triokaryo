@@ -178,6 +178,7 @@ footer{padding:28px 0 48px;color:var(--muted);font-size:14px;border-top:1px soli
   <h2>Run it</h2>
   <p class="sub">Python 3.9 or later with pysam, numpy and matplotlib; or the container.</p>
 <pre><code>pip install git+https://github.com/jlanej/triokaryo
+triokaryo merge --child kid.vcf.gz --father dad.vcf.gz --mother mom.vcf.gz --out trio.vcf.gz   # per-sample VCFs (bcftools)
 triokaryo run --vcf trio.vcf.gz --pedigree trios.tsv --child KID --out out/KID \
     --panel 1kg-dragen --events other_calls.tsv --gc-track gc.tsv
 triokaryo cohort --runs 'out/*' --out cohort --events other_calls.tsv</code></pre>

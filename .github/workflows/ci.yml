@@ -27,6 +27,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Install bcftools (for the merge test)
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq bcftools tabix
       - name: Install (with test extras)
         run: |
           python -m pip install --upgrade pip

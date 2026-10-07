@@ -19,12 +19,24 @@
 | origin, origin_llr, origin_n | parent of origin from the informative sites (child, autosomes), the log-likelihood ratio and the site count |
 | origin_phase | from the sign of the phased shift: the parent of the extra, lost or retained copy (child), or whether the event lies on the transmitted homologue (parent) |
 | homologues, hetero_share | for a child's gain, LOH or UPD with a parent named: whether that parent's two copies are one homologue or two, and the share of the event's windows in which they differ |
-| stage, centromere, n_crossovers, crossovers | for a child's whole-chromosome gain or heterodisomy with a parent named: the meiotic stage (meiosis I, meiosis II, or mitotic / meiosis II without a crossover) from the state of the two copies nearest the centromere, that centromeric state, and the crossovers as changes of state along the chromosome (positions in Mb) |
+| stage, centromere, n_crossovers, crossovers, crossover_states | for a child's whole-chromosome gain or heterodisomy with a parent named: the meiotic stage (meiosis I, meiosis II, or mitotic / meiosis II without a crossover) from the state of the two copies nearest the centromere, that centromeric state, and the crossovers as changes of state along the chromosome (positions in Mb; the state before and after each as hetero>iso or iso>hetero) |
 | het_rate, het_rate_rel, n_het, n_called | heterozygosity rate in the segment, its ratio to the member's own (or to the panel's), and the counts |
 | mie_rate | Mendelian-error rate among the segment's confident sites (the genome-wide rate is in the summary) |
 | inheritance | child: inherited from the father / the mother, or new; parent: passed to the child or not |
 | external | labels of the supplied events (`--events`) overlapping the segment |
 | note | annotations: run of homozygosity; isodisomy; no heterozygous calls; pieces joined; phased-versus-depth disagreement; phased-scan typing; heterodisomy; parent-of-origin disagreement; loss on a single X; whole-chromosome X or Y against the pedigree sex (47,XXY, 45,X, mosaics, loss of Y) with the source of the Y estimate |
+
+## events.bed
+
+The events as BED6 for genome browsers and interval tools: chrom, start, end, name `sample|role|type|bands|f=…|origin`
+(spaces as underscores), score 1000 × cell fraction, strand `.`; a `track` header line. The cohort writes `events.all.bed` with
+the trio prefixed to the name.
+
+## crossovers.tsv
+
+One row per crossover of the staged events (the child's whole-chromosome gains and heterodisomies): trio, sample, role, chrom,
+position (bp and Mb), the state before and after (heterodisomic, isodisomic), the event's type and cell fraction, its stage and
+the parent whose two copies are followed. The cohort gathers `crossovers.all.tsv`.
 
 ## phased.tsv
 
@@ -90,7 +102,7 @@ concordance with the supplied events, and the rejected phased segments by region
 `summary.all.tsv` (per trio: members, sexes, sites, Mendelian-error rate, X copy numbers, sex-chromosome complements
 and checks, each member's karyotype string, the father/son Y ratio, depths, phased sites, shared windows, rejected
 segments, events, flagged events, run time, run directory), `concordance.tsv`,
-`flags.tsv` (every event with a note), `sex_aneuploidies.tsv`, `rejected.all.tsv`; plus `guide.html` and `figures/patterns_*.*`.
+`flags.tsv` (every event with a note), `sex_aneuploidies.tsv`, `crossovers.all.tsv`, `events.all.bed`, `rejected.all.tsv`; plus `guide.html` and `figures/patterns_*.*`.
 
 ## triokaryo report --runs
 
@@ -99,8 +111,10 @@ VCF: after a change to the page or the key, or to add the guide to an older run.
 
 ## triokaryo calibrate --out
 
-`calibration.tsv`: one row per planted event (replicate, depth, f, type, size_mb, chrom, detected, source, f_called,
-f_lrr, f_baf, f_phase, origin_ok, origin, span_called, other_calls_on_chrom). `calibration.md`: detection-rate tables
-per type and depth (rows cell fraction, columns size) and the median absolute error of each estimate.
+`calibration.tsv`: one row per planted event (replicate, depth, f, type, size_mb or `whole`, chrom, detected, source,
+type_called, f_called, f_lrr, f_baf, f_phase, origin_ok, origin, stage, stage_ok, span_called, other_calls_on_chrom).
+`false_positives.tsv`: the child's calls on chromosomes without a planted event. `calibration.md`: detection-rate tables
+per type and depth (rows cell fraction, columns size; Wilson 95% intervals with replicates), the whole-chromosome
+events, the false positives and the median absolute error of each estimate.
 `calibration.{png,svg,pdf}`: the detection grid per type (rows) and depth (columns), each cell its rate and the source
 (D depth, B bands, P phased). `runs/`: the simulated trios and their runs, regenerated and not kept.
