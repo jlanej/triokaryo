@@ -131,8 +131,9 @@ read count is modelled as binomial with a success probability determined by the 
 contributed the alt allele; the log-likelihood ratio of the two parental assignments over the event's sites gives
 `origin`, `origin_llr` and `origin_n`. (ii) The sign of the phased shift gives `origin_phase`. A disagreement is
 flagged. **Inheritance:** a child's event is inherited when a parent carries an event of the same type on the same
-chromosome whose intersection covers at least half of the shorter segment ("in a share of the parent's cells" when
-the parent's *f* < 0.8); otherwise it is de novo. A parent's event is marked transmitted or not by the same rule.
+chromosome with reciprocal overlap of at least 50% (the intersection covers at least half of each segment), "in a
+share of the parent's cells" when the parent's *f* < 0.8; otherwise it is de novo. A parent's event is marked
+transmitted or not by the same rule.
 **Mendelian errors** are counted per event and compared with the genome-wide rate: a constitutional deletion or an
 isodisomy produces errors at informative sites, a trisomy or a mosaic event does not, and a run of homozygosity has
 none.
@@ -201,8 +202,8 @@ produce those variants.
 - The parent-of-origin likelihood assumes one event per region and is conditional on an event being present; it does
   not test for the event. A trisomy from a meiosis II or mitotic error (one homologue duplicated) still yields its
   parent, since informative sites resolve the parent, not the homologue.
-- Events are matched by intersection over the shorter segment, not by reciprocal overlap; a small parental event
-  inside a large event of the child is sufficient for "inherited".
+- Supplied events are matched by intersection over the shorter segment, deliberately lenient so that a caller's
+  fragmented segments match one event; inheritance requires reciprocal overlap of at least 50%.
 
 ## Development
 
@@ -213,7 +214,7 @@ make docker-test              # the image, run on the simulated trio
 ```
 
 CI runs the tests on two Python versions, builds the image, runs the simulated trio inside it, and pushes to GHCR on
-`main` and tags. See `docs/METHODS.md` and `docs/OUTPUT.md`.
+`main` and tags. See `docs/METHODS.md`, `docs/OUTPUT.md` and, for planned work, `docs/ROADMAP.md`.
 
 ## License
 

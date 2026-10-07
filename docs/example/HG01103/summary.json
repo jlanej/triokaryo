@@ -305,7 +305,7 @@
    "phase_se": 0.011045847045150098,
    "n_phased": 69,
    "f_phase": 0.06979014153245489,
-   "origin_phase": "the retained homologue is the one passed to the child",
+   "origin_phase": "",
    "start_fine": 44252064,
    "end_fine": 60457700,
    "edge_sites": 1219,

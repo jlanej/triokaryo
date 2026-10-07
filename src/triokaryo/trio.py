@@ -81,8 +81,9 @@ def mie_rate(sites, lo, hi, min_dp, min_gq):
 
 
 def read_trio(events, scan, genome, min_dp, min_gq, min_overlap=0.5):
-    """Annotates the events in place: the child's with inheritance and the parent of origin; the parents' with whether the
-    child carries the same event; every event with its Mendelian-error rate (the genome's baseline in the note)."""
+    """Annotates the events in place: the child's with inheritance (an event of the same type in a parent with reciprocal
+    overlap of at least min_overlap) and the parent of origin; the parents' with whether the child carries the same event;
+    every event with its Mendelian-error rate. Returns the genome-wide Mendelian-error rate."""
     kid = [e for e in events if e.role == "child"]
     dad = [e for e in events if e.role == "father"]
     mom = [e for e in events if e.role == "mother"]
@@ -98,7 +99,8 @@ def read_trio(events, scan, genome, min_dp, min_gq, min_overlap=0.5):
         if sites is not None:
             e.mie_rate = mie_rate(sites, e.start + 1, e.end, min_dp, min_gq)
     for e in kid:
-        same = [(p, src) for lst, src in ((dad, "father"), (mom, "mother")) for p in lst if p.chrom == e.chrom and p.type == e.type and e.overlap(p) >= min_overlap]
+        same = [(p, src) for lst, src in ((dad, "father"), (mom, "mother")) for p in lst
+                if p.chrom == e.chrom and p.type == e.type and e.reciprocal_overlap(p) >= min_overlap]
         if same:
             parts = []
             for p, src in same:
@@ -123,6 +125,6 @@ def read_trio(events, scan, genome, min_dp, min_gq, min_overlap=0.5):
                 p.note = (p.note + "; " if p.note else "") + "in every cell: a run of homozygosity (identical by descent) unless the depth says otherwise"
     for lst, src in ((dad, "father"), (mom, "mother")):
         for p in lst:
-            hit = [e for e in kid if e.chrom == p.chrom and e.type == p.type and p.overlap(e) >= min_overlap]
+            hit = [e for e in kid if e.chrom == p.chrom and e.type == p.type and p.reciprocal_overlap(e) >= min_overlap]
             p.inheritance = "passed to the child" if hit else "not passed to the child"
     return base_rate

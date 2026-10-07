@@ -70,3 +70,47 @@ def test_merged_absent_homref_counts_as_confident_parent():
     k2, _, _ = informative(Sites("chr1", pos, dp, alt, gt, gq2, np.zeros(n, bool)), 1, 10 ** 9, 8, 20)
     assert len(k2) == 0
     assert mie_rate(sites, 1, 10 ** 9, 8, 20) == 0.0
+
+
+def test_inheritance_needs_reciprocal_overlap_but_external_matching_does_not():
+    """A small parental event inside a large event of the child is not 'inherited'; a caller's fragment inside an event still matches."""
+    import types
+    from triokaryo.segment import Event
+    from triokaryo.trio import read_trio
+    big = Event("KID", "child", "chr1", 0, 100_000_000, "stretch", "gain", f_lrr=1.0)
+    small = Event("DAD", "father", "chr1", 10_000_000, 20_000_000, "stretch", "gain", f_lrr=1.0)
+    assert big.overlap(small) == 1.0 and abs(big.reciprocal_overlap(small) - 0.1) < 1e-9
+    scan = types.SimpleNamespace(chroms={}, sites=lambda c: None)
+    read_trio([big, small], scan, genome(), 8, 20)
+    assert big.inheritance.startswith("new") and small.inheritance == "not passed to the child"
+    same = Event("DAD", "father", "chr1", 0, 90_000_000, "stretch", "gain", f_lrr=1.0)
+    read_trio([big, same], scan, genome(), 8, 20)
+    assert big.inheritance == "inherited from the father" and same.inheritance == "passed to the child"
+
+
+def test_run_of_homozygosity_gets_no_parent_of_origin_from_the_phased_track():
+    """An event annotated as a run of homozygosity keeps its phased statistics but receives no origin_phase or homologue count."""
+    import types
+    from triokaryo.phase import PhasedTrack, annotate_events
+    from triokaryo.segment import Event
+    from triokaryo.vcfscan import Sites
+    n = 200
+    pos = np.arange(1, n + 1) * 10_000
+    dp = np.full((3, n), 30)
+    alt = np.array([np.full(n, 24), np.zeros(n, int), np.full(n, 30)])             # the child's maternal (alt) allele at 0.8
+    gt = np.array([np.ones(n, int), np.zeros(n, int), np.full(n, 2)])
+    gq = np.full((3, n), 99)
+    sites = Sites("chr1", pos, dp, alt, gt, gq, np.zeros(n, bool))
+    scan = types.SimpleNamespace(chroms={"chr1": sites}, sites=lambda c: sites)
+    idx = np.arange(n)
+    frac = alt[0] / 30.0
+    w = np.arange(0, n, 20)
+    track = PhasedTrack("chr1", idx, frac, np.ones(n, bool), pos[w], pos[np.minimum(w + 19, n - 1)], pos[w + 10], np.full(len(w), 20),
+                        np.full(len(w), 600), np.full(len(w), 0.8), np.full(len(w), 0.02), np.zeros(len(w), int), np.full(len(w), 0.8),
+                        np.zeros(len(w)), np.ones(len(w)), np.ones(len(w)))
+    bins = types.SimpleNamespace(bin_size=1_000_000)
+    for note, expect in (("", True), ("a run of homozygosity (both copies identical by descent), not a uniparental disomy: no Mendelian errors", False)):
+        ev = Event("KID", "child", "chr1", 0, 2_000_000, "stretch", "LOH", f_baf=1.0, source="bands", note=note)
+        annotate_events([ev], [{"chr1": track}, {}, {}], scan, bins, genome())
+        assert ev.n_phased == n and abs(ev.phase_shift - 0.3) < 1e-9
+        assert bool(ev.origin_phase) is expect and bool(ev.homologues) is False

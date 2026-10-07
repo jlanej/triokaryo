@@ -29,7 +29,7 @@ COLUMN_DOCS = [
     ("homologues, hetero_share", "for a child's gain, LOH or UPD with a parent named and |shift| of 0.05 or more: whether that parent's two copies are one homologue (the auxiliary track follows the main one) or two (it departs: 1/3 against 2/3 along a trisomy), and the share of the event's windows in which they differ"),
     ("het_rate, het_rate_rel, n_het, n_called", "heterozygosity rate in the segment, its ratio to the member's own (or to the panel's), and the counts"),
     ("mie_rate", "Mendelian-error rate among the segment's confident sites: a constitutional deletion, an isodisomy or a heterodisomy produces errors at the informative sites; a trisomy or a mosaic event does not; a run of homozygosity has none"),
-    ("inheritance", "child: inherited from the father / the mother (an event of the same type in that parent; 'in a share of the parent's cells' when mosaic there), or new; parent: passed to the child or not"),
+    ("inheritance", "child: inherited from the father / the mother (an event of the same type in that parent with reciprocal overlap of at least 50%; 'in a share of the parent's cells' when mosaic there), or new; parent: passed to the child or not, by the same rule"),
     ("external", "labels of the supplied events (--events) whose intersection with the segment covers at least half of the shorter of the two"),
     ("note", "annotations: 'a run of homozygosity ... not a uniparental disomy' (constitutional LOH without Mendelian errors); 'Mendelian errors at the informative sites: a uniparental isodisomy'; 'no heterozygous calls: in every cell'; 'joined across n bin(s) ...'; 'the phased bands read a share of x% against the depth's y%: the depth's call may be an artefact'; 'from the phased bands: ...' (how a phased-scan event was typed); 'a uniparental heterodisomy ...'; 'the phased bands and the opposite-homozygote sites name different parents'; 'a loss on a single X'"),
 ]
@@ -67,7 +67,7 @@ RULES = [
     ("One homologue or two", "for a child's gain, LOH or UPD with its parent named: the auxiliary track read at the other parent's homozygous sites follows the main track where the two copies are one homologue and departs from it where they are two; the share of windows in which it departs is hetero_share."),
     ("Run of homozygosity versus disomy", "a constitutional LOH without Mendelian errors is a run of homozygosity (both copies identical by descent; the parents share the haplotype); with errors at the informative sites it is a uniparental isodisomy. A heterodisomy retains heterozygosity and shows the errors."),
     ("The X", "analysed relative to the member's own X median, so a 47,XXY X reads as two copies and the check against the pedigree sex reports it; a single X has no heterozygous sites to phase; pseudoautosomal bins are excluded."),
-    ("Parents' events", "a parent's gain, loss or LOH is analysed the same way; 'passed to the child' when the child carries an event of the same type there; the sign of the phased shift shows whether it lies on the transmitted homologue."),
+    ("Parents' events", "a parent's gain, loss or LOH is analysed the same way; 'passed to the child' when the child carries an event of the same type with reciprocal overlap of at least 50%; the sign of the phased shift shows whether it lies on the transmitted homologue."),
 ]
 
 

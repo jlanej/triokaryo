@@ -64,11 +64,20 @@ class Event:
         return self.f_lrr if np.isfinite(self.f_lrr) and self.type in ("gain", "loss") else self.f_baf
 
     def overlap(self, other):
+        """The intersection as a fraction of the shorter segment (lenient: a caller's fragment inside this event scores 1)."""
         a = max(self.start, other.start)
         b = min(self.end, other.end)
         if b <= a:
             return 0.0
         return (b - a) / min(self.end - self.start, other.end - other.start)
+
+    def reciprocal_overlap(self, other):
+        """The intersection as a fraction of the longer segment: at least t means each segment covers at least t of the other."""
+        a = max(self.start, other.start)
+        b = min(self.end, other.end)
+        if b <= a:
+            return 0.0
+        return (b - a) / max(self.end - self.start, other.end - other.start)
 
     def as_dict(self):
         d = asdict(self)

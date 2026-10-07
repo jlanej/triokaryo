@@ -182,10 +182,11 @@ does not test for the event.
 ## Inheritance
 
 A child's event is "inherited from the father/mother" when that parent has an event of the same type on the same
-chromosome whose intersection with the child's covers at least half of the shorter of the two segments, with "(in a
-share of the parent's cells)" when the parent's f < 0.8; otherwise it is "new (neither parent carries it)". A parent's
-event is "passed to the child" or "not passed to the child" by the same rule. The rule is not reciprocal: a small
-parental event inside a large event of the child satisfies it.
+chromosome with reciprocal overlap of at least 0.5, that is, the intersection covers at least half of the longer of the
+two segments and therefore of each; "(in a share of the parent's cells)" is added when the parent's f < 0.8.
+Otherwise the event is "new (neither parent carries it)". A parent's event is "passed to the child" or "not passed
+to the child" by the same rule. Supplied events, by contrast, are matched by the more lenient shorter-segment rule
+(below).
 
 ## Mendelian errors
 

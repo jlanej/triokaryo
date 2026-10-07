@@ -407,8 +407,9 @@ def refine_edges(ev, track, sites, bins, genome):
 
 
 def annotate_events(events, tracks_by_member, scan, bins, genome):
-    """Every event's phased reading, parent of origin by the sign, one-or-two-homologues reading, and edges at site
-    resolution; a note where the phased reading and the opposite-homozygote reading name different parents."""
+    """Every event's phased statistics, parent of origin by the sign of the shift, homologue count, and boundaries at
+    site resolution; a note where the phased sign and the informative-site likelihood name different parents. An event
+    annotated as a run of homozygosity receives no parent of origin or homologue count."""
     for e in events:
         m = MEMBERS.index(e.role)
         track = tracks_by_member[m].get(e.chrom)
@@ -425,9 +426,10 @@ def annotate_events(events, tracks_by_member, scan, bins, genome):
                                                               "(GC, the panel's edge) rather than a copy change" % (100 * e.f_phase, 100 * e.f_lrr))
             elif e.f_phase > 1.5 * e.f_lrr and e.f_phase - e.f_lrr > 0.05:
                 e.note = (e.note + "; " if e.note else "") + "the phased bands read a larger share (%.0f%%) than the depth (%.0f%%)" % (100 * e.f_phase, 100 * e.f_lrr)
-        if e.n_phased >= ORIGIN_MIN_SITES and abs(e.phase_shift) >= ORIGIN_MIN_Z * e.phase_se:
+        roh = "run of homozygosity" in e.note                               # a run of homozygosity has no parent of origin
+        if e.n_phased >= ORIGIN_MIN_SITES and abs(e.phase_shift) >= ORIGIN_MIN_Z * e.phase_se and not roh:
             e.origin_phase = origin_from_shift(e.role, e.type, e.phase_shift)
-            if e.role == "child" and e.origin and e.type != "UPD" and e.origin != e.origin_phase and "run of homozygosity" not in e.note:
+            if e.role == "child" and e.origin and e.type != "UPD" and e.origin != e.origin_phase:
                 e.note = (e.note + "; " if e.note else "") + "the phased bands and the opposite-homozygote sites name different parents"
             e.homologues, e.hetero_share = homologues_reading(e, track)
         e.start_fine, e.end_fine, e.edge_sites = refine_edges(e, track, sites, bins, genome)
