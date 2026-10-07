@@ -53,7 +53,9 @@ def run_trio(vcf, trio, out, gc_track=None, events_path=None, bin_size=1_000_000
     log("sex chromosomes: %s; Y father/son log2 ratio %s" % ("; ".join("%s %s (%s)" % (role, states[role]["sex_check"] and (("X" * int(states[role]["x_copies"]) if np.isfinite(states[role]["x_copies"]) else "?") +
                                                                       ("Y" * int(states[role]["y_copies"]) if np.isfinite(states[role]["y_copies"]) else "")) or "unknown", states[role]["sex_check"] or "no pedigree sex")
                                                                       for role in MEMBERS), "%.3f over %d sites" % (y_ratio, y_ratio_n) if np.isfinite(y_ratio) else "NA"))
-    child_x_baseline = 1 if trio.kid_sex == "M" else 2 if trio.kid_sex == "F" else (int(x_copies["child"]) if np.isfinite(x_copies["child"]) else 2)
+    from .sexchrom import implied_sex
+    kid_sex = implied_sex(trio.kid_sex, states["child"])[0]
+    child_x_baseline = 1 if kid_sex == "M" else 2 if kid_sex == "F" else (int(x_copies["child"]) if np.isfinite(x_copies["child"]) else 2)
     # the phased tracks: the maternal-allele fraction along the child, the transmitted-allele fraction along each parent
     from .phase import annotate_events, mask_rejected, mask_shared, phased_scan, phased_tracks
     tracks, phase_info, rejected = [], {}, []
@@ -81,7 +83,7 @@ def run_trio(vcf, trio, out, gc_track=None, events_path=None, bin_size=1_000_000
     external = [x for x in external if x.sample in trio.members]
     match_external(events, external)
     os.makedirs(out, exist_ok=True)
-    summ = write_tables(out, trio, bins, events, x_copies, scan, base_mie, P, tracks=tracks, phase_info=phase_info, rejected=rejected, sex_info=sex_info)
+    summ = write_tables(out, trio, bins, events, x_copies, scan, base_mie, P, tracks=tracks, phase_info=phase_info, rejected=rejected, sex_info=sex_info, genome=G)
     if external:
         from .report import write_tsv
         write_tsv(os.path.join(out, "external.tsv"), ["sample", "chrom", "start", "end", "label", "match"],
@@ -95,12 +97,13 @@ def run_trio(vcf, trio, out, gc_track=None, events_path=None, bin_size=1_000_000
         chroms = sorted({e.chrom for e in events} | {x.chrom for x in external}, key=lambda c: G.chroms.index(c))
         for c in chroms:
             figs.append(fig_chrom(trio, c, bins, scan, events, external, G, fdir, min_dp, min_gq, tracks=tracks))
-    write_html(out, trio, figs, events, summ, external, mock_note)
+    write_html(out, trio, figs, events, summ, external, mock_note, genome=G)
     from .guide import write_guide
     write_guide(os.path.join(out, "guide.html"))
     with open(os.path.join(out, "summary.json"), "w") as fh:
         json.dump(dict(trio=trio.name, members=list(trio.members), sexes=list(trio.sexes), x_copies=x_copies, mie_rate_genome=base_mie, phasing=phase_info,
                        sex_chromosomes={role: {k: v for k, v in states[role].items() if k != "y_in_vcf"} for role in MEMBERS},
+                       karyotypes={role: summ.get("%s_karyotype" % role, "") for role in MEMBERS},
                        y_father_son=dict(log2=y_ratio, sites=y_ratio_n), genome=genome_name, mock_note=mock_note,
                        events=[e.as_dict() for e in events], external=[dict(sample=x.sample, chrom=x.chrom, start=x.start, end=x.end, label=x.note, match=x.inheritance) for x in external],
                        sites_used=scan.n_used, records=scan.n_records, skipped=scan.skipped, seconds=round(time.time() - t0, 1)),

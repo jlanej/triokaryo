@@ -50,8 +50,9 @@ The trio, its members and their sexes; records read, sites used and records skip
 Mendelian-error rate; per member the event counts by type, the X and Y copy numbers (`x_copies`, `y_copies`; raw
 values `x_copies_raw`, `y_copies_raw`), the sex-chromosome complement (`sex_karyotype`) with its check against the
 pedigree sex (`sex_check`; `x_check` the X-only wording), the median autosomal depth, the phased-site count, the
-window size, the reference bias, the number of phased-scan events and of shared windows; the father/son Y depth
-ratio (`y_father_son_log2`, `y_father_son_sites`) and whether the panel carried Y rows (`y_panel`); the parameters.
+window size, the reference bias, the number of phased-scan events and of shared windows, and the ISCN-like karyotype
+string (`karyotype`; grammar in METHODS); the father/son Y depth ratio (`y_father_son_log2`, `y_father_son_sites`)
+and whether the panel carried Y rows (`y_panel`); the parameters.
 `summary.json` also holds every event, every supplied event and the per-member sex-chromosome state.
 
 ## figures/
@@ -83,8 +84,9 @@ concordance), `figures/landscape.*` (events per chromosome by type; one row per 
 by type, the child's thick, a parent's thin above or below, a black line over a bar for a matched event), a sortable
 and filterable table of every event linked to its trio's page and chromosome figure, per-trio quality metrics,
 the concordance with the supplied events, and the rejected phased segments by region. Tables: `events.all.tsv`,
-`summary.all.tsv` (per trio: members, sexes, sites, Mendelian-error rate, X copy numbers and checks, depths, phased
-sites, shared windows, rejected segments, events, flagged events, run time, run directory), `concordance.tsv`,
+`summary.all.tsv` (per trio: members, sexes, sites, Mendelian-error rate, X copy numbers, sex-chromosome complements
+and checks, each member's karyotype string, the father/son Y ratio, depths, phased sites, shared windows, rejected
+segments, events, flagged events, run time, run directory), `concordance.tsv`,
 `flags.tsv` (every event with a note), `rejected.all.tsv`; plus `guide.html` and `figures/patterns_*.*`.
 
 ## triokaryo report --runs

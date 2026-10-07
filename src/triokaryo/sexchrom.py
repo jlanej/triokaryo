@@ -56,12 +56,22 @@ def x_check(sex, st):
         return ""
     if (sex == "M" and xc == 1) or (sex == "F" and xc == 2):
         return "agrees"
-    yc = st["y_copies"]
-    if sex == "M":
-        why = "47,XXY" if yc == 1 else "an XX male, or a sample swap" if yc == 0 else "47,XXY or an XX male?"
-        return "X copies %d in a reported male (%s)" % (int(xc), why if xc == 2 else "47,XXX%s" % ("Y" if yc == 1 else "") if xc == 3 else "")
-    why = "45,X" if yc == 0 else "45,X/46,XY, or a sample swap" if yc == 1 else "45,X?"
-    return "X copies %d in a reported female (%s)" % (int(xc), why if xc == 1 else "47,XXX" if xc == 3 else "")
+    k = karyotype(xc, st["y_copies"])
+    if k:
+        why = "an XX male, or a sample swap" if (sex == "M" and k == "XX") else "a sample swap, or an XY female" if (sex == "F" and k == "XY") else KARYOTYPE_NAME.get(k, k)
+    else:
+        why = {("M", 2): "47,XXY or an XX male?", ("F", 1): "45,X?", ("F", 3): "47,XXX?", ("M", 3): "48,XXXY?"}.get((sex, int(xc)), "Y not in the VCF")
+    return "X copies %d in a reported %s (%s)" % (int(xc), "male" if sex == "M" else "female", why)
+
+
+def implied_sex(sex, st):
+    """The pedigree sex, or, when it is not given, the sex the Y copy number implies (M with a Y, F without); '' when neither."""
+    if sex:
+        return sex, False
+    yc = st.get("y_copies", NA)
+    if np.isfinite(yc):
+        return ("M" if int(yc) >= 1 else "F"), True
+    return "", False
 
 
 def sex_check(sex, st):
@@ -107,13 +117,14 @@ def sex_chromosome_events(m, sample, states, sexes, bins, genome, min_f, y_ref=F
     """The member's whole-X and whole-Y events against the complement its pedigree sex implies. states: {role: sex_state};
     y_ref: the panel carries Y rows, so the Y level is corrected; y_ratio: y_father_son's log2 ratio (NaN without a son)."""
     role = MEMBERS[m]
-    sex = sexes[m]
     st = states[role]
     out = []
+    sex, implied = implied_sex(sexes[m], st)
     if not sex:
         return out
     ex_x, ex_y = EXPECTED[sex]
-    who = "male" if sex == "M" else "female"
+    who = ("male" if sex == "M" else "female") + (" (no pedigree sex; implied by the Y)" if implied else "")
+    k = karyotype(st["x_copies"], st["y_copies"])
     x_raw = st["x_copies_raw"]
     if np.isfinite(x_raw) and abs(x_raw - ex_x) >= min_f:
         kind = "gain" if x_raw > ex_x else "loss"
@@ -121,9 +132,9 @@ def sex_chromosome_events(m, sample, states, sexes, bins, genome, min_f, y_ref=F
         L = genome.length["chrX"]
         name = ""
         if f >= 0.9:
-            name = {("M", "gain"): " (47,XXY)", ("F", "loss"): " (45,X)", ("F", "gain"): " (47,XXX)"}.get((sex, kind), "")
-        elif kind == "gain" and sex == "M":
-            name = " (46,XY/47,XXY mosaic)"
+            name = (" (%s)" % KARYOTYPE_NAME[k]) if k in KARYOTYPE_NAME else {("M", "gain"): " (47,XXY)", ("F", "loss"): " (45,X)", ("F", "gain"): " (47,XXX)"}.get((sex, kind), "")
+        elif kind == "gain":
+            name = " (46,XY/47,XXY mosaic)" if sex == "M" else " (46,XX/47,XXX mosaic)"
         elif kind == "loss":
             name = " (45,X/46,%s mosaic)" % ("XY" if sex == "M" else "XX")
         note = "whole-chromosome X: %.2f copies against %d expected for a reported %s%s" % (x_raw, ex_x, who, name)
@@ -153,7 +164,86 @@ def sex_chromosome_events(m, sample, states, sexes, bins, genome, min_f, y_ref=F
         else:
             f = NA
         if np.isfinite(f):
-            name = " (47,XYY)" if kind == "gain" and f >= 0.9 else " (mosaic loss of Y)" if kind == "loss" and f < 0.9 else " (loss of Y)" if kind == "loss" else ""
+            name = (" (%s)" % KARYOTYPE_NAME.get(k, "47,XYY")) if kind == "gain" and f >= 0.9 else " (mosaic loss of Y)" if kind == "loss" and f < 0.9 else " (loss of Y)" if kind == "loss" else ""
             out.append(Event(sample, role, "chrY", 0, genome.length["chrY"], "whole", kind, lrr=float(np.log2(y_raw / 2.0)) if y_raw > 0 else NA, n_bins=st["y_bins"],
-                             f_lrr=f, note="whole-chromosome Y%s: %.2f copies against 1 expected for a reported male, %s" % (name, y_raw, how)))
+                             f_lrr=f, note="whole-chromosome Y%s: %.2f copies against 1 expected for a reported %s, %s" % (name, y_raw, who, how)))
     return out
+
+
+STAGE_SHORT = (("meiosis II", "MII"), ("meiosis I", "MI"), ("mitotic", "MII/mit"))
+
+
+def _short_stage(stage):
+    for k, v in STAGE_SHORT:
+        if stage.startswith(k):
+            return v
+    return ""
+
+
+def _short_origin(e):
+    """mat or pat: the parent of the extra, lost or retained copy, from the child's origin labels; '' for a parent's event."""
+    if e.role != "child":
+        return ""
+    s = e.origin_phase or e.origin
+    i, j = s.find("maternal"), s.find("paternal")
+    if i < 0 and j < 0:
+        return ""
+    return "mat" if (j < 0 or (0 <= i < j)) else "pat"
+
+
+def _coords(e):
+    a = e.start_fine if np.isfinite(e.start_fine) else e.start
+    b = e.end_fine if np.isfinite(e.end_fine) else e.end
+    return "%s%.1f-%.1fMb" % ((e.span + ":") if e.span in ("p", "q") else "", a / 1e6, b / 1e6)
+
+
+def karyotype_string(events, complement, chrom_order):
+    """An ISCN-like summary of one member. The main line is the modal number and sex-chromosome complement, annotated for a
+    constitutional sex-chromosome aneuploidy with the parent of the extra or lost copy and the meiotic stage (47,XXY(mat,MI)),
+    followed by the constitutional autosomal terms: +N / -N with mat/pat and the stage, upd(N)mat(iso|hetero), roh(N)(a-bMb),
+    loh/dup/del(N)(a-bMb) with mat/pat. Each mosaic event forms its own line relative to the base complement, with its cell
+    fraction in brackets: mos 47,XXY(pat)[0.40]/46,XY. A term ending in ? is a call the phased track doubts."""
+    comp = complement or "?"
+    events = sorted(events, key=lambda e: (chrom_order.get(e.chrom, 99), e.start))
+    is_mos = lambda e: np.isfinite(e.f) and e.f < 0.9  # noqa: E731
+    autosomal_whole = lambda e: e.chrom not in ("chrX", "chrY") and e.span == "whole" and e.type in ("gain", "loss")  # noqa: E731
+    # the modal number: the complement, plus the constitutional whole-chromosome gains and losses (every line carries them)
+    modal = (44 + len(comp) if complement else 46) + sum((1 if e.type == "gain" else -1) for e in events if autosomal_whole(e) and not is_mos(e))
+    const, mosaic, ann = [], [], ""
+    for e in events:
+        mos = is_mos(e)
+        doubt = "?" if "may be an artefact" in e.note else ""
+        n = e.chrom[3:]
+        o, stg = _short_origin(e), _short_stage(e.stage)
+        if e.chrom in ("chrX", "chrY") and e.span == "whole":
+            a = ",".join(x for x in (o, stg) if x)
+            if not mos:
+                ann = "(%s)" % a if a else ""
+                continue
+            comp2, m2 = comp, modal
+            if complement:
+                comp2 = (comp + n) if e.type == "gain" else comp.replace(n, "", 1)
+                comp2 = "X" * comp2.count("X") + "Y" * comp2.count("Y")
+                m2 = modal + len(comp2) - len(comp)
+            mosaic.append(("%d,%s%s%s" % (m2, comp2, "(%s)" % a if a else "", doubt), e.f))
+            continue
+        if e.type == "UPD" or (e.type == "LOH" and e.span == "whole" and "isodisomy" in e.note):
+            term = "upd(%s)%s(%s)" % (n, o, "hetero" if e.type == "UPD" else "iso")
+        elif e.type == "LOH" and "run of homozygosity" in e.note:
+            term = "roh(%s)(%s)" % (n, _coords(e))
+        elif e.type == "LOH":
+            term = "loh(%s)(%s)%s" % (n, _coords(e), o)
+        elif e.span == "whole":
+            term = "%s%s%s%s" % ("+" if e.type == "gain" else "-", n, o, "(%s)" % stg if stg else "")
+        else:
+            term = "%s(%s)(%s)%s" % ("dup" if e.type == "gain" else "del", n, _coords(e), o)
+        term += doubt
+        if mos:
+            m2 = modal + (1 if (autosomal_whole(e) and e.type == "gain") else -1 if autosomal_whole(e) else 0)
+            mosaic.append(("%d,%s,%s" % (m2, comp, term), e.f))
+        else:
+            const.append(term)
+    main = "%d,%s%s" % (modal, comp, ann) + ("," + ",".join(const) if const else "")
+    if mosaic:
+        return "mos " + "/".join("%s[%.2f]" % (line, f) for line, f in mosaic) + "/" + main
+    return main

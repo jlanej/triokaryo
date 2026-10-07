@@ -53,3 +53,61 @@ def test_panel_y_rows_are_read_on_the_diploid_scale(tmp_path):
         p.write_text("\n".join(rows) + "\n")
         pan = load_panel(str(p))
         assert abs(pan[("chr1", 0)][1] - 0.01) < 1e-9 and abs(pan[("chrY", 3_000_000)][1] - expect) < 1e-9, (level, pan[("chrY", 3_000_000)])
+
+
+def test_karyotype_string_grammar():
+    """The ISCN-like string: modal number with the complement, constitutional terms in chromosome order, each mosaic event its own
+    line with its cell fraction, the parent of origin and the meiotic stage abbreviated."""
+    from triokaryo.genome import genome
+    from triokaryo.segment import Event
+    from triokaryo.sexchrom import karyotype_string
+    G = genome()
+    order = {c: i for i, c in enumerate(G.chroms)}
+    L = G.length
+    ev = [Event("K", "child", "chr21", 0, L["chr21"], "whole", "gain", f_lrr=1.0, origin_phase="extra copy maternal", stage="meiosis I"),
+          Event("K", "child", "chr12", 0, L["chr12"], "whole", "gain", f_lrr=0.3, origin_phase="extra copy paternal", stage="mitotic, or meiosis II without a crossover"),
+          Event("K", "child", "chr7", 0, L["chr7"], "whole", "LOH", f_baf=1.0, origin="maternal copy retained (paternal replaced)", note="Mendelian errors at the informative sites: a uniparental isodisomy"),
+          Event("K", "child", "chr15", 0, L["chr15"], "whole", "UPD", f_baf=1.0, origin_phase="both copies maternal (heterodisomy)"),
+          Event("K", "child", "chr18", 55_000_000, L["chr18"], "stretch", "loss", f_lrr=1.0, origin="paternal copy lost"),
+          Event("K", "child", "chr6", 0, 59_800_000, "p", "LOH", f_baf=0.4, origin="maternal copy retained (paternal replaced)"),
+          Event("K", "child", "chr1", 0, 5_000_000, "stretch", "gain", f_lrr=0.12, note="the phased bands read a share of 4% against the depth's 12%: the depth's call may be an artefact"),
+          Event("K", "child", "chrX", 0, L["chrX"], "whole", "gain", f_lrr=1.0, origin_phase="extra copy maternal", stage="meiosis I")]
+    s = karyotype_string(ev, "XXY", order)
+    assert s == ("mos 48,XXY,dup(1)(0.0-5.0Mb)?[0.12]/48,XXY,loh(6)(p:0.0-59.8Mb)mat[0.40]/49,XXY,+12pat(MII/mit)[0.30]"
+                 "/48,XXY(mat,MI),upd(7)mat(iso),upd(15)mat(hetero),del(18)(55.0-80.4Mb)pat,+21mat(MI)"), s
+    assert karyotype_string([], "XX", order) == "46,XX" and karyotype_string([], "", order) == "46,?"
+    assert karyotype_string([Event("M", "mother", "chrX", 0, L["chrX"], "whole", "loss", f_lrr=0.4)], "XX", order) == "mos 45,X[0.40]/46,XX"
+    assert karyotype_string([Event("D", "father", "chrY", 0, L["chrY"], "whole", "loss", f_lrr=0.3)], "XY", order) == "mos 45,X[0.30]/46,XY"
+    assert karyotype_string([Event("K", "child", "chrX", 0, L["chrX"], "whole", "gain", f_lrr=0.4, origin_phase="extra copy paternal", stage="meiosis I (paternal: X and Y transmitted together)")],
+                            "XY", order) == "mos 47,XXY(pat,MI)[0.40]/46,XY"
+
+
+def test_daughter_xxx_and_turner(tmp_path):
+    """A 47,XXX from a maternal meiosis I error (both maternal homologues: heterodisomic at the centromere), a paternal 47,XXX (the
+    father's single X twice: isodisomic, staged meiosis II or post-zygotic) and a 45,X with the paternal X lost, each with the
+    complement, its check against the pedigree sex and the karyotype string; no other event called."""
+    from triokaryo.mock import DAUGHTER_TURNER, DAUGHTER_XXX_PATERNAL
+    for name, kw, expect in (("xxx_mat", dict(no_events=True, xxx=True), ("gain", "XXX", "extra copy maternal", "meiosis I", "heterodisomic", "47,XXX(mat,MI)")),
+                             ("xxx_pat", dict(events=DAUGHTER_XXX_PATERNAL), ("gain", "XXX", "extra copy paternal", "meiosis II, or post-zygotic", "isodisomic", "47,XXX(pat,MII)")),
+                             ("turner", dict(events=DAUGHTER_TURNER), ("loss", "X", "paternal copy lost", "", "", "45,X(pat)"))):
+        m = write_mock(str(tmp_path / name), seed=7, child_sex="F", **kw)
+        trio = read_trios(m["trios"])[0]
+        assert trio.kid_sex == "F"
+        res = run_trio(m["vcf"], trio, str(tmp_path / (name + "_out")), gc_track=m["gc"], figures=False, log=lambda s: None)
+        kind, comp, origin, stage, centro, kar = expect
+        (e,) = res["events"]
+        s = res["summary"]
+        assert e.sample == "KID" and e.chrom == "chrX" and e.type == kind and e.span == "whole" and abs(e.f - 1.0) < 0.1, (name, e.type, e.f)
+        assert e.origin == origin and e.origin_phase == origin and e.stage.startswith(stage) and e.centromere == centro, (name, e.origin, e.origin_phase, e.stage, e.centromere)
+        assert s["child_sex_karyotype"] == comp and s["child_sex_check"].startswith("%s in a reported female" % comp) and s["child_karyotype"] == kar, (name, s["child_sex_check"], s["child_karyotype"])
+        assert s["child_y_copies"] == 0 and abs(e.f_phase - 1.0) < 0.1
+
+
+def test_whole_x_event_without_pedigree_sex(tmp_path):
+    """With no pedigree sex, the Y implies the sex: a 47,XXY son is still a whole-X gain against one expected copy."""
+    from triokaryo.pedigree import trio_from_args
+    m = write_mock(str(tmp_path / "xxy"), seed=5, no_events=True, xxy=True)
+    res = run_trio(m["vcf"], trio_from_args("KID", "DAD", "MOM"), str(tmp_path / "out"), gc_track=m["gc"], figures=False, log=lambda s: None)
+    (e,) = res["events"]
+    assert e.chrom == "chrX" and e.type == "gain" and abs(e.f - 1.0) < 0.1 and "implied by the Y" in e.note and e.origin == "extra copy maternal" and e.stage == "meiosis I"
+    assert res["summary"]["child_sex_check"] == "" and res["summary"]["child_sex_karyotype"] == "XXY" and res["summary"]["child_karyotype"] == "47,XXY(mat,MI)"

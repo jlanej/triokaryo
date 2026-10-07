@@ -408,5 +408,10 @@
  "y_father_son": {
   "log2": NaN,
   "sites": 0
+ },
+ "karyotypes": {
+  "child": "mos 47,XY,dup(1)(0.0-3.8Mb)mat?[0.12]/47,XY,+12pat(MII/mit)",
+  "father": "mos 46,XY,dup(13)(87.6-114.4Mb)[0.69]/46,XY,del(21)(42.6-46.7Mb)[0.59]/46,XY",
+  "mother": "46,XX"
  }
 }

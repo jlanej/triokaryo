@@ -93,7 +93,7 @@ def cmd_mock(a):
         from .mock import SEX_EVENTS
         events = (events or []) + SEX_EVENTS
     paths = write_mock(a.out, seed=a.seed, sites_per_mb=a.sites_per_mb, no_events=a.no_events, xxy=a.xxy, prefix=a.prefix, events=events,
-                       contigs=a.contigs.split(",") if a.contigs else None)
+                       contigs=a.contigs.split(",") if a.contigs else None, child_sex=a.child_sex, xxx=a.xxx)
     _log("mock trio -> %s" % paths["vcf"])
     return 0
 
@@ -172,7 +172,9 @@ def main(argv=None):
     m.add_argument("--seed", type=int, default=1)
     m.add_argument("--sites-per-mb", type=int, default=60)
     m.add_argument("--no-events", action="store_true")
-    m.add_argument("--xxy", action="store_true", help="a 47,XXY child (male with two X copies)")
+    m.add_argument("--child-sex", default="M", choices=["M", "F"], help="the child's sex (default M)")
+    m.add_argument("--xxy", action="store_true", help="a 47,XXY son with both maternal X homologues (a maternal meiosis I error)")
+    m.add_argument("--xxx", action="store_true", help="a 47,XXX daughter with both maternal X homologues and the paternal X (a maternal meiosis I error); with --child-sex F")
     m.add_argument("--prefix", default="", help="prefix for the sample names KID, DAD, MOM (several simulated trios in one cohort)")
     m.add_argument("--contigs", default="", help="restrict to these chromosomes, comma-separated (a small dense simulation)")
     m.add_argument("--low-share", action="store_true", help="plant the low-cell-fraction events (below the depth threshold) instead of the default set")

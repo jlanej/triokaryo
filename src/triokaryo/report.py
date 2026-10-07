@@ -37,7 +37,21 @@ PHASED_COLS = ("role", "chrom", "start", "end", "mid", "n_sites", "depth", "frac
                "aux_mother_hom", "aux_mother_hom_sites", "aux_father_hom", "aux_father_hom_sites", "aux_child_het", "aux_child_het_sites")
 
 
-def write_tables(out, trio, bins, events, x_copies, scan, base_mie, params, tracks=None, phase_info=None, rejected=None, sex_info=None):
+def karyotypes_of(events, summ, genome):
+    """Each member's ISCN-like karyotype string from its events and the complement in the summary (X copies alone when the
+    complement is missing, as in older runs)."""
+    from .sexchrom import karyotype_string
+    order = {c: i for i, c in enumerate(genome.chroms)}
+    out = {}
+    for role in MEMBERS:
+        comp = summ.get("%s_sex_karyotype" % role) or ""
+        if not comp and _finite(summ.get("%s_x_copies" % role)):
+            comp = "X" * int(float(summ["%s_x_copies" % role]))
+        out[role] = karyotype_string([e for e in events if e.role == role], comp, order)
+    return out
+
+
+def write_tables(out, trio, bins, events, x_copies, scan, base_mie, params, tracks=None, phase_info=None, rejected=None, sex_info=None, genome=None):
     os.makedirs(out, exist_ok=True)
     if rejected is not None:
         write_tsv(os.path.join(out, "phased_rejected.tsv"), ["sample", "role", "chrom", "start", "end", "shift", "windows", "reason"], rejected)
@@ -106,6 +120,9 @@ def write_tables(out, trio, bins, events, x_copies, scan, base_mie, params, trac
         summ["y_father_son_log2"] = sex_info.get("y_father_son_log2", NA)
         summ["y_father_son_sites"] = sex_info.get("y_father_son_sites", 0)
         summ["y_panel"] = bool(sex_info.get("y_panel", False))
+    if genome is not None:
+        for role, k in karyotypes_of(events, summ, genome).items():
+            summ["%s_karyotype" % role] = k
     summ.update({"param_" + k: v for k, v in params.items()})
     write_tsv(os.path.join(out, "summary.tsv"), list(summ.keys()), [summ])
     return summ
@@ -136,12 +153,15 @@ CSS = ("html{background:#fff;color-scheme:light}body{font-family:Helvetica,Arial
        "figcaption{font-size:12px;color:#444}.key{font-size:11px;color:#555}h2{margin-top:1.5em}.mock{background:#fff3cd;padding:0.5em;border:1px solid #e0c060}")
 
 
-def write_html(out, trio, figs, events, summ, external, mock_note=""):
+def write_html(out, trio, figs, events, summ, external, mock_note="", genome=None):
     w = []
     w.append('<!doctype html><html><head><meta charset="utf-8"><title>triokaryo %s</title><style>%s</style></head><body>' % (html.escape(trio.name), CSS))
     if mock_note:
         w.append('<div class="mock">%s</div>' % html.escape(mock_note))
     w.append("<h1>Trio %s: large chromosomal events from the VCF</h1>" % html.escape(trio.name))
+    if genome is not None:
+        kar = karyotypes_of(events, summ, genome)
+        w.append("<p><b>Karyotype.</b> %s.</p>" % "; ".join("%s <code>%s</code>" % (role, html.escape(kar[role])) for role in MEMBERS))
     w.append("<p>child %s (%s), father %s (%s), mother %s (%s). %s sites used of %s records (%s). Genome-wide Mendelian-error rate %s.</p>" % tuple(
         html.escape(str(v)) for v in (trio.kid, trio.kid_sex or "sex not given", trio.dad, trio.dad_sex or "?", trio.mom, trio.mom_sex or "?", summ["sites_used"],
                                       summ["records"], summ["skipped"], fmt(summ["mie_rate_genome"], 3))))
@@ -289,7 +309,7 @@ def rebuild_run(run_dir, log=None):
             write_sidecar(fdir, n, title, caption, keys)
             write_legend(fdir, n, keys)
             figs.append(dict(name=n, title=title, caption=caption, keys=keys, png=os.path.join(fdir, n + ".png")))
-    write_html(run_dir, trio, figs, events, summ, external, summary.get("mock_note", ""))
+    write_html(run_dir, trio, figs, events, summ, external, summary.get("mock_note", ""), genome=G)
     write_guide(os.path.join(run_dir, "guide.html"))
     if log:
         log("%s: page, %d figure sidecars and legends, guide rebuilt" % (run_dir, len(figs)))
@@ -364,14 +384,16 @@ def write_cohort(out, run_dirs, events_path=None, genome_name="grch38", log=None
                   [dict(sample=x.sample, chrom=x.chrom, start=x.start, end=x.end, label=x.note, match=x.inheritance) for x in ext])
     # per trio
     scols = ["trio", "members", "sexes", "sites_used", "records", "mie_rate_genome", "x_copies", "sex_karyotypes", "child_sex_check", "father_sex_check", "mother_sex_check",
-             "y_father_son_log2", "child_depth", "father_depth", "mother_depth", "child_phased_sites", "father_phased_sites", "mother_phased_sites", "windows_shared", "rejected",
-             "n_events", "n_flagged", "seconds", "run"]
+             "child_karyotype", "father_karyotype", "mother_karyotype", "y_father_son_log2", "child_depth", "father_depth", "mother_depth", "child_phased_sites",
+             "father_phased_sites", "mother_phased_sites", "windows_shared", "rejected", "n_events", "n_flagged", "seconds", "run"]
     srows = []
     for s in summaries:
         t = s["tsv"]
         chk = {r: t.get("%s_sex_check" % r) or t.get("%s_x_check" % r, "") for r in MEMBERS}
+        kar = karyotypes_of(s["events_obj"], t, G)
         srows.append(dict(trio=s["trio"], members=",".join(s["members"]), sexes=",".join(s.get("sexes") or []), sites_used=s["sites_used"], records=s["records"],
                           mie_rate_genome=s["mie_rate_genome"], x_copies=json.dumps(s["x_copies"]),
+                          child_karyotype=kar["child"], father_karyotype=kar["father"], mother_karyotype=kar["mother"],
                           sex_karyotypes=",".join(t.get("%s_sex_karyotype" % r) or ("X" * int(float(t["%s_x_copies" % r])) if _finite(t.get("%s_x_copies" % r)) else "?") for r in MEMBERS),
                           child_sex_check=chk["child"], father_sex_check=chk["father"], mother_sex_check=chk["mother"], y_father_son_log2=t.get("y_father_son_log2", "NA"),
                           child_depth=t.get("child_depth", "NA"), father_depth=t.get("father_depth", "NA"), mother_depth=t.get("mother_depth", "NA"),
@@ -436,14 +458,14 @@ def write_cohort(out, run_dirs, events_path=None, genome_name="grch38", log=None
                 html.escape(page), html.escape(figp), html.escape(e.chrom)))
     w.append("</tbody></table>")
     w.append("<h2>Trios</h2><table class=\"sortable\"><thead><tr>" + "".join("<th>%s</th>" % h for h in (
-        "trio", "members", "sexes", "events", "flagged", "sex chromosomes (child, father, mother)", "against the pedigree sex", "Y father/son (log2)", "MIE rate", "sites",
-        "depth (child, father, mother)", "phased sites (child)", "rejected", "page")) + "</tr></thead><tbody>")
+        "trio", "members", "sexes", "events", "flagged", "karyotype (child)", "sex chromosomes (child, father, mother)", "against the pedigree sex", "Y father/son (log2)",
+        "MIE rate", "sites", "depth (child, father, mother)", "phased sites (child)", "rejected", "page")) + "</tr></thead><tbody>")
     for s, r in zip(summaries, srows):
         xchk = "; ".join("%s: %s" % (m, r["%s_sex_check" % m]) for m in MEMBERS if r["%s_sex_check" % m] not in ("", "agrees", "agrees (Y not in the VCF)")) or "agrees"
         w.append("<tr>" + "".join("<td>%s</td>" % html.escape(str(c)) for c in (
-            s["trio"], ", ".join(s["members"]), ",".join(s.get("sexes") or []), r["n_events"], r["n_flagged"], r["sex_karyotypes"].replace(",", ", "), xchk, r["y_father_son_log2"],
-            fmt(s["mie_rate_genome"], 3), s["sites_used"], "%s, %s, %s" % (r["child_depth"], r["father_depth"], r["mother_depth"]), r["child_phased_sites"], r["rejected"])) +
-                 '<td><a href="%s">page</a></td></tr>' % html.escape(os.path.relpath(os.path.join(s["run"], "index.html"), out)))
+            s["trio"], ", ".join(s["members"]), ",".join(s.get("sexes") or []), r["n_events"], r["n_flagged"], r["child_karyotype"], r["sex_karyotypes"].replace(",", ", "), xchk,
+            r["y_father_son_log2"], fmt(s["mie_rate_genome"], 3), s["sites_used"], "%s, %s, %s" % (r["child_depth"], r["father_depth"], r["mother_depth"]), r["child_phased_sites"],
+            r["rejected"])) + '<td><a href="%s">page</a></td></tr>' % html.escape(os.path.relpath(os.path.join(s["run"], "index.html"), out)))
     w.append("</tbody></table>")
     if conc:
         w.append("<h2>Concordance with the supplied events</h2><p>%d supplied events, %d matched by a triokaryo event of the same sample and chromosome whose "

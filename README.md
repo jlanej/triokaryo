@@ -133,9 +133,12 @@ complement the pedigree sex implies, a whole-X or whole-Y deviation of 10% or mo
 cell fraction: 47,XXY and 46,XY/47,XXY mosaics, 45,X and 45,X/46,XX mosaics, 47,XXX, 47,XYY, and mosaic loss of Y, the
 latter from the panel-corrected Y level or, without a panel, from the father/son Y depth ratio (the two Y chromosomes
 are the same sequence, so mapping cancels). These events receive the parent of origin and, for a child's X, the
-meiotic stage: a paternal extra X in a male is a paternal meiosis I error, a maternal one is staged from the
-centromere like an autosomal trisomy. Segmental X events are called relative to the member's own X level. A male's
-X uses a hemizygous baseline for the parent-of-origin likelihood and for Mendelian errors.
+meiotic stage: a paternal extra X in a male is a paternal meiosis I error, a paternal extra X in a female is the
+father's single X twice (meiosis II or post-zygotic), and a maternal extra X is staged from the centromere like an
+autosomal trisomy. Segmental X events are called relative to the member's own X level. A male's X uses a hemizygous
+baseline for the parent-of-origin likelihood and for Mendelian errors. Without a pedigree sex, the Y implies it. Each
+member also receives an ISCN-like karyotype string, e.g. `47,XXY(mat,MI)`, `mos 47,XXY(pat)[0.40]/46,XY`,
+`47,XY,+21mat(MI)`, `mos 46,XX,del(2)(140.7-173.2Mb)pat[0.67]/46,XX`.
 
 **Parent of origin** is estimated twice. (i) At informative sites (parents opposite homozygotes), the child's alt
 read count is modelled as binomial with a success probability determined by the event type, *f*, and which parent
@@ -159,9 +162,9 @@ none.
   auxiliary tracks); `phased_rejected.tsv`: segments the phased scan rejected, with the reason.
 - `bins.tsv`: per bin, GC, the panel's values and masks, and per member depth, LRR, corrected LRR, call counts,
   heterozygosity rate and band deviation; the within-trio depth tracks.
-- `summary.tsv`, `summary.json`: the trio, the sites used, each member's X and Y copy numbers and sex-chromosome
-  complement with the check against the pedigree sex, the father/son Y depth ratio, the genome-wide Mendelian-error
-  rate, event counts, parameters.
+- `summary.tsv`, `summary.json`: the trio, the sites used, each member's X and Y copy numbers, sex-chromosome
+  complement with the check against the pedigree sex, and karyotype string, the father/son Y depth ratio, the
+  genome-wide Mendelian-error rate, event counts, parameters.
 - `external.tsv`: the supplied events (`--events`) and whether each was matched.
 - `guide.html`: how to read every figure row, colour, call and column, with pattern cards of each event type (also
   `triokaryo guide --out`).

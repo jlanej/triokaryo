@@ -68,6 +68,15 @@ def test_sex_chromosomes_and_sex_check(run, mock):
     assert abs(s["child_x_copies_raw"] - 1) < 0.1 and abs(s["mother_x_copies_raw"] - 2) < 0.1 and abs(s["father_y_copies_raw"] - 1) < 0.12 and s["mother_y_copies_raw"] == 0
     assert abs(s["y_father_son_log2"]) < 0.1 and s["y_father_son_sites"] > 500
     assert not [e for e in run["events"] if e.chrom in ("chrX", "chrY")]
+    # the karyotype string: the constitutional events in the main line, each mosaic its own line
+    import re
+    k = s["child_karyotype"]
+    main = k.split("/")[-1]
+    assert k.startswith("mos ") and main.startswith("47,XY,") and main.endswith(",+21mat(MI)"), k            # one constitutional whole-chromosome gain
+    assert re.search(r"del\(2\)\(100\.\d-10[56]\.\dMb\)pat,upd\(7\)mat\(iso\),dup\(10\)\(q:\d+\.\d-133\.8Mb\)pat,upd\(15\)mat\(hetero\),del\(18\)\(55\.\d-80\.4Mb\)pat", main), main
+    assert "/48,XY,+12pat(MII/mit)[0.30]/" in k and re.search(r"47,XY,loh\(6\)\(p:0\.0-59\.\dMb\)mat\[0\.[34]\d\]", k), k
+    assert re.fullmatch(r"46,XY,del\(2\)\(100\.\d-10[56]\.\dMb\),dup\(10\)\(q:\d+\.\d-133\.8Mb\)", s["father_karyotype"]), s["father_karyotype"]
+    assert re.fullmatch(r"mos 47,XX,\+8\[0\.1\d\]/46,XX", s["mother_karyotype"]), s["mother_karyotype"]
 
 
 def test_external_events_matched(run):

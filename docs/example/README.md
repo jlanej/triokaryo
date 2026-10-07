@@ -25,6 +25,7 @@ these runs.
 | HG01103 | not reported | loss of 14q 35–41 Mb, f = 0.64 (0.62 by both allelic estimates), paternal copy. DRAGEN: CN 1 in two segments over 35.3–41.2 Mb |
 | HG01103, HG01101, HG01102 | | five homozygous segments of 5 to 15 Mb (the child's 10p; the father's 11p, pericentromeric 11 and 17q; the mother's 7q) classified as **runs of homozygosity**: heterozygosity rate ≤ 0.09 of the member's own, no excess of Mendelian errors, few phased sites. Not uniparental disomies |
 | HG01101 | | two gains by depth (9q34 f = 0.10, 19p13 f = 0.14) that the phased track puts at 0.01–0.03: flagged |
+| the two children | | karyotype strings `mos 47,XY,dup(1)(0.0-3.8Mb)mat?[0.12]/47,XY,+12pat(MII/mit)` (NA12739) and `mos 46,XX,del(2)(140.7-173.2Mb)pat[0.67]/46,XX,del(2)(173.0-179.6Mb)pat[0.31]/46,XX,del(14)(35.3-41.1Mb)pat[0.64]/46,XX,roh(10)(23.7-34.2Mb)` (HG01103); the `?` marks the doubted depth call |
 | all six members | | sex-chromosome complements XY, XY, XX (NA12739 trio) and XX, XY, XX (HG01103 trio), all agreeing with the pedigree; the males' Y reads 0.98–1.02 copies against the panel's male Y level and the females' 0; no whole-X or whole-Y event (X copy numbers 1.00, 1.00, 1.94 and 1.98, 1.00, 1.97) |
 
 The pages: [`NA12739/index.html`](NA12739/index.html), [`HG01103/index.html`](HG01103/index.html), and the cohort

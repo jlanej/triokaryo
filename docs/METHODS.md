@@ -115,8 +115,13 @@ the maternal fraction at informative sites stays at 1 (p = 1 or 0 in the likelih
 and the cell fraction is not readable from the bands) and paternal when it falls to 1/(1 + f) (p = 1/(1+f) or
 f/(1+f); the phased shift is (1 − f)/(2(1 + f)), so f_phase = (1 − 2s)/(1 + 2s)); a paternal extra X implies a
 paternal meiosis I error (X and Y transmitted together), a maternal one is staged like an autosomal trisomy, with
-windows lacking the auxiliary track counted as isodisomic. A male's X loss has no parent to resolve (the single X is
-maternal). Mendelian errors on the X of a child with one X follow the hemizygous rules (a heterozygous call, or an
+windows lacking the auxiliary track counted as isodisomic (where the two maternal copies differ at cell fraction f, the
+auxiliary track reads 1/(1 + f) or f/(1 + f), so the two-homologue criterion widens with 1/(1 + f) − 1/2; below a cell
+fraction of about 0.3 the child's heterozygous calls thin out and the stage is unreliable). A male's X loss has no
+parent to resolve (the single X is maternal). In a daughter, a paternal extra X (47,XXX or a mosaic) is necessarily the
+father's single X twice, so its two copies are one homologue and the stage is meiosis II or post-zygotic; a maternal
+extra X is staged from the centromere like an autosomal trisomy. Without a pedigree sex, the Y copy number implies the
+sex (a Y present: male) and the whole-chromosome events are read against that complement, with a note. Mendelian errors on the X of a child with one X follow the hemizygous rules (a heterozygous call, or an
 allele the mother does not carry); with two X copies the autosomal rules apply, under which a child carrying only
 maternal alleles at informative sites, as in a maternal 47,XXY, shows the errors of a uniparental disomy. In the
 mother's phased track on the X of a son, sites where the father's allele differs from the son's are kept, since the
@@ -203,6 +208,20 @@ the same track, and the note says so); or **UPD** (uniparental heterodisomy) whe
 heterozygosity rate is ≥ 0.5 of the member's own, since the child is then homozygous for one parent's allele at every
 informative site yet heterozygous wherever that parent is, a state that depth, folded BAF and heterozygosity rate all
 miss. Segments failing the span or consistency criteria are written to `phased_rejected.tsv` with the reason.
+
+## Karyotype string
+
+Each member receives an ISCN-like summary (`karyotype` in the summary and on the pages). The main line is the modal
+number (44 plus the complement, plus constitutional whole-chromosome gains and minus losses) and the sex-chromosome
+complement, annotated for a constitutional sex-chromosome aneuploidy with the parent of the extra or lost copy and the
+meiotic stage, e.g. `47,XXY(mat,MI)`, `47,XXX(pat,MII)`, `45,X(pat)`; then the constitutional autosomal terms in
+chromosome order: `+21mat(MI)`, `-18`, `upd(7)mat(iso)`, `upd(15)mat(hetero)`, `roh(10)(23.7-34.2Mb)`,
+`loh(6)(p:0.0-59.8Mb)mat`, `dup(13)(q:87.6-114.4Mb)`, `del(2)(140.7-173.2Mb)pat` (coordinates at site resolution
+where available, else bin edges). Each mosaic event (cell fraction under 0.9) forms its own line relative to the base
+complement with its cell fraction in brackets, e.g. `mos 47,XXY(pat)[0.40]/46,XY`, `mos 45,X[0.30]/46,XY` for a mosaic
+loss of Y, `mos 47,XY,+12pat(MII/mit)[0.30]/46,XY`; a mosaic line carries the modal number of the constitutional
+karyotype but lists only its own term. `mat`/`pat` name the parent of the extra, lost or retained copy; `MI`, `MII`
+and `MII/mit` abbreviate the stage; a term ending in `?` is a depth call the phased track doubts.
 
 ## Parent of origin from informative sites
 

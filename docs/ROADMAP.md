@@ -17,6 +17,9 @@ ordered by expected value; "done" items are kept for the record with the commit 
   whole-Y events with cell fraction (47,XXY, 45,X, mosaics, loss of Y from the panel or the father/son Y ratio), a
   hemizygous baseline for a male's X in the parent-of-origin likelihood, the phased reading and the Mendelian rules, the
   X phased scan gated by measured X copies, Y sites in the simulation, and the panel's Y rows on the diploid scale.
+- 47,XXX (maternal, staged from the centromere; paternal, the father's single X twice), 45,X, a cell-fraction-aware
+  two-homologue criterion for mosaic maternal XXY, the sex implied by the Y when the pedigree lacks it, and an ISCN-like
+  karyotype string per member.
 
 ## Method
 
@@ -52,15 +55,12 @@ ordered by expected value; "done" items are kept for the record with the commit 
   time. Rebuild it from the twelve VCFs when they are next available, ideally with more males (five contribute now).
 - **Mosaic loss of Y in daughters' fathers.** Without a son the father/son ratio is unavailable and, without a panel,
   a loss of Y needs a 25% deviation; a male-only Y panel built from the cohort's fathers would resolve it.
-- **X parent of origin without pedigree sex.** Whole-X events need the pedigree sex; the complement itself could
-  stand in (XY from the depth implies the hemizygous baseline).
 - **X inactivation and PAR.** The pseudoautosomal regions are excluded throughout; PAR1 could be analysed as autosomal
   (both parents contribute).
 
 ## Outputs and usability
 
-- **Karyotype string per trio** in ISCN-like form (e.g. `47,XY,+12 pat`, `mos 46,XY,del(2)(q22q31)[0.67]`), and a
-  standard CNV export (BED or VCF) for downstream tools.
+- **Standard CNV export** (BED or VCF) for downstream tools; cytoband names in the karyotype string from a band table.
 - **Crossover map table** per meiotic event: the `crossovers` column lists positions; a dedicated table with the parent,
   the resolving auxiliary track and the state on each side would make them queryable, and a crossover track could be
   drawn on the chromosome figure.

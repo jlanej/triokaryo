@@ -56,6 +56,10 @@ SEX_EVENTS = [
     dict(member=MOM, chrom="chrX", start=0, end=None, f=0.40, delta={"h0": -1}, label="mosaic 45,X/46,XX in the mother (40% of cells)", type="loss", origin="", inherited=False),
     dict(member=KID, chrom="chrX", start=0, end=None, f=0.40, delta={"pat": +1}, label="mosaic 46,XY/47,XXY in the son (40% of cells), the extra X paternal", type="gain", origin="extra copy paternal", inherited=False),
 ]
+# a daughter's sex-chromosome aneuploidies (triokaryo mock --child-sex F ...): a paternal 47,XXX (the father's single X twice: isodisomic, a
+# meiosis II or post-zygotic error) and a 45,X with the paternal X lost; the maternal meiosis I 47,XXX is `--xxx`
+DAUGHTER_XXX_PATERNAL = [dict(member=KID, chrom="chrX", start=0, end=None, f=1.0, delta={"pat": +1}, label="47,XXX, the extra X paternal (the father's single X twice)", type="gain", origin="extra copy paternal", inherited=False)]
+DAUGHTER_TURNER = [dict(member=KID, chrom="chrX", start=0, end=None, f=1.0, delta={"pat": -1}, label="45,X, the paternal X lost", type="loss", origin="paternal copy lost", inherited=False)]
 GC_CHROM = {"chr1": 0.0, "chr4": -0.03, "chr13": -0.025, "chr16": 0.03, "chr17": 0.04, "chr19": 0.07, "chr20": 0.02, "chr22": 0.06, "chrX": -0.02}
 
 
@@ -69,11 +73,14 @@ def _gt(alt, dp):
 
 
 def write_mock(out_dir, seed=1, sites_per_mb=60, no_events=False, xxy=False, depth=(30.0, 32.0, 28.0), gc_beta=(-0.8, -0.5, -1.0), bin_size=1_000_000,
-               events=None, prefix="", contigs=None):
+               events=None, prefix="", contigs=None, child_sex="M", xxx=False):
     """prefix: a tag before the sample names (KID, DAD, MOM), so that several mock trios can sit in one cohort.
-    contigs: only these chromosomes (a dense small mock), else all."""
+    contigs: only these chromosomes (a dense small mock), else all. child_sex: M (one maternal X, the father's Y) or F (one X
+    from each parent, no Y). xxy: a son with both maternal X homologues (a maternal meiosis I 47,XXY); xxx: a daughter with
+    both maternal X homologues and the paternal X (a maternal meiosis I 47,XXX)."""
     os.makedirs(out_dir, exist_ok=True)
     nm = {KID: prefix + KID, DAD: prefix + DAD, MOM: prefix + MOM}
+    son = child_sex.upper().startswith("M")
     rng = np.random.default_rng(seed)
     G = load_genome("grch38")
     events = [] if no_events else list(DEFAULT_EVENTS if events is None else events)
@@ -93,7 +100,8 @@ def write_mock(out_dir, seed=1, sites_per_mb=60, no_events=False, xxy=False, dep
                 g = float(np.clip(0.41 + GC_CHROM.get(c, 0.0) + rng.normal(0, 0.035), 0.3, 0.62))
                 gc[(c, s)] = g
                 fh.write("%s\t%d\t%d\t%.4f\n" % (c, s, min(s + bin_size, L), g))
-    truth = dict(seed=seed, samples=[nm[KID], nm[DAD], nm[MOM]], sexes=["M", "M", "F"], xxy=bool(xxy), events=[], transmitted_paternal=tp, transmitted_maternal=tm)
+    truth = dict(seed=seed, samples=[nm[KID], nm[DAD], nm[MOM]], sexes=["M" if son else "F", "M", "F"], xxy=bool(xxy), xxx=bool(xxx), events=[],
+                 transmitted_paternal=tp, transmitted_maternal=tm)
     vcf_txt = os.path.join(out_dir, "mock.vcf")
     with open(vcf_txt, "w") as fh:
         fh.write("##fileformat=VCFv4.2\n##source=triokaryo mock (no real data)\n")
@@ -124,10 +132,10 @@ def write_mock(out_dir, seed=1, sites_per_mb=60, no_events=False, xxy=False, dep
             # the Y: the father's one Y, inherited by the son as the same sequence; the mother none
             base = {KID: {"pat": 1, "mat": 1}, DAD: {"h0": 1, "h1": 1}, MOM: {"h0": 1, "h1": 1}}
             if c == "chrX":
-                base[KID] = {"mat": 1, "mat_other": 1} if xxy else {"mat": 1}
+                base[KID] = ({"mat": 1, "mat_other": 1} if xxy else {"mat": 1}) if son else ({"mat": 1, "mat_other": 1, "pat": 1} if xxx else {"mat": 1, "pat": 1})
                 base[DAD] = {"h0": 1}
             if c == "chrY":
-                base = {KID: {"pat_y": 1}, DAD: {"h0": 1}, MOM: {}}
+                base = {KID: {"pat_y": 1} if son else {}, DAD: {"h0": 1}, MOM: {}}
             alleles = {KID: dict(hom, pat_y=d0), DAD: {"h0": d0, "h1": d1}, MOM: {"h0": m0, "h1": m1}}
             gcs = np.array([gc[(c, int(x // bin_size) * bin_size)] for x in pos])
             cols = {}
@@ -181,12 +189,12 @@ def write_mock(out_dir, seed=1, sites_per_mb=60, no_events=False, xxy=False, dep
     for ev in events:
         truth["events"].append(dict(sample=nm[ev["member"]], chrom=ev["chrom"], start=ev["start"], end=ev["end"] if ev["end"] is not None else G.length[ev["chrom"]],
                                     f=ev["f"], type=ev["type"], label=ev["label"], origin=ev["origin"], inherited=ev["inherited"]))
-    truth["x_copies"] = {nm[KID]: 2 if xxy else 1, nm[DAD]: 1, nm[MOM]: 2}
-    truth["y_copies"] = {nm[KID]: 1, nm[DAD]: 1, nm[MOM]: 0}
+    truth["x_copies"] = {nm[KID]: (2 if xxy else 1) if son else (3 if xxx else 2), nm[DAD]: 1, nm[MOM]: 2}
+    truth["y_copies"] = {nm[KID]: 1 if son else 0, nm[DAD]: 1, nm[MOM]: 0}
     with open(os.path.join(out_dir, "truth.json"), "w") as fh:
         json.dump(truth, fh, indent=1)
     with open(os.path.join(out_dir, "mock.trios.tsv"), "w") as fh:
-        fh.write("#kid\tdad\tmom\tkid_sex\tdad_sex\tmom_sex\n%s\t%s\t%s\t1\t1\t2\n" % (nm[KID], nm[DAD], nm[MOM]))
+        fh.write("#kid\tdad\tmom\tkid_sex\tdad_sex\tmom_sex\n%s\t%s\t%s\t%s\t1\t2\n" % (nm[KID], nm[DAD], nm[MOM], "1" if son else "2"))
     # the planted events as another caller would list them (NGS-DOSE's karyotype events columns), for the concordance check
     with open(os.path.join(out_dir, "events.external.tsv"), "w") as fh:
         fh.write("sample\tchrom\tspan\tstart_mb\tend_mb\tlabel\tkind\n")

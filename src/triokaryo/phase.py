@@ -368,7 +368,10 @@ def _homologue_states(ev, track, absent_is_iso=False, upd_like=None):
     main = track.w_frac - 0.5
     other = np.where(np.isfinite(af), af, 0.5) - 0.5
     if (ev.type == "UPD") if upd_like is None else upd_like:
-        differ = np.abs(other) < np.abs(main) / 2                           # both copies from one parent: the auxiliary track sits at one half
+        # both copies from one parent in a cell fraction f: where they differ, the auxiliary track reads 1/(1+f) or f/(1+f),
+        # i.e. 1/(1+f) - 1/2 from one half (0 at f = 1); where they are one homologue the child has no heterozygous site
+        f = float(np.clip(ev.f, 0.0, 1.0)) if np.isfinite(ev.f) else 1.0
+        differ = np.abs(other) < min(1.0 / (1.0 + f) - 0.5 + 0.12, 0.4)
     else:
         differ = np.sign(other) != np.sign(main)
     sel = inside if absent_is_iso else have
@@ -534,6 +537,16 @@ def annotate_events(events, tracks_by_member, scan, bins, genome, child_x_baseli
                         e.stage, e.centromere, e.n_crossovers, e.crossovers = st["stage"], st["centromere"], st["n_crossovers"], st["crossovers"]
                 e.start_fine, e.end_fine, e.edge_sites = refine_edges(e, track, sites, bins, genome) if e.span != "whole" else (NA, NA, 0)
                 continue
+        if e.role == "child" and e.chrom == "chrX" and e.type == "gain" and e.phase_shift < 0 and e.n_phased >= ORIGIN_MIN_SITES and -e.phase_shift >= ORIGIN_MIN_Z * e.phase_se:
+            # a paternal extra X in a daughter (47,XXX, or a mosaic): the father has one X, so its two copies are one homologue
+            e.f_phase = f_from_d(abs(e.phase_shift), e.type)
+            e.origin_phase = "extra copy paternal"
+            e.homologues, e.hetero_share = "the two paternal copies are one homologue (the father's single X)", 0.0
+            if e.span == "whole":
+                e.stage, e.centromere = "meiosis II, or post-zygotic (paternal: the father's single X duplicated)", "isodisomic"
+            if e.origin and e.origin != e.origin_phase:
+                e.note = (e.note + "; " if e.note else "") + "the phased bands and the opposite-homozygote sites name different parents"
+            continue
         e.f_phase = f_from_d(abs(e.phase_shift), e.type)
         if e.source == "depth" and e.n_phased >= DISAGREE_SITES and np.isfinite(e.f_lrr) and np.isfinite(e.f_phase):
             if e.f_phase < 0.5 * e.f_lrr and e.f_lrr - e.f_phase > 0.05:

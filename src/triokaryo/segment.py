@@ -288,8 +288,8 @@ def call_member(bins, scan, m, sample, genome, params=None, sex=""):
             covered[a:b] = True
         # copy-neutral loss of heterozygosity: bands split (bdev above the member's own) or no heterozygous calls,
         # over bins the depth did not call
-        if chrom == "chrX" and (x_copies == 1 or sex == "M" or x_mosaic):
-            continue                                           # a single X has no heterozygous sites; a male's second X and a whole-X mosaic are whole-X events (sexchrom)
+        if chrom == "chrX" and (x_copies != 2 or sex == "M" or x_mosaic):
+            continue                                           # a single X has no heterozygous sites; a third X, a male's second X and a whole-X mosaic are whole-X events (sexchrom)
         banned = bins.masked_bands[sl][valid] if bins.masked_bands is not None else np.zeros(int(valid.sum()), dtype=bool)
         use_panel = bins.het_rel is not None and np.isfinite(bins.het_rel[m][auto]).sum() > 100
         if use_panel:                                              # the member's own baselines on the panel-relative tracks
