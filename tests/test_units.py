@@ -223,3 +223,31 @@ def test_short_state_runs_are_not_crossovers():
     s = np.array([0] * 3 + [1] * 3, bool)
     assert len(set(flatten_short_runs(s, 5).tolist())) == 1                   # two short runs: one state is left
     assert flatten_short_runs(np.zeros(0, bool), 5).size == 0
+
+
+def test_scan_reads_the_trio_by_name_whatever_the_vcf_column_order(tmp_path):
+    """A family VCF whose columns are not child, father, mother (the mother first, say) must still give the father the father's
+    depths: the scan goes by sample name. Before this test the per-record loop followed the VCF's column order, so a cohort
+    whose VCFs list the mother before the father read every father as XX and every mother as XY."""
+    import subprocess
+    import numpy as np
+    from triokaryo.genome import genome
+    from triokaryo.mock import write_mock
+    from triokaryo.vcfscan import scan_vcf
+    m = write_mock(str(tmp_path / "m"), seed=3)
+    vcf = str(tmp_path / "m" / "mock.vcf.gz")
+    shuffled = str(tmp_path / "shuffled.vcf.gz")
+    subprocess.run(["bcftools", "view", "-s", "MOM,KID,DAD", "-Oz", "-o", shuffled, vcf], check=True)
+    subprocess.run(["bcftools", "index", "-t", shuffled], check=True)
+    G = genome("grch38")
+    a = scan_vcf(vcf, ("KID", "DAD", "MOM"), G, thin=4)
+    b = scan_vcf(shuffled, ("KID", "DAD", "MOM"), G, thin=4)
+    for chrom, sa in a.chroms.items():
+        sb = b.chroms[chrom]
+        assert np.array_equal(sa.pos, sb.pos)
+        assert np.array_equal(sa.dp, sb.dp) and np.array_equal(sa.alt, sb.alt) and np.array_equal(sa.gt, sb.gt), chrom
+    # and the depth really is each member's own: the mother's X depth (two copies) is not the father's (one)
+    x = b.chroms["chrX"]
+    auto = np.median(np.concatenate([b.chroms[c].dp[1] for c in b.chroms if c not in ("chrX", "chrY")]))
+    autom = np.median(np.concatenate([b.chroms[c].dp[2] for c in b.chroms if c not in ("chrX", "chrY")]))
+    assert np.median(x.dp[1][~x.par]) / auto < 0.75 < np.median(x.dp[2][~x.par]) / autom

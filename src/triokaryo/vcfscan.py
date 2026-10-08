@@ -53,7 +53,8 @@ def _gt_class(gt):
 
 
 def scan_vcf(path, samples, genome, thin=1, pass_only=True, log=None, contigs=None):
-    """samples: (child, father, mother) as named in the VCF. thin: keep every thin-th usable record (1: all).
+    """samples: (child, father, mother) as named in the VCF, read in that order whatever the VCF's column order (a family VCF
+    may list the mother first, or carry more samples than the trio). thin: keep every thin-th usable record (1: all).
     contigs: restrict to these (normalised names), else every chromosome of the genome."""
     vf = pysam.VariantFile(path)
     have = set(vf.header.samples)
@@ -116,7 +117,8 @@ def scan_vcf(path, samples, genome, thin=1, pass_only=True, log=None, contigs=No
             if chrom in scan.chroms:
                 raise SystemExit("%s: records of %s are not contiguous (sort the VCF)" % (path, chrom))
         buf["pos"].append(rec.pos)
-        for s in rec.samples.values():
+        for name in samples:                                   # by NAME, in the trio's order (child, father, mother): a record's samples come
+            s = rec.samples[name]                              # in the VCF's own column order, which need not be the trio's
             ad = s.get("AD")
             a = int(ad[1]) if ad is not None and len(ad) > 1 and ad[1] is not None else 0
             d = s.get("DP")
