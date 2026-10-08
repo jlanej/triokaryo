@@ -180,7 +180,8 @@ def write_tables(out, trio, bins, events, x_copies, scan, base_mie, params, trac
     summ = dict(trio=trio.name, child=trio.kid, father=trio.dad, mother=trio.mom, child_sex=trio.kid_sex, father_sex=trio.dad_sex, mother_sex=trio.mom_sex,
                 records=scan.n_records, sites_used=scan.n_used, skipped="; ".join("%s %d" % kv for kv in sorted(scan.skipped.items())),
                 mie_rate_genome=base_mie, bin_size=bins.bin_size, gc_corrected=bool(np.isfinite(bins.gc).any()),
-                panel=bool(bins.panel_median is not None and np.isfinite(bins.panel_median).any()), bins_masked=int(bins.masked.sum()) if bins.masked is not None else 0)
+                panel=bool(bins.panel_median is not None and np.isfinite(bins.panel_median).any()), bins_masked=int(bins.masked.sum()) if bins.masked is not None else 0,
+                genotypes_from_pl=bool(getattr(scan, "genotypes_from_pl", False)), depth_sites=getattr(bins, "depth_sites", "all"))
     for m, role in enumerate(MEMBERS):
         ev = [e for e in events if e.role == role]
         summ["%s_events" % role] = len(ev)
@@ -189,6 +190,8 @@ def write_tables(out, trio, bins, events, x_copies, scan, base_mie, params, trac
         summ["%s_loh" % role] = sum(1 for e in ev if e.type == "LOH")
         xc = x_copies.get(role, NA)
         summ["%s_x_copies" % role] = xc
+        hr = getattr(bins, "homref_depth_ratio", None)
+        summ["%s_homref_depth_ratio" % role] = float(hr[m]) if hr is not None and m < len(hr) else NA
         sex = trio.sexes[m]
         st = (sex_info or {}).get("states", {}).get(role)
         if st:

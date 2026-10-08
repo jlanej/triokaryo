@@ -16,8 +16,10 @@ legends, and calls from other methods (a depth-based karyotype such as NGS-DOSE,
 karyotype) can be supplied for comparison.
 
 All normalisation and all tests are within the trio; no cohort is required. The input is any VCF holding the three
-members with per-sample `GT`, `AD`, `DP` and `GQ`: a joint-called family VCF, or per-sample VCFs merged with
-`bcftools merge -0`.
+members with per-sample `GT`, `AD`, `DP` and `GQ`: a joint-called family or cohort VCF, or per-sample VCFs merged with
+`bcftools merge -0`. A GATK joint call is read for what it is: genotypes refined under a pedigree prior
+(CalculateGenotypePosteriors, `PP`) are re-derived from `PL`, which the prior hides from a trio analysis, and the
+reference-block depth of homozygous-reference genotypes (GenotypeGVCFs, `MIN_DP`) is left out of the depth track.
 
 > **No real data in this repository.** The tests and the demo use a simulated trio written by `triokaryo mock`
 > (GRCh38 chromosome lengths, simulated sites, planted events). Do not commit VCFs, pedigrees, CRAMs or sample IDs.
@@ -110,7 +112,12 @@ father without a son be read for mosaic loss of Y). `--panel 1kg-dragen` is a sh
 homozygous reference, which the trio analysis accepts as a confident parental genotype. The input needs per-sample
 `GT`, `AD` and `DP`; without `GQ` in the header (some callers) a called genotype with reads counts as confident, with a
 warning; GATK, DRAGEN and DeepVariant write all four, while callers with other allelic-depth tags (freebayes `AO`/`RO`)
-need conversion to `AD`.
+need conversion to `AD`. Two habits of GATK joint calls are handled by default (`--genotypes auto`, `--depth-sites auto`;
+METHODS): a VCF refined by CalculateGenotypePosteriors carries posterior genotypes whose pedigree prior suppresses the
+Mendelian errors that identify an isodisomy, a heterodisomy or a deletion and reads a son's X as diploid, so `GT` and
+`GQ` are re-derived from `PL`; and GenotypeGVCFs gives a homozygous-reference genotype its reference block's minimum
+depth, shallower than the site's and more so where heterozygous sites are sparse, so the depth track is taken over each
+member's own variant genotypes.
 
 ## Signals
 

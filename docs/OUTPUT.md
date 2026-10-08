@@ -76,7 +76,9 @@ pedigree sex (`sex_check`; `x_check` the X-only wording), the median autosomal d
 window size, the reference bias, the number of phased-scan events and of shared windows, and the ISCN-like karyotype
 string (`karyotype`; grammar in METHODS); the father/son Y depth ratio (`y_father_son_log2`, `y_father_son_sites`)
 and whether the panel carried Y rows (`y_panel`); the within-trio X correction applied without a panel (`x_offset_trio`, log2); whether a GC
-track was applied (`gc_corrected`) and how many bins the panel masked (`bins_masked`); the parameters.
+track was applied (`gc_corrected`) and how many bins the panel masked (`bins_masked`); whether the genotypes were re-derived from
+`PL` (`genotypes_from_pl`) and which genotypes the bin depth was taken over (`depth_sites`: all, or each member's own variant
+ones), with per member the hom-ref over heterozygous depth ratio that decides it (`<role>_homref_depth_ratio`); the parameters.
 `summary.json` also holds every event, every supplied event and the per-member sex-chromosome state.
 
 ## figures/

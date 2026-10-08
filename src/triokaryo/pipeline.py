@@ -9,7 +9,7 @@ import numpy as np
 
 from .external import match_external, read_events
 from .genome import genome as load_genome
-from .model import MEMBERS, load_gc_track, make_bins
+from .model import MEMBERS, homref_depth_ratio, load_gc_track, make_bins, reference_block_depth
 from .report import write_html, write_tables
 from .segment import PARAMS, call_member
 from .trio import read_trio
@@ -17,13 +17,16 @@ from .vcfscan import scan_vcf
 
 
 def run_trio(vcf, trio, out, gc_track=None, events_path=None, bin_size=1_000_000, min_dp=8, min_gq=20, thin=1, genome_name="grch38", figures=True,
-             params=None, log=None, mock_note="", panel=None):
+             params=None, log=None, mock_note="", panel=None, genotypes="auto", depth_sites="auto"):
+    """genotypes: 'auto' re-derives GT and GQ from PL where the VCF carries posterior genotypes (PP), 'pl' always, 'vcf' never.
+    depth_sites: 'auto' takes the bin depth from each member's own variant genotypes where the homozygous-reference ones carry a
+    reference block's depth (MIN_DP declared, or hom-ref depth under 0.95 of the heterozygous depth), 'variant' always, 'all' never."""
     log = log or (lambda s: print("[triokaryo] " + s, file=sys.stderr))
     t0 = time.time()
     G = load_genome(genome_name)
     P = dict(PARAMS, **(params or {}), min_dp=min_dp, min_gq=min_gq)
     log("trio %s: child %s, father %s, mother %s" % (trio.name, trio.kid, trio.dad, trio.mom))
-    scan = scan_vcf(vcf, trio.members, G, thin=thin, log=log)
+    scan = scan_vcf(vcf, trio.members, G, thin=thin, log=log, genotypes=genotypes)
     log("%d records, %d PASS biallelic SNVs used (%s); %.0f s" % (scan.n_records, scan.n_used, ", ".join("%s %d" % kv for kv in sorted(scan.skipped.items())), time.time() - t0))
     gc = load_gc_track(gc_track) if gc_track else None
     if gc is not None:
@@ -33,7 +36,17 @@ def run_trio(vcf, trio, out, gc_track=None, events_path=None, bin_size=1_000_000
         from .panel import load_panel
         pan = load_panel(panel)
         log("panel: %d bins from %s" % (len(pan), panel))
-    bins = make_bins(scan, G, bin_size, min_dp, min_gq, gc, panel=pan)
+    ratios = homref_depth_ratio(scan, G, min_gq)
+    if depth_sites == "auto":
+        depth_sites = "variant" if reference_block_depth(scan, ratios) else "all"
+    ratio_text = ", ".join("%s %.2f" % (role, ratios[m]) if np.isfinite(ratios[m]) else "%s NA" % role for m, role in enumerate(MEMBERS))
+    if depth_sites == "variant":
+        log("depth from each member's own variant genotypes only: the homozygous-reference ones carry a reference block's depth (%s; hom-ref over het depth: %s)"
+            % ("MIN_DP declared" if "MIN_DP" in scan.formats else "no MIN_DP declared", ratio_text))
+    else:
+        log("depth from every genotype with reads (hom-ref over het depth: %s)" % ratio_text)
+    bins = make_bins(scan, G, bin_size, min_dp, min_gq, gc, panel=pan, depth_sites=depth_sites)
+    bins.homref_depth_ratio = ratios
     if pan is not None:
         from .model import PANEL_MAX_RSD, PANEL_MIN_N
         log("panel: %d bins masked (fewer than %d genomes, or robust SD above %.2f)" % (int(bins.masked.sum()), PANEL_MIN_N, PANEL_MAX_RSD))

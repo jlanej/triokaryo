@@ -47,6 +47,8 @@ class Bins:
     masked_bands: np.ndarray = None   # bins whose bands are split across the panel's genomes (paralogy): excluded from the LOH search
     bdev_adj: np.ndarray = None       # (3, B) the band deviation net of the panel's regional excess (the bands track the LOH search segments)
     het_rel: np.ndarray = None        # (3, B) the heterozygosity rate over the panel's (the rate track the LOH search segments)
+    depth_sites: str = "all"           # the genotypes the bin depth was taken over (make_bins)
+    homref_depth_ratio: np.ndarray = None   # per member, hom-ref over het depth (homref_depth_ratio)
 
     def of(self, chrom):
         a, b = self.index.get(chrom, (0, 0))
@@ -115,7 +117,37 @@ PANEL_BDEV_EXCESS = 0.03    # a bin whose panel band deviation exceeds the panel
                             # where the alleles of two loci are counted as one) is excluded from the loss-of-heterozygosity search
 
 
-def make_bins(scan, genome, bin_size=1_000_000, min_dp=8, min_gq=20, gc_track=None, min_het=5, panel=None):
+def homref_depth_ratio(scan, genome, min_gq=20, min_sites=10_000):
+    """Per member, the median depth of its homozygous-reference genotypes over that of its confident heterozygous ones, over the
+    autosomes (NaN with fewer than min_sites of either). One in a VCF whose DP is the depth at the site; under one where a joint
+    caller wrote a reference block's minimum depth for the genotypes it did not call from reads (GATK GenotypeGVCFs: MIN_DP), a
+    running minimum that understates the depth, the more so over long blocks, i.e. where heterozygous sites are sparse."""
+    k = len(getattr(scan, "samples", ())) or 3
+    out = np.full(k, NA)
+    for m in range(k):
+        ref, het = [], []
+        for c, s in scan.chroms.items():
+            if c not in genome.autosomes:
+                continue
+            ok = s.dp[m] > 0
+            ref.append(s.dp[m][ok & (s.gt[m] == GT_HOMREF)])
+            het.append(s.dp[m][ok & (s.gt[m] == GT_HET) & (s.gq[m] >= min_gq)])
+        ref = np.concatenate(ref) if ref else np.array([])
+        het = np.concatenate(het) if het else np.array([])
+        if len(ref) >= min_sites and len(het) >= min_sites:
+            out[m] = float(np.median(ref)) / float(np.median(het))
+    return out
+
+
+def reference_block_depth(scan, ratios, max_ratio=0.95):
+    """Whether the homozygous-reference genotypes carry a reference block's depth rather than the site's: the header declares
+    MIN_DP, or a member's hom-ref depth is under max_ratio of its heterozygous depth (homref_depth_ratio)."""
+    return "MIN_DP" in getattr(scan, "formats", set()) or bool(np.any(np.isfinite(ratios) & (ratios < max_ratio)))
+
+
+def make_bins(scan, genome, bin_size=1_000_000, min_dp=8, min_gq=20, gc_track=None, min_het=5, panel=None, depth_sites="all"):
+    """depth_sites: 'all' takes every genotype with reads into the bin depth; 'variant' only the member's own heterozygous and
+    homozygous-alternate ones, whose DP a joint caller measured at the site (reference_block_depth)."""
     chroms = [c for c in genome.chroms if c in scan.chroms]
     rows = []
     index = {}
@@ -164,6 +196,8 @@ def make_bins(scan, genome, bin_size=1_000_000, min_dp=8, min_gq=20, gc_track=No
         par[i] = bool(s.par[sel].any())                            # a bin touching a pseudoautosomal region: a male is diploid there
         for m in range(3):
             ok = dp[m] > 0
+            if depth_sites == "variant":
+                ok &= gt[m] != GT_HOMREF
             n_dp[m, i] = int(ok.sum())
             depth[m, i] = trimmed_mean(dp[m][ok])
             called = (dp[m] >= min_dp) & (gq[m] >= min_gq) & (gt[m] >= GT_HOMREF)
@@ -174,6 +208,8 @@ def make_bins(scan, genome, bin_size=1_000_000, min_dp=8, min_gq=20, gc_track=No
                 baf = alt[m][het] / np.maximum(dp[m][het], 1)
                 bdev[m, i] = float(np.median(np.abs(baf - 0.5)))
         all3 = (dp > 0).all(axis=0)
+        if depth_sites == "variant":
+            all3 &= (gt != GT_HOMREF).all(axis=0)
         if all3.sum() >= 5:
             d = dp[:, all3].astype(float)
             child_vs_mid[i] = float(np.median(np.log2(d[0] / ((d[1] + d[2]) / 2.0))))
@@ -219,8 +255,10 @@ def make_bins(scan, genome, bin_size=1_000_000, min_dp=8, min_gq=20, gc_track=No
             reg = np.where(np.isfinite(pbdev), pbdev - (typical if np.isfinite(typical) else 0.0), 0.0)
             bdev_adj = np.where(np.isfinite(bdev), bdev - reg[None, :], NA)
             het_rel = np.where(np.isfinite(het_rate) & np.isfinite(phet) & (phet > 0), het_rate / phet, NA)
-    return Bins(chrom, start, end, gc, n_dp, depth, n_called, n_het, het_rate, bdev, lrr, lrr_gc, child_vs_mid, father_vs_mother, index, bin_size,
+    bins = Bins(chrom, start, end, gc, n_dp, depth, n_called, n_het, het_rate, bdev, lrr, lrr_gc, child_vs_mid, father_vs_mother, index, bin_size,
                 autosomal, par, pmed, prsd, masked, pbdev, masked_bands, bdev_adj, het_rel)
+    bins.depth_sites = depth_sites
+    return bins
 
 
 def gc_correct(lrr, gc, fit_mask, window=41):

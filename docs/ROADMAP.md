@@ -53,6 +53,11 @@ ordered by expected value; "done" items are kept for the record with the commit 
   event are masked (robust SD above 0.10, down from 0.25: pericentromeres, 22q11, Xq28); single-bin spikes (germline CNVs,
   collapsed repeats) are smoothed before segmentation as in circular binary segmentation; and a 1-Mb GRCh38 GC track is
   shipped and applied by default, removing each library's own GC bias beyond the panel's (a 10% residual over 5p, 16p, 19p).
+- GATK joint calls read for what they are: genotypes refined by CalculateGenotypePosteriors (`PP`) are re-derived from `PL`,
+  whose pedigree prior would otherwise hide the Mendelian errors of an isodisomy, a heterodisomy or a deletion and read a
+  son's X as diploid; and the reference-block depth GenotypeGVCFs gives homozygous-reference genotypes (`MIN_DP`, a running
+  minimum) is left out of the depth track, which is taken over each member's own variant genotypes. `triokaryo mock
+  --refined --ref-blocks` imitates both.
 - A parent's phased shift is read folded onto the sign runs of its windows: the transmitted homologue switches at the
   child's crossovers in that parent's meiosis, so a parent's event spanning one no longer cancels or fragments, and the
   crossovers are reported (`crossovers`, `crossover_states`, `crossovers.tsv`); `triokaryo mock --switch` plants them.

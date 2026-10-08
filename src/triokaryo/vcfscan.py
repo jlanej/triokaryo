@@ -1,7 +1,7 @@
 """One pass over the trio's VCF: for every PASS biallelic SNV, per member, the depth, the alt-allele depth, the genotype
-class and the genotype quality, stored per chromosome as arrays. No other record field is read, so an annotated VCF
-costs no more than a bare one beyond its size. AD is required; DP falls back to the sum of AD; without GQ in the
-header a called genotype with reads is taken as confident."""
+class and the genotype quality, stored per chromosome as arrays. No other record field is read (PL only when the
+genotypes are re-derived from it), so an annotated VCF costs no more than a bare one beyond its size. AD is required;
+DP falls back to the sum of AD; without GQ in the header a called genotype with reads is taken as confident."""
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -33,6 +33,8 @@ class Scan:
     n_used: int = 0
     skipped: dict = field(default_factory=dict)     # why records were left out
     gq_in_header: bool = True                       # False: the caller writes no GQ; a called genotype with reads is then taken as confident
+    formats: set = field(default_factory=set)       # the FORMAT tags the header declares
+    genotypes_from_pl: bool = False                 # the genotype class and GQ were re-derived from PL (a VCF with posterior genotypes)
 
     def sites(self, chrom):
         return self.chroms.get(chrom)
@@ -52,10 +54,26 @@ def _gt_class(gt):
     return GT_HET if s == 1 else (GT_HOMALT if s == 2 else GT_HOMREF)
 
 
-def scan_vcf(path, samples, genome, thin=1, pass_only=True, log=None, contigs=None):
+def _from_pl(pl):
+    """Genotype class and quality from a PL vector (diploid: 0/0, 0/1, 1/1; haploid: 0, 1): the genotype of least PL and the gap to
+    the next, capped at 99, as the caller derives them before any prior. None where PL is absent, incomplete or tied."""
+    if pl is None or len(pl) not in (2, 3) or any(x is None for x in pl):
+        return None
+    order = sorted(range(len(pl)), key=lambda i: pl[i])
+    best, second = order[0], order[1]
+    if pl[best] == pl[second]:
+        return None
+    g = (GT_HOMREF, GT_HET, GT_HOMALT)[best] if len(pl) == 3 else (GT_HOMREF, GT_HOMALT)[best]
+    return g, min(99, int(pl[second]) - int(pl[best]))
+
+
+def scan_vcf(path, samples, genome, thin=1, pass_only=True, log=None, contigs=None, genotypes="auto"):
     """samples: (child, father, mother) as named in the VCF, read in that order whatever the VCF's column order (a family VCF
     may list the mother first, or carry more samples than the trio). thin: keep every thin-th usable record (1: all).
-    contigs: restrict to these (normalised names), else every chromosome of the genome."""
+    contigs: restrict to these (normalised names), else every chromosome of the genome. genotypes: 'vcf' takes GT and GQ as
+    written; 'pl' re-derives them from PL; 'auto' does so when the header declares PP (posterior genotypes, as written by
+    GATK CalculateGenotypePosteriors, whose pedigree prior suppresses the Mendelian errors the trio analysis reads and
+    treats a son's X as diploid), else takes them as written."""
     vf = pysam.VariantFile(path)
     have = set(vf.header.samples)
     missing = [s for s in samples if s not in have]
@@ -71,7 +89,15 @@ def scan_vcf(path, samples, genome, thin=1, pass_only=True, log=None, contigs=No
     has_gq = "GQ" in formats
     if not has_gq and log:
         log("WARNING: no GQ in FORMAT; a called genotype with reads is taken as confident on depth alone (--min-gq has no effect)")
-    scan = Scan(samples=tuple(samples), gq_in_header=has_gq)
+    use_pl = genotypes == "pl" or (genotypes == "auto" and "PP" in formats)
+    if use_pl and "PL" not in formats:
+        if log:
+            log("WARNING: genotypes from PL asked for, but the VCF has no PL; GT and GQ are taken as written")
+        use_pl = False
+    if use_pl and log:
+        log("genotypes re-derived from PL (the VCF carries posterior genotypes%s: a pedigree prior hides Mendelian errors and reads a son's X as diploid)"
+            % (", PP" if "PP" in formats else ""))
+    scan = Scan(samples=tuple(samples), gq_in_header=has_gq, formats=formats, genotypes_from_pl=use_pl)
     skipped = scan.skipped
     buf = None
     cur = None
@@ -126,6 +152,10 @@ def scan_vcf(path, samples, genome, thin=1, pass_only=True, log=None, contigs=No
                 d = sum(x for x in ad if x is not None) if ad is not None else 0
             q = s.get("GQ") if has_gq else None
             g = _gt_class(s.get("GT"))
+            if use_pl:
+                r = _from_pl(s.get("PL"))
+                if r is not None:
+                    g, q = r
             if not has_gq and g != GT_MISSING and (d or 0) > 0:
                 q = 99                                     # no GQ anywhere: a called genotype with reads passes the confidence test
             # a per-sample VCF merged with `bcftools merge -0` writes 0/0 with no AD, DP or GQ where the sample had no record: a

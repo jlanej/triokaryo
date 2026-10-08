@@ -73,14 +73,19 @@ def _gt(alt, dp):
 
 
 def write_mock(out_dir, seed=1, sites_per_mb=60, no_events=False, xxy=False, depth=(30.0, 32.0, 28.0), gc_beta=(-0.8, -0.5, -1.0), bin_size=1_000_000,
-               events=None, prefix="", contigs=None, child_sex="M", xxx=False, sex_deficit=(1.0, 1.0), with_gq=True, switch_maternal=None, switch_paternal=None):
+               events=None, prefix="", contigs=None, child_sex="M", xxx=False, sex_deficit=(1.0, 1.0), with_gq=True, switch_maternal=None, switch_paternal=None,
+               refined=False, ref_blocks=False):
     """prefix: a tag before the sample names (KID, DAD, MOM), so that several mock trios can sit in one cohort.
     contigs: only these chromosomes (a dense small mock), else all. child_sex: M (one maternal X, the father's Y) or F (one X
     from each parent, no Y). xxy: a son with both maternal X homologues (a maternal meiosis I 47,XXY); xxx: a daughter with
     both maternal X homologues and the paternal X (a maternal meiosis I 47,XXX). sex_deficit: depth factors on the X and
     the Y, imitating the mappability deficit of real data (e.g. 0.93, 0.90). with_gq=False writes no GQ, as some callers do.
     switch_maternal / switch_paternal: {chrom: position}, a crossover in that parent's meiosis: the child's inherited homologue
-    switches to the parent's other one beyond the position (the transmitted-allele sign of a parent's event flips there)."""
+    switches to the parent's other one beyond the position (the transmitted-allele sign of a parent's event flips there).
+    refined: PL from the reads and, as GATK CalculateGenotypePosteriors with a pedigree does, GT and GQ refined under a family
+    prior that penalises a Mendelian violation by 80 phred (the child moved to the consistent genotype where its PL gap is
+    smaller; otherwise kept with the GQ reduced) and PP, the posterior PL. ref_blocks: homozygous-reference genotypes
+    written with a reference block's depth, about 18% under the site's, as GATK GenotypeGVCFs does (MIN_DP)."""
     os.makedirs(out_dir, exist_ok=True)
     nm = {KID: prefix + KID, DAD: prefix + DAD, MOM: prefix + MOM}
     son = child_sex.upper().startswith("M")
@@ -115,6 +120,11 @@ def write_mock(out_dir, seed=1, sites_per_mb=60, no_events=False, xxy=False, dep
                  '##FORMAT=<ID=DP,Number=1,Type=Integer,Description="Read depth">\n')
         if with_gq:
             fh.write('##FORMAT=<ID=GQ,Number=1,Type=Integer,Description="Genotype quality">\n')
+        if refined:
+            fh.write('##FORMAT=<ID=PL,Number=G,Type=Integer,Description="Normalized, Phred-scaled likelihoods for genotypes as defined in the VCF specification">\n'
+                     '##FORMAT=<ID=PP,Number=G,Type=Integer,Description="Phred-scaled Posterior Genotype Probabilities">\n')
+        if ref_blocks:
+            fh.write('##FORMAT=<ID=MIN_DP,Number=1,Type=Integer,Description="Minimum DP observed within the GVCF block">\n')
         fh.write("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t%s\t%s\t%s\n" % (nm[KID], nm[DAD], nm[MOM]))
         for c in G.chroms:
             if contigs and c not in contigs:
@@ -176,6 +186,40 @@ def write_mock(out_dir, seed=1, sites_per_mb=60, no_events=False, xxy=False, dep
                 alt = rng.binomial(dp, p_alt)
                 gq = np.where(rng.random(n) < 0.08, rng.integers(2, 20, n), 99)
                 cols[member] = (dp, alt, gq)
+            pls, refined_gt = {}, {}
+            if refined or ref_blocks:                                  # PL from the reads: the genotype likelihoods before any prior
+                err = 0.003
+                for member in (KID, DAD, MOM):
+                    dpm, am, _ = cols[member]
+                    ll = np.stack([am * np.log10(err) + (dpm - am) * np.log10(1 - err), dpm * np.log10(0.5), am * np.log10(1 - err) + (dpm - am) * np.log10(err)])
+                    pls[member] = np.rint(-10 * (ll - ll.max(axis=0))).astype(int)
+            if refined:                                                 # the family prior: a Mendelian violation costs 80 phred
+                g_pl = {mb: np.where(cols[mb][0] > 0, np.argmin(pls[mb], axis=0), -1) for mb in (KID, DAD, MOM)}
+                allele_sets = {0: (0,), 1: (0, 1), 2: (1,)}
+                for member in (KID, DAD, MOM):
+                    refined_gt[member] = [None] * n
+                for i in range(n):
+                    gk, gd, gm = g_pl[KID][i], g_pl[DAD][i], g_pl[MOM][i]
+                    pp = {mb: pls[mb][:, i].copy() for mb in (KID, DAD, MOM)}
+                    if gk >= 0 and gd >= 0 and gm >= 0:
+                        allowed = {a + b for a in allele_sets[gd] for b in allele_sets[gm]}
+                        for g in range(3):
+                            if g not in allowed:
+                                pp[KID][g] += 80
+                    for member in (KID, DAD, MOM):
+                        v = pp[member]
+                        if cols[member][0][i] == 0:
+                            refined_gt[member][i] = None
+                            continue
+                        order = np.argsort(v, kind="stable")
+                        gq = int(min(99, v[order[1]] - v[order[0]]))
+                        refined_gt[member][i] = (int(order[0]), gq, v - v.min())
+            if ref_blocks:                                              # a hom-ref genotype's DP is its reference block's minimum
+                for member in (KID, DAD, MOM):
+                    dpm, am, gqm = cols[member]
+                    hom_ref = (dpm > 0) & (np.argmin(pls[member], axis=0) == 0)
+                    dpm = np.where(hom_ref, np.maximum(1, np.rint(dpm * rng.uniform(0.70, 0.94, n))).astype(int), dpm)
+                    cols[member] = (dpm, np.minimum(am, dpm), gqm)
             for i in range(n):
                 filt = "PASS"
                 u = rng.random()
@@ -190,8 +234,16 @@ def write_mock(out_dir, seed=1, sites_per_mb=60, no_events=False, xxy=False, dep
                 for member in (KID, DAD, MOM):
                     dp, al, gq = cols[member]
                     d, a, q = int(dp[i]), int(al[i]), int(gq[i])
-                    fields.append(("%s:%d,%d:%d:%s" % (_gt(a, d), d - a, a, d, q if d else ".")) if with_gq else ("%s:%d,%d:%d" % (_gt(a, d), d - a, a, d)))
-                fh.write("%s\t%d\t.\t%s\t%s\t100\t%s\t.\t%s\t%s\n" % (c, int(pos[i]), ref, alt_allele, filt, "GT:AD:DP:GQ" if with_gq else "GT:AD:DP", "\t".join(fields)))
+                    if refined:
+                        r = refined_gt[member][i]
+                        gt_s, q_s = (("0/0", "0/1", "1/1")[r[0]], str(r[1])) if r is not None else ("./.", ".")
+                        pl_s = ",".join(str(int(x)) for x in pls[member][:, i]) if d else "."
+                        pp_s = ",".join(str(int(x)) for x in r[2]) if r is not None else "."
+                        fields.append("%s:%d,%d:%d:%s:%s:%s" % (gt_s, d - a, a, d, q_s, pl_s, pp_s))
+                    else:
+                        fields.append(("%s:%d,%d:%d:%s" % (_gt(a, d), d - a, a, d, q if d else ".")) if with_gq else ("%s:%d,%d:%d" % (_gt(a, d), d - a, a, d)))
+                fmt = "GT:AD:DP:GQ:PL:PP" if refined else "GT:AD:DP:GQ" if with_gq else "GT:AD:DP"
+                fh.write("%s\t%d\t.\t%s\t%s\t100\t%s\t.\t%s\t%s\n" % (c, int(pos[i]), ref, alt_allele, filt, fmt, "\t".join(fields)))
     vcf_gz = vcf_txt + ".gz"
     pysam.tabix_compress(vcf_txt, vcf_gz, force=True)
     pysam.tabix_index(vcf_gz, preset="vcf", force=True)

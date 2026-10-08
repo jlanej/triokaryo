@@ -9,7 +9,7 @@ import os
 
 import numpy as np
 
-from .model import NA, trimmed_mean
+from .model import NA, homref_depth_ratio, reference_block_depth, trimmed_mean
 from .vcfscan import scan_vcf
 
 
@@ -27,7 +27,7 @@ def align_sex_chromosomes(lrr):
     return lrr
 
 
-def sample_profile(sites_by_chrom, genome, bin_size, member=0, min_sites=20, min_dp=8, min_gq=20, min_het=5):
+def sample_profile(sites_by_chrom, genome, bin_size, member=0, min_sites=20, min_dp=8, min_gq=20, min_het=5, depth_sites="all"):
     """One sample's self-normalised bin LRR (log2 of the bin's trimmed-mean depth over the autosomal median), the X and Y on the
     diploid scale (align_sex_chromosomes), its band deviation per bin (the median |BAF - 1/2| at heterozygous sites) and its
     heterozygosity rate per bin (heterozygous over confident calls):
@@ -40,8 +40,9 @@ def sample_profile(sites_by_chrom, genome, bin_size, member=0, min_sites=20, min
         dp, alt, gt, gq = s.dp[member], s.alt[member], s.gt[member], s.gq[member]
         called = (dp >= min_dp) & (gq >= min_gq) & (gt >= 0)
         het = called & (gt == 1)
+        with_depth = (dp > 0) & ((gt != 0) if depth_sites == "variant" else True)      # a joint caller's hom-ref DP may be a block's minimum
         for b in np.unique(idx):
-            sel = (idx == b) & (dp > 0) & ~s.par
+            sel = (idx == b) & with_depth & ~s.par
             if sel.sum() >= min_sites:
                 depth[(chrom, int(b) * bin_size)] = trimmed_mean(dp[sel])
             h = (idx == b) & het & ~s.par
@@ -72,11 +73,12 @@ def build_panel(genome, bin_size, vcfs=(), samples=None, runs=(), log=None, thin
         if not use:
             continue
         scan = scan_vcf(v, use, genome, thin=thin, log=None)
+        ds = "variant" if reference_block_depth(scan, homref_depth_ratio(scan, genome)) else "all"
         for m, name in enumerate(use):
-            lr, bd, hr = sample_profile(scan.chroms, genome, bin_size, m)
+            lr, bd, hr = sample_profile(scan.chroms, genome, bin_size, m, depth_sites=ds)
             profiles.append((name, lr, bd, hr))
             if log:
-                log("panel: %s from %s (%d bins)" % (name, os.path.basename(v), len(lr)))
+                log("panel: %s from %s (%d bins%s)" % (name, os.path.basename(v), len(lr), "; depth from the genome's own variant genotypes" if ds == "variant" else ""))
     for d in runs:
         bpath, spath = os.path.join(d, "bins.tsv"), os.path.join(d, "summary.tsv")
         if not (os.path.exists(bpath) and os.path.exists(spath)):

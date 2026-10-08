@@ -18,6 +18,31 @@ A call is *confident* when DP ≥ `--min-dp` (8) and GQ ≥ `--min-gq` (20). `AD
 without `DP` the depth is the sum of `AD`; without `GQ` in the header a called genotype with reads is taken as confident,
 with a warning. `triokaryo merge` builds the trio VCF from per-sample VCFs with bcftools (PASS biallelic SNVs, `merge -0`).
 
+**Refined genotypes** (`--genotypes`). GATK's genotype refinement (CalculateGenotypePosteriors with a pedigree) rewrites
+`GT` and `GQ` under a family prior that penalises a Mendelian violation by about 80 phred and treats every chromosome
+as diploid. That hides the signal the trio analysis reads: a child's genotypes at the informative sites of an
+isodisomy, a heterodisomy or a constitutional deletion are moved to Mendelian-consistent heterozygotes where the
+likelihood gap is small (a spurious heterozygote inside an event with none) or kept with their quality stripped below
+20 (dropped from the Mendelian-error count), and a son's X, hemizygous and maternal, is read against a diploid prior
+with the father's alleles. `PL`, the likelihoods before the prior, are left as they were, so where the header declares
+`PP` (the default, `auto`) the genotype class and GQ are re-derived from `PL`: the genotype of least `PL`, and the gap
+to the next, capped at 99, which is how the caller sets them before refinement. `pl` forces this, `vcf` takes the
+genotypes as written; `genotypes_from_pl` in the summary records which was done.
+
+**Reference-block depth** (`--depth-sites`). A joint caller working from gVCFs writes the depth of a sample's
+homozygous-reference genotypes from the reference block that covered the site, not from the site: GATK GenotypeGVCFs
+takes the block's minimum (`MIN_DP`), a running minimum over the block that understates the depth by about a sixth at
+30× and by more over long blocks, where the sample's own variant sites are sparse. Such depths are shallower than the
+member's heterozygous ones and their share of a bin rises wherever heterozygous sites vanish (a run of homozygosity,
+an isodisomy, a hemizygous deletion), so the bin depth would dip by a few per cent there, at the detection floor. Per
+member the median depth of its homozygous-reference genotypes over that of its confident heterozygous ones is
+measured over the autosomes (`<role>_homref_depth_ratio`); where the header declares `MIN_DP` or a member's ratio is
+under 0.95 (the default, `auto`), the bin depth, the within-trio tracks and a panel built from such VCFs are taken
+over each member's own heterozygous and homozygous-alternate genotypes only, whose `DP` was measured at the site
+(`depth_sites` = `variant`); the genotype statistics are unchanged. `all` and `variant` force either choice. A VCF
+whose hom-ref depth is the site's (DRAGEN, bcftools, per-sample VCFs merged with `merge -0`, where a sample without a
+record carries no depth) keeps every genotype.
+
 ## Bins and per-bin statistics
 
 Fixed-width bins from each chromosome start. Per bin and member: the number of sites with depth; the **depth**, the

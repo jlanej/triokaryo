@@ -81,7 +81,7 @@ def cmd_run(a):
         if os.path.exists(p):
             note = open(p).read().strip()
     run_trio(a.vcf, trio, a.out, gc_track=a.gc_track, events_path=a.events, bin_size=a.bin, min_dp=a.min_dp, min_gq=a.min_gq, thin=a.thin,
-             genome_name=a.genome, figures=not a.no_figures, params=params, log=_log, mock_note=note, panel=a.panel)
+             genome_name=a.genome, figures=not a.no_figures, params=params, log=_log, mock_note=note, panel=a.panel, genotypes=a.genotypes, depth_sites=a.depth_sites)
     return 0
 
 
@@ -138,7 +138,7 @@ def cmd_mock(a):
         switches[parts[0]][parts[1]] = int(float(parts[2]))
     paths = write_mock(a.out, seed=a.seed, sites_per_mb=a.sites_per_mb, no_events=a.no_events, xxy=a.xxy, prefix=a.prefix, events=events,
                        contigs=a.contigs.split(",") if a.contigs else None, child_sex=a.child_sex, xxx=a.xxx, sex_deficit=deficit,
-                       switch_maternal=switches["mat"] or None, switch_paternal=switches["pat"] or None)
+                       switch_maternal=switches["mat"] or None, switch_paternal=switches["pat"] or None, refined=a.refined, ref_blocks=a.ref_blocks)
     _log("mock trio -> %s" % paths["vcf"])
     return 0
 
@@ -168,7 +168,7 @@ def cmd_batch(a):
         sys.exit("give --vcf (one joint VCF) or --vcf-pattern (per-trio VCFs, e.g. 'vcfs/{kid}.vcf.gz')")
     panel = resolve_panel(a.panel)
     kw = dict(gc_track=resolve_gc_track(a.gc_track, a.genome, a.bin), events_path=a.events, bin_size=a.bin, min_dp=a.min_dp, min_gq=a.min_gq, thin=a.thin, genome_name=a.genome,
-              figures=not a.no_figures, panel=panel)
+              figures=not a.no_figures, panel=panel, genotypes=a.genotypes, depth_sites=a.depth_sites)
     jobs = []
     for t in trios:
         vcf = a.vcf or a.vcf_pattern.format(kid=t.kid, dad=t.dad, mom=t.mom, family=t.family)
@@ -257,6 +257,8 @@ def main(argv=None):
                                    "subtracted from each member's tracks; recommended on real data, where centromere flanks and segmental duplications "
                                    "are otherwise called as events. A file, or '1kg-dragen' (twelve public 1000 Genomes genomes called by DRAGEN 3.7.6, 1-Mb bins)")
     r.add_argument("--events", help="events from another method to draw and match (sample chrom start end label [type]; or NGS-DOSE's karyotype/events.tsv)")
+    r.add_argument("--genotypes", default="auto", choices=["auto", "pl", "vcf"], help="genotypes: as written in the VCF ('vcf'), re-derived from PL ('pl'), or re-derived where the header declares PP ('auto', the default): posterior genotypes (GATK CalculateGenotypePosteriors) were refined under a pedigree prior that hides the Mendelian errors the trio analysis reads and treats a son's X as diploid")
+    r.add_argument("--depth-sites", default="auto", choices=["auto", "all", "variant"], help="the genotypes the bin depth is taken over: every one with reads ('all'), each member's own heterozygous and homozygous-alternate ones ('variant'), or the latter where homozygous-reference genotypes carry a reference block's depth ('auto', the default: MIN_DP declared, or hom-ref depth under 0.95 of the heterozygous depth, as GATK GenotypeGVCFs writes)")
     r.add_argument("--bin", type=int, default=1_000_000, help="bin width in bp")
     r.add_argument("--min-dp", type=int, default=8, help="minimum depth of a confident call")
     r.add_argument("--min-gq", type=int, default=20, help="minimum GQ of a confident call")
@@ -300,6 +302,8 @@ def main(argv=None):
     m.add_argument("--sex-chromosomes", action="store_true", help="plant the sex-chromosome mosaics: loss of Y in the father, 45,X/46,XX in the mother, 46,XY/47,XXY in the son")
     m.add_argument("--sex-deficit", default="", help="depth factors on the X and the Y imitating real data's mappability deficit, e.g. 0.93,0.90")
     m.add_argument("--switch", default="", help="crossovers in the transmitted haplotypes, e.g. mat:chr8:70000000,pat:chr2:50000000: a parent's event changes sign there along the phased track")
+    m.add_argument("--refined", action="store_true", help="write PL and PP, with GT and GQ refined under a pedigree prior as GATK CalculateGenotypePosteriors does (Mendelian violations penalised by 80 phred)")
+    m.add_argument("--ref-blocks", action="store_true", help="write homozygous-reference genotypes with a reference block's depth (about 18%% under the site's), as GATK GenotypeGVCFs does")
     m.set_defaults(fn=cmd_mock)
     c = sub.add_parser("cohort", help="cohort report over many runs: counts, landscape figure, every event, per-trio metrics, concordance, guide")
     c.add_argument("--runs", nargs="+", required=True, help="run directories (globs)")
@@ -318,6 +322,8 @@ def main(argv=None):
     b.add_argument("--gc-track", help="as for run: a file, 'hg38' (the default at 1 Mb on GRCh38) or 'none'")
     b.add_argument("--panel", help="as for run: a file or '1kg-dragen'")
     b.add_argument("--events")
+    b.add_argument("--genotypes", default="auto", choices=["auto", "pl", "vcf"], help="as for run")
+    b.add_argument("--depth-sites", default="auto", choices=["auto", "all", "variant"], help="as for run")
     b.add_argument("--bin", type=int, default=1_000_000)
     b.add_argument("--min-dp", type=int, default=8)
     b.add_argument("--min-gq", type=int, default=20)
