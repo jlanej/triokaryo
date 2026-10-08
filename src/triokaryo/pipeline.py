@@ -132,7 +132,9 @@ def run_trio(vcf, trio, out, gc_track=None, events_path=None, bin_size=1_000_000
                        karyotypes={role: summ.get("%s_karyotype" % role, "") for role in MEMBERS},
                        y_father_son=dict(log2=y_ratio, sites=y_ratio_n), x_offset_trio=x_off, genome=genome_name, mock_note=mock_note,
                        events=[e.as_dict() for e in events], external=[dict(sample=x.sample, chrom=x.chrom, start=x.start, end=x.end, label=x.note, match=x.inheritance) for x in external],
-                       sites_used=scan.n_used, records=scan.n_records, skipped=scan.skipped, seconds=round(time.time() - t0, 1)),
+                       sites_used=scan.n_used, records=scan.n_records, skipped=scan.skipped, seconds=round(time.time() - t0, 1),
+                       genotypes_from_pl=bool(getattr(scan, "genotypes_from_pl", False)), depth_sites=getattr(bins, "depth_sites", "all"),
+                       homref_depth_ratio={role: (float(ratios[m]) if np.isfinite(ratios[m]) else None) for m, role in enumerate(MEMBERS)}),
                   fh, indent=1, default=lambda o: None if (isinstance(o, float) and not np.isfinite(o)) else str(o))
     log("%d event(s): %s; %.0f s -> %s" % (len(events), "; ".join("%s %s %s %s f %.2f" % (e.role, e.type, e.span, e.chrom, e.f) for e in events) or "none", time.time() - t0, out))
     return dict(events=events, x_copies=x_copies, bins=bins, scan=scan, summary=summ, figures=figs, external=external, tracks=tracks, phase_info=phase_info, sex=sex_info)
