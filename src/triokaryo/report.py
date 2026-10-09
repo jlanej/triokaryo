@@ -314,6 +314,11 @@ def write_html(out, trio, figs, events, summ, external, mock_note="", genome=Non
         fh.write("\n".join(w))
 
 
+def _benign_check(text):
+    """A sex check that raises nothing: empty, 'agrees', or 'agrees (...)' with the Y not read (not in the VCF, or unreadable)."""
+    return text in ("", "agrees") or text.startswith("agrees (")
+
+
 def _trio_of(summary):
     from .pedigree import Trio
     m, sx = summary["members"], summary.get("sexes") or ["", "", ""]
@@ -534,7 +539,7 @@ def write_cohort(out, run_dirs, events_path=None, genome_name="grch38", log=None
     doubted = sum(1 for _, e in events if "may be an artefact" in e.note)
     roh = sum(1 for _, e in events if "run of homozygosity" in e.note)
     xbad = [(s["trio"], r) for s in summaries for r in MEMBERS
-            if (s["tsv"].get("%s_sex_check" % r) or s["tsv"].get("%s_x_check" % r, "")) not in ("", "agrees", "agrees (Y not in the VCF)")]
+            if not _benign_check(s["tsv"].get("%s_sex_check" % r) or s["tsv"].get("%s_x_check" % r, ""))]
     quiet = sum(1 for s in summaries if not s["events"])
     # the page
     w = ['<!doctype html><html><head><meta charset="utf-8"><title>triokaryo cohort</title><style>%s'
@@ -575,7 +580,7 @@ def write_cohort(out, run_dirs, events_path=None, genome_name="grch38", log=None
         "trio", "members", "sexes", "events", "flagged", "karyotype (child)", "sex chromosomes (child, father, mother)", "against the pedigree sex", "Y father/son (log2)",
         "MIE rate", "sites", "depth (child, father, mother)", "phased sites (child)", "rejected", "page")) + "</tr></thead><tbody>")
     for s, r in zip(summaries, srows):
-        xchk = "; ".join("%s: %s" % (m, r["%s_sex_check" % m]) for m in MEMBERS if r["%s_sex_check" % m] not in ("", "agrees", "agrees (Y not in the VCF)")) or "agrees"
+        xchk = "; ".join("%s: %s" % (m, r["%s_sex_check" % m]) for m in MEMBERS if not _benign_check(r["%s_sex_check" % m])) or "agrees"
         w.append("<tr>" + "".join("<td>%s</td>" % html.escape(str(c)) for c in (
             s["trio"], ", ".join(s["members"]), ",".join(s.get("sexes") or []), r["n_events"], r["n_flagged"], r["child_karyotype"], r["sex_karyotypes"].replace(",", ", "), xchk,
             r["y_father_son_log2"], fmt(s["mie_rate_genome"], 3), s["sites_used"], "%s, %s, %s" % (r["child_depth"], r["father_depth"], r["mother_depth"]), r["child_phased_sites"],

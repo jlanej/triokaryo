@@ -47,7 +47,21 @@ def sex_state(bins, scan, m, min_sites=20, min_bins=5):
     y_in_vcf = ys is not None and ys.n > 0
     if y_in_vcf and not np.isfinite(y_raw) and float((ys.dp[m] > 0).mean()) < 0.05:
         y_raw, y_cp = 0.0, 0
-    return dict(x_copies=x_cp, x_copies_raw=x_raw, x_bins=nx, y_copies=y_cp, y_copies_raw=y_raw, y_bins=ny, y_in_vcf=y_in_vcf)
+    sl = bins.of("chrY")
+    y_total = int(sl.stop - sl.start)
+    y_masked = int(bins.masked[sl].sum()) if bins.masked is not None and y_total else 0
+    y_thin = int((bins.n_dp[m][sl] < min_sites).sum()) if y_total else 0
+    return dict(x_copies=x_cp, x_copies_raw=x_raw, x_bins=nx, y_copies=y_cp, y_copies_raw=y_raw, y_bins=ny, y_in_vcf=y_in_vcf, y_bins_total=y_total,
+                y_bins_masked=y_masked, y_bins_thin=y_thin, y_min_sites=min_sites)
+
+
+def y_unread(st):
+    """Why the Y copy number is not read: the Y is not in the VCF, or its bins are unusable - masked by the panel, or holding fewer
+    than min_sites depth sites each - and fewer than Y_MIN_BINS remain."""
+    if not st.get("y_in_vcf"):
+        return "Y not in the VCF"
+    return "Y unreadable: %d usable Y bin(s) of %d, %d needed (%d masked by the panel, %d with fewer than %d depth sites)" % (
+        st.get("y_bins", 0), st.get("y_bins_total", 0), Y_MIN_BINS, st.get("y_bins_masked", 0), st.get("y_bins_thin", 0), st.get("y_min_sites", 20))
 
 
 def x_check(sex, st):
@@ -61,7 +75,7 @@ def x_check(sex, st):
     if k:
         why = "an XX male, or a sample swap" if (sex == "M" and k == "XX") else "a sample swap, or an XY female" if (sex == "F" and k == "XY") else KARYOTYPE_NAME.get(k, k)
     else:
-        why = {("M", 2): "47,XXY or an XX male?", ("F", 1): "45,X?", ("F", 3): "47,XXX?", ("M", 3): "48,XXXY?"}.get((sex, int(xc)), "Y not in the VCF")
+        why = {("M", 2): "47,XXY or an XX male?", ("F", 1): "45,X?", ("F", 3): "47,XXX?", ("M", 3): "48,XXXY?"}.get((sex, int(xc)), y_unread(st))
     return "X copies %d in a reported %s (%s)" % (int(xc), "male" if sex == "M" else "female", why)
 
 
@@ -84,8 +98,9 @@ def sex_check(sex, st):
     if not k:
         if not np.isfinite(st["x_copies"]):
             return ""
-        return "agrees (Y not in the VCF)" if int(st["x_copies"]) == EXPECTED[sex][0] else "X copies %d in a reported %s (Y not in the VCF)" % (
-            int(st["x_copies"]), "male" if sex == "M" else "female")
+        why = y_unread(st)
+        return ("agrees (%s)" % why) if int(st["x_copies"]) == EXPECTED[sex][0] else "X copies %d in a reported %s (%s)" % (
+            int(st["x_copies"]), "male" if sex == "M" else "female", why)
     if k == expected:
         return "agrees"
     if sex == "M" and k == "XX":
