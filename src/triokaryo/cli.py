@@ -222,6 +222,16 @@ def cmd_cohort(a):
     return 0
 
 
+def cmd_digest(a):
+    from .digest import write_digest
+    runs = sorted(d for pat in a.runs for d in glob.glob(pat) if os.path.exists(os.path.join(d, "summary.json")))
+    if not runs:
+        sys.exit("no run with a summary.json under: " + " ".join(a.runs))
+    write_digest(a.out, runs, events_path=a.events, genome_name=a.genome, top=a.top, min_mb=a.min_mb, min_f=a.min_f, min_mb_loh=a.min_mb_loh,
+                 parent_sex_mosaics=a.parent_sex_mosaics, allow_first_pass=a.allow_first_pass, max_width=a.max_width, title=a.title, log=_log)
+    return 0
+
+
 def cmd_guide(a):
     from .guide import write_guide
     write_guide(a.out, figures_dir=a.figures)
@@ -305,6 +315,20 @@ def main(argv=None):
     m.add_argument("--refined", action="store_true", help="write PL and PP, with GT and GQ refined under a pedigree prior as GATK CalculateGenotypePosteriors does (Mendelian violations penalised by 80 phred)")
     m.add_argument("--ref-blocks", action="store_true", help="write homozygous-reference genotypes with a reference block's depth (about 18%% under the site's), as GATK GenotypeGVCFs does")
     m.set_defaults(fn=cmd_mock)
+    dg = sub.add_parser("digest", help="one self-contained page of the cohort's largest events, each with the trio's genome-wide and chromosome figures: the hand-off")
+    dg.add_argument("--runs", nargs="+", required=True, help="run directories (globs)")
+    dg.add_argument("--out", required=True, help="output directory: digest.html, digest.tsv, digest_left_out.tsv")
+    dg.add_argument("--events", help="events from another method to match (NGS-DOSE's karyotype/events.tsv), where the runs were not made with them")
+    dg.add_argument("--top", type=int, default=25, help="how many events to show (default 25)")
+    dg.add_argument("--min-mb", type=float, default=10.0, help="a stretch under this many Mb is left out (default 10)")
+    dg.add_argument("--min-f", type=float, default=0.2, help="an arm or stretch in under this share of the cells is left out (default 0.2); a whole chromosome never is")
+    dg.add_argument("--min-mb-loh", type=float, default=20.0, help="a run of homozygosity (LOH stretch) under this many Mb is left out (default 20)")
+    dg.add_argument("--parent-sex-mosaics", action="store_true", help="list a parent's X or Y lost in part of the cells (loss with age) too")
+    dg.add_argument("--allow-first-pass", action="store_true", help="keep runs made without a panel (the first pass, whose calls are not to be read)")
+    dg.add_argument("--max-width", type=int, default=1500, help="embedded figures downscaled to this width in pixels (default 1500)")
+    dg.add_argument("--title", default="", help="the page's title")
+    dg.add_argument("--genome", default="grch38")
+    dg.set_defaults(fn=cmd_digest)
     c = sub.add_parser("cohort", help="cohort report over many runs: counts, landscape figure, every event, per-trio metrics, concordance, guide")
     c.add_argument("--runs", nargs="+", required=True, help="run directories (globs)")
     c.add_argument("--out", required=True)

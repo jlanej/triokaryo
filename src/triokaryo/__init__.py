@@ -6,4 +6,4 @@ giving a signed allelic-imbalance track; per event the type, the cell fraction (
 and from the phased track), the parent of origin, the homologue count, site-resolution boundaries, the Mendelian-error
 rate and the inheritance; tables and figures. All comparisons are within the trio; no cohort is required.
 """
-__version__ = "0.1.2"
+__version__ = "0.1.3"
