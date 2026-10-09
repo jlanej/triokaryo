@@ -100,3 +100,52 @@ def test_cohort_panel_corrects_the_y_for_a_father_of_a_daughter(tmp_path):
     assert res1["summary"]["y_panel"] and not [e for e in res1["events"] if e.chrom == "chrX"], [(e.sample, e.chrom, e.type, e.f) for e in res1["events"]]
     assert abs(res1["summary"]["child_x_copies_raw"] - 2) < 0.06 and abs(res1["summary"]["mother_x_copies_raw"] - 2) < 0.06
     assert res1["summary"]["father_karyotype"] == "mos 45,X[%.2f]/46,XY" % ys[0].f
+
+
+def test_panel_y_rows_come_from_the_genomes_with_a_y_only(tmp_path):
+    """A joint call gives a female a little depth on the Y (stray X-homologous reads), so her first-pass bins carry Y rows at a
+    deep negative LRR. Those are no Y: a panel built from such runs must take its Y rows from the males alone, count only them
+    as genomes with a Y, and read the females' X as two copies. (A GMKF cohort of 663 once read as 663 with a Y.)"""
+    import csv, os
+    from triokaryo.genome import genome
+    from triokaryo.panel import build_panel
+    G = genome("grch38")
+    bin_size = 1_000_000
+    runs = []
+    rng = np.random.default_rng(5)
+    for i in range(3):
+        d = tmp_path / ("run%d" % i)
+        d.mkdir()
+        rows = []
+        for chrom, n in (("chr1", 120), ("chrX", 30), ("chrY", 12)):
+            for b in range(n):
+                r = dict(chrom=chrom, start=b * bin_size, end=(b + 1) * bin_size)
+                for role, x_level, y_level in (("child", -1.0, -1.05), ("father", -1.0, -1.05), ("mother", 0.0, -4.0)):
+                    lvl = {"chr1": 0.0, "chrX": x_level, "chrY": y_level}[chrom] + rng.normal(0, 0.02)
+                    r["%s_lrr" % role] = "%.4f" % lvl
+                    r["%s_bdev" % role] = "NA"
+                    r["%s_het_rate" % role] = "NA"
+                    r["%s_n_called" % role] = "0"
+                rows.append(r)
+        with open(d / "bins.tsv", "w") as fh:
+            w = csv.DictWriter(fh, fieldnames=list(rows[0].keys()), delimiter="\t", lineterminator="\n")
+            w.writeheader()
+            w.writerows(rows)
+        with open(d / "summary.tsv", "w") as fh:
+            fh.write("trio\tchild\tfather\tmother\tbin_size\tchild_y_copies\tfather_y_copies\tmother_y_copies\n")
+            fh.write("K%d\tK%d\tD%d\tM%d\t%d\t1\t1\t0\n" % (i, i, i, i, bin_size))
+        runs.append(str(d))
+    rows, samples, n_y = build_panel(G, bin_size, runs=runs)
+    assert len(samples) == 9 and n_y == 6, (len(samples), n_y)
+    y = [r for r in rows if r["chrom"] == "chrY"]
+    x = [r for r in rows if r["chrom"] == "chrX"]
+    assert len(y) == 12 and all(r["n"] == 6 for r in y) and abs(np.median([r["lrr_median"] for r in y]) - (-0.05)) < 0.03, y[:2]
+    assert all(r["lrr_rsd"] < 0.05 for r in y)
+    assert all(r["n"] == 9 for r in x) and abs(np.median([r["lrr_median"] for r in x])) < 0.03         # the males' X shifted up a unit, the females' as is
+    # without the run's own reading, the level alone tells a female's stray Y depth from a Y
+    for i in range(3):
+        with open(os.path.join(runs[i], "summary.tsv"), "w") as fh:
+            fh.write("trio\tchild\tfather\tmother\tbin_size\n")
+            fh.write("K%d\tK%d\tD%d\tM%d\t%d\n" % (i, i, i, i, bin_size))
+    rows2, _, n_y2 = build_panel(G, bin_size, runs=runs)
+    assert n_y2 == 6 and all(r["n"] == 6 for r in rows2 if r["chrom"] == "chrY")

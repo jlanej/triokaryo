@@ -13,11 +13,25 @@ from .model import NA, homref_depth_ratio, reference_block_depth, trimmed_mean
 from .vcfscan import scan_vcf
 
 
-def align_sex_chromosomes(lrr):
+NO_Y_LEVEL = -1.5           # a genome whose Y bins' median LRR (diploid scale) lies under this carries no Y: what depth its Y bins hold
+                            # is stray reads (X-homologous sequence in a female), not a chromosome, and gives the Y rows nothing
+
+
+def align_sex_chromosomes(lrr, y_copies=None):
     """A genome's X and Y LRR on the diploid scale, in place: a one-copy X (median under -0.5: a male, or a 45,X) and a one-copy
     Y (median under -0.5) are each shifted up by exactly one unit. The rows then hold each chromosome's level with its
     mappability deficit whatever the genome's sex, so that the deficit cancels for a member: shifting a male's X by its own
-    median instead would erase the deficit for males only, and a male-heavy panel would read every female's X as a loss."""
+    median instead would erase the deficit for males only, and a male-heavy panel would read every female's X as a loss.
+    A genome without a Y contributes no Y rows: its Y bins, where a joint call gives a female depth from stray X-homologous
+    reads, are dropped - by the run's own reading where given (y_copies 0), else by their level (median under NO_Y_LEVEL).
+    Before this, every female with a few Y bins counted as a genome with a Y and her stray depth, shifted up a unit as if
+    a one-copy Y, went into the Y rows: a cohort of 663 read as 663 with a Y."""
+    ys = [k for k in lrr if k[0] == "chrY"]
+    if ys:
+        v = [lrr[k] for k in ys]
+        if (y_copies is not None and y_copies == 0) or float(np.median(v)) < NO_Y_LEVEL:
+            for k in ys:
+                del lrr[k]
     for c, n_min in (("chrX", 20), ("chrY", 3)):
         v = [x for (cc, _), x in lrr.items() if cc == c]
         if len(v) >= n_min and float(np.median(v)) < -0.5:
@@ -89,6 +103,11 @@ def build_panel(genome, bin_size, vcfs=(), samples=None, runs=(), log=None, thin
         rows = list(csv.DictReader(open(bpath), delimiter="\t"))
         for role in (roles or ("child", "father", "mother")):
             name = summ.get(role, role)
+            yc = summ.get("%s_y_copies" % role, "")                   # the run's own reading of the member's Y copies, where it has one
+            try:
+                yc = int(float(yc)) if yc not in ("", "NA", "nan") else None
+            except ValueError:
+                yc = None
             prof, bd, hr = {}, {}, {}
             for r in rows:
                 key = (r["chrom"], int(r["start"]))
@@ -101,9 +120,9 @@ def build_panel(genome, bin_size, vcfs=(), samples=None, runs=(), log=None, thin
                 h = r.get("%s_het_rate" % role, "NA")
                 if h != "NA" and int(r.get("%s_n_called" % role, 0) or 0) >= 20:
                     hr[key] = float(h)
-            profiles.append((name, align_sex_chromosomes(prof), bd, hr))
+            profiles.append((name, align_sex_chromosomes(prof, y_copies=yc), bd, hr))
             if log:
-                log("panel: %s from %s (%d bins)" % (name, d, len(prof)))
+                log("panel: %s from %s (%d bins%s)" % (name, d, len(prof), "" if any(k[0] == "chrY" for k in prof) else "; no Y"))
     keys = sorted({k for _, p, _, _ in profiles for k in p} | {k for _, _, b, _ in profiles for k in b},
                   key=lambda k: (genome.chroms.index(k[0]) if k[0] in genome.chroms else 99, k[1]))
     out = []
