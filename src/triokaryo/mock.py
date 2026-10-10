@@ -74,7 +74,7 @@ def _gt(alt, dp):
 
 def write_mock(out_dir, seed=1, sites_per_mb=60, no_events=False, xxy=False, depth=(30.0, 32.0, 28.0), gc_beta=(-0.8, -0.5, -1.0), bin_size=1_000_000,
                events=None, prefix="", contigs=None, child_sex="M", xxx=False, sex_deficit=(1.0, 1.0), with_gq=True, switch_maternal=None, switch_paternal=None,
-               refined=False, ref_blocks=False):
+               refined=False, ref_blocks=False, pedigree_sex=""):
     """prefix: a tag before the sample names (KID, DAD, MOM), so that several mock trios can sit in one cohort.
     contigs: only these chromosomes (a dense small mock), else all. child_sex: M (one maternal X, the father's Y) or F (one X
     from each parent, no Y). xxy: a son with both maternal X homologues (a maternal meiosis I 47,XXY); xxx: a daughter with
@@ -85,7 +85,9 @@ def write_mock(out_dir, seed=1, sites_per_mb=60, no_events=False, xxy=False, dep
     refined: PL from the reads and, as GATK CalculateGenotypePosteriors with a pedigree does, GT and GQ refined under a family
     prior that penalises a Mendelian violation by 80 phred (the child moved to the consistent genotype where its PL gap is
     smaller; otherwise kept with the GQ reduced) and PP, the posterior PL. ref_blocks: homozygous-reference genotypes
-    written with a reference block's depth, about 18% under the site's, as GATK GenotypeGVCFs does (MIN_DP)."""
+    written with a reference block's depth, about 18% under the site's, as GATK GenotypeGVCFs does (MIN_DP). pedigree_sex: the
+    child's sex as the trios file states it (M or F; default the simulated sex): F with xxy imitates a sex called from X
+    heterozygosity, as peddy's, which reads a 47,XXY's two X's as female."""
     os.makedirs(out_dir, exist_ok=True)
     nm = {KID: prefix + KID, DAD: prefix + DAD, MOM: prefix + MOM}
     son = child_sex.upper().startswith("M")
@@ -253,10 +255,12 @@ def write_mock(out_dir, seed=1, sites_per_mb=60, no_events=False, xxy=False, dep
                                     f=ev["f"], type=ev["type"], label=ev["label"], origin=ev["origin"], inherited=ev["inherited"]))
     truth["x_copies"] = {nm[KID]: (2 if xxy else 1) if son else (3 if xxx else 2), nm[DAD]: 1, nm[MOM]: 2}
     truth["y_copies"] = {nm[KID]: 1 if son else 0, nm[DAD]: 1, nm[MOM]: 0}
+    kid_sex = {"M": "1", "F": "2"}[pedigree_sex.upper()[:1]] if pedigree_sex else ("1" if son else "2")
+    truth["pedigree_sex"] = {"1": "M", "2": "F"}[kid_sex]
     with open(os.path.join(out_dir, "truth.json"), "w") as fh:
         json.dump(truth, fh, indent=1)
     with open(os.path.join(out_dir, "mock.trios.tsv"), "w") as fh:
-        fh.write("#kid\tdad\tmom\tkid_sex\tdad_sex\tmom_sex\n%s\t%s\t%s\t%s\t1\t2\n" % (nm[KID], nm[DAD], nm[MOM], "1" if son else "2"))
+        fh.write("#kid\tdad\tmom\tkid_sex\tdad_sex\tmom_sex\n%s\t%s\t%s\t%s\t1\t2\n" % (nm[KID], nm[DAD], nm[MOM], kid_sex))
     # the planted events as another caller would list them (NGS-DOSE's karyotype events columns), for the concordance check
     with open(os.path.join(out_dir, "events.external.tsv"), "w") as fh:
         fh.write("sample\tchrom\tspan\tstart_mb\tend_mb\tlabel\tkind\n")
@@ -268,6 +272,8 @@ def write_mock(out_dir, seed=1, sites_per_mb=60, no_events=False, xxy=False, dep
             span = "whole" if ev["start"] == 0 and ev["end"] == L else "q" if ev["start"] == pe and ev["end"] == L else "p" if ev["start"] == 0 and ev["end"] == pe else "stretch"
             fh.write("%s\t%s\t%s\t%.3f\t%.3f\t%s%s%s\t%s\n" % (ev["sample"], ev["chrom"], span, ev["start"] / 1e6, ev["end"] / 1e6, "+" if ev["type"] == "gain" else "-",
                                                              ev["chrom"][3:], ("[%.2f]" % ev["f"]) if ev["f"] < 1 else "", "gain" if ev["type"] == "gain" else "loss"))
+        if xxy or xxx:                                             # the complement as NGS-DOSE lists it: one row on chrX/chrY, named
+            fh.write("%s\tchrX/chrY\twhole\tNA\tNA\t%s\tsex-chromosome complement\n" % (nm[KID], "47,XXY" if xxy else "47,XXX"))
     with open(os.path.join(out_dir, "MOCK_DATA.txt"), "w") as fh:
         fh.write("MOCK DATA - triokaryo mock (seed %d): every record simulated, no real genome.\n" % seed)
     return dict(vcf=vcf_gz, trios=os.path.join(out_dir, "mock.trios.tsv"), truth=os.path.join(out_dir, "truth.json"), gc=os.path.join(out_dir, "gc.tsv"),

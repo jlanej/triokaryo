@@ -201,6 +201,7 @@ def write_tables(out, trio, bins, events, x_copies, scan, base_mie, params, trac
             summ["%s_y_copies" % role] = st["y_copies"]
             summ["%s_y_copies_raw" % role] = st["y_copies_raw"]
             summ["%s_sex_karyotype" % role] = karyotype(st["x_copies"], st["y_copies"])
+            summ["%s_sex_anchor" % role] = st.get("anchor", "")           # the complement the Y implies (M with a Y, F without; blank: Y unread, the pedigree sex stood in)
             summ["%s_sex_check" % role] = st.get("sex_check", "")
         else:
             summ["%s_x_check" % role] = ("" if not sex or not np.isfinite(xc) else "agrees" if (sex == "M" and xc == 1) or (sex == "F" and xc == 2)
@@ -605,7 +606,7 @@ def write_cohort(out, run_dirs, events_path=None, genome_name="grch38", log=None
         w.append("<p>%d whole-X or whole-Y events in %d members (sex_aneuploidies.tsv). %s.</p>" % (len(sex_ane), len({(r["trio"], r["role"]) for r in sex_ane}), html.escape("; ".join(parts))))
         w.append(_table(["trio", "sample", "role", "complement", "karyotype", "label", "type", "f", "origin", "stage", "crossovers", "mie_rate", "note"], sex_ane))
     else:
-        w.append("<p>None: every whole X and Y matches the complement the pedigree sex implies (sex_aneuploidies.tsv is empty).</p>")
+        w.append("<p>None: every whole X and Y matches a normal complement - XY with a Y, XX without, the pedigree sex where the Y is unread (sex_aneuploidies.tsv is empty).</p>")
     if conc:
         w.append("<h2>Concordance with the supplied events</h2><p>%d supplied events, %d matched by a triokaryo event of the same sample and chromosome whose "
                  "intersection covers at least half of the shorter segment; %d triokaryo gains or losses without a supplied event; %d copy-neutral events, which a "

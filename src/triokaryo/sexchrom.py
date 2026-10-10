@@ -1,5 +1,6 @@
-"""Sex chromosomes: each member's X and Y copy number from the depth, the sex-chromosome complement against the pedigree
-sex, and whole-chromosome X and Y events, constitutional or mosaic, relative to the complement the pedigree sex implies.
+"""Sex chromosomes: each member's X and Y copy number from the depth, the sex-chromosome complement (checked against the
+pedigree sex), and whole-chromosome X and Y events, constitutional or mosaic, relative to the normal complement the member's
+own Y implies - XY with a Y, XX without - with the pedigree sex standing in only where the Y is unreadable.
 Segmental X events are called by the ordinary segmentation relative to the member's own X level (segment.call_member);
 the Y is analysed as a whole chromosome only.
 
@@ -9,14 +10,19 @@ has 0 Y copies. Read against the autosomes alone, a male's Y carries a mappabili
 whose Y rows hold the male level on the diploid scale removes it, as does comparing a father's Y with his son's, whose
 Y is the same sequence (y_father_son).
 
-Whole-chromosome events: with the pedigree sex given, the expected complement is XY or XX. An X whose raw copy number
-deviates from the expectation by at least min_f is a whole-X gain or loss in a cell fraction f = |copies - expected|:
-47,XXY (f = 1) or 46,XY/47,XXY in a reported male; 45,X, 45,X/46,XX or 47,XXX in a reported female. A Y deviating from
-one copy in a reported male by at least min_f is a whole-Y gain (47,XYY) or loss (mosaic loss of Y, the common
-age-related mosaicism in men), from the panel-corrected level when the panel carries Y rows, else from the father/son
-ratio when the child is male, else only beyond a deviation of 0.25. These events then receive the parent of origin, the
-phased statistics and the meiotic stage like an autosome's, with a hemizygous baseline for a reported male's X
-(trio.parent_of_origin, phase.annotate_events)."""
+Whole-chromosome events: the expected complement is the one the member's Y implies (anchor_complement) - XY with a Y, XX
+without, a Y in part of the cells going with the nearer of the two - and the pedigree sex only where the Y is unreadable
+(effective_sex). The pedigree sex cannot be the anchor: called from X heterozygosity, as peddy's is, it reads a 47,XXY as
+female (two X's) and a 45,X as male (one X), and against "female" an XXY's two X copies agree and its Y goes unexamined.
+An X whose raw copy number deviates from the expectation by at least min_f is a whole-X gain or loss in a cell fraction
+f = |copies - expected|: 47,XXY (f = 1) or 46,XY/47,XXY with a Y; 45,X, 45,X/46,XX or 47,XXX without. A Y deviating from
+one copy by at least min_f is a whole-Y gain (47,XYY) or loss (mosaic loss of Y, the common age-related mosaicism in men),
+from the panel-corrected level when the panel carries Y rows, else from the father/son ratio when the child is male, else
+only beyond a deviation of 0.25; a Y in part of the cells of an XX genome (Y_PRESENT or more) is a whole-Y gain
+(46,XX/47,XXY mosaic, or an XX/XY mixture). These events then receive the parent of origin, the phased statistics and the
+meiotic stage like an autosome's, with a hemizygous baseline for the X of a member with a Y (trio.parent_of_origin,
+phase.annotate_events). The complement against the pedigree sex (sex_check) stays the tell for a sample swap, an XX male
+or an XY female, and names the 47,XXY or 45,X a heterozygosity-called sex mislabels."""
 import numpy as np
 
 from .model import NA, MEMBERS, chrom_level
@@ -25,6 +31,7 @@ from .segment import Event
 Y_MIN_BINS = 3                 # usable Y bins for a Y copy number
 X_OFFSET_MAX = 0.3             # the largest within-trio X correction applied (log2); beyond it the members' X levels contradict the pedigree
 Y_EVENT_FLOOR_NO_REF = 0.25    # a whole-Y deviation this large is reported without a panel or a father/son comparison
+Y_PRESENT = 0.25               # a Y read at this many copies or more is a Y, in all or part of the cells; less is stray depth
 Y_FATHER_SON_MIN_SITES = 200   # Y sites with depth in both for the father/son ratio
 EXPECTED = {"M": (1, 1), "F": (2, 0)}
 KARYOTYPE_NAME = {"XXY": "47,XXY", "XYY": "47,XYY", "XXX": "47,XXX", "X": "45,X", "XXYY": "48,XXYY", "XXXY": "48,XXXY", "XXXX": "48,XXXX"}
@@ -38,21 +45,45 @@ def karyotype(x_copies, y_copies):
     return ("X" * x + "Y" * y) if x + y else "0"
 
 
+def anchor_complement(x_raw, y_raw, y_copies):
+    """From the depth alone, the normal complement the member's sex chromosomes are read against: XY ('M') with a Y - the Y
+    rounding to one copy or more - and XX ('F') with none, under Y_PRESENT copies. A Y in part of the cells (Y_PRESENT to
+    half) goes with the nearer of the two: XY for an X at one copy (mosaic loss of Y), XX for an X at two (a Y in part of the
+    cells of an XX genome). '' when the Y is unreadable. The pedigree sex plays no part: called from X heterozygosity, as
+    peddy's is, it reads a 47,XXY as female and a 45,X as male."""
+    if not np.isfinite(y_raw):
+        return ""
+    if np.isfinite(y_copies) and int(y_copies) >= 1:
+        return "M"
+    if y_raw < Y_PRESENT:
+        return "F"
+    if not np.isfinite(x_raw):
+        return "M"
+    return "M" if abs(x_raw - 1.0) + (1.0 - y_raw) <= abs(x_raw - 2.0) + y_raw else "F"
+
+
 def sex_state(bins, scan, m, min_sites=20, min_bins=5):
-    """The member's X and Y copy numbers (raw and rounded) and usable bins; 0 Y copies when the VCF carries Y sites but the
-    member has depth at fewer than 5% of them."""
+    """The member's X and Y copy numbers (raw and rounded) and usable bins, and the complement the Y implies (anchor: M, F,
+    or '' when the Y is unreadable). y_copies is the Y count of the base complement: 0 without a Y (the VCF carries Y sites
+    but the member has depth at fewer than 5% of them, or the level is under Y_PRESENT), at least 1 with one, so that a Y
+    lost in part of the cells still reads XY."""
     x_raw, x_cp, nx = chrom_level(bins, m, "chrX", min_sites, min_bins)
     y_raw, y_cp, ny = chrom_level(bins, m, "chrY", min_sites, Y_MIN_BINS)
     ys = scan.sites("chrY")
     y_in_vcf = ys is not None and ys.n > 0
     if y_in_vcf and not np.isfinite(y_raw) and float((ys.dp[m] > 0).mean()) < 0.05:
         y_raw, y_cp = 0.0, 0
+    anchor = anchor_complement(x_raw, y_raw, y_cp)
+    if anchor == "M" and y_cp < 1:
+        y_cp = 1
+    elif anchor == "F":
+        y_cp = 0
     sl = bins.of("chrY")
     y_total = int(sl.stop - sl.start)
     y_masked = int(bins.masked[sl].sum()) if bins.masked is not None and y_total else 0
     y_thin = int((bins.n_dp[m][sl] < min_sites).sum()) if y_total else 0
     return dict(x_copies=x_cp, x_copies_raw=x_raw, x_bins=nx, y_copies=y_cp, y_copies_raw=y_raw, y_bins=ny, y_in_vcf=y_in_vcf, y_bins_total=y_total,
-                y_bins_masked=y_masked, y_bins_thin=y_thin, y_min_sites=min_sites)
+                y_bins_masked=y_masked, y_bins_thin=y_thin, y_min_sites=min_sites, anchor=anchor)
 
 
 def y_unread(st):
@@ -89,6 +120,28 @@ def implied_sex(sex, st):
     return "", False
 
 
+def effective_sex(sex, st):
+    """The sex the member's whole X and Y are read against, and its source: the complement the Y implies where the Y is read
+    (anchor: 'Y'), else the pedigree sex ('pedigree'), else ''."""
+    a = st.get("anchor", "")
+    if a:
+        return a, "Y"
+    return (sex, "pedigree") if sex else ("", "")
+
+
+def _who(sex, src, ped):
+    """The member in the event's note: how its sex was fixed for the expected complement (no parentheses: the cohort table takes
+    the note's first parenthesis as the event's name)."""
+    name = "male" if sex == "M" else "female"
+    if src != "Y":
+        return "a reported %s, the Y unread" % name
+    if not ped:
+        return "a %s with no pedigree sex, implied by the Y" % name
+    if ped == sex:
+        return "a reported %s" % name
+    return "a reported %s %s" % ("male" if ped == "M" else "female", "with a Y" if sex == "M" else "without a Y")
+
+
 def sex_check(sex, st):
     """The sex-chromosome complement against the pedigree sex: 'agrees', or the complement found and its name."""
     if not sex:
@@ -104,9 +157,13 @@ def sex_check(sex, st):
     if k == expected:
         return "agrees"
     if sex == "M" and k == "XX":
-        name = "an XX male, or a sample swap"
+        name = "an XX male, a sample swap, or an X without heterozygosity (an isodisomy) that a sex called from X heterozygosity reads male"
     elif sex == "F" and k == "XY":
         name = "a sample swap, or an XY female"
+    elif sex == "F" and k == "XXY":
+        name = "47,XXY; a sex called from X heterozygosity reads two X's as female"
+    elif sex == "M" and k == "X":
+        name = "45,X; a sex called from X heterozygosity reads one X as male"
     else:
         name = KARYOTYPE_NAME.get(k, k)
     return "%s in a reported %s (%s)" % (k, "male" if sex == "M" else "female", name)
@@ -157,16 +214,17 @@ def y_father_son(scan, bins, min_sites=Y_FATHER_SON_MIN_SITES):
 
 
 def sex_chromosome_events(m, sample, states, sexes, bins, genome, min_f, y_ref=False, y_ratio=NA):
-    """The member's whole-X and whole-Y events against the complement its pedigree sex implies. states: {role: sex_state};
-    y_ref: the panel carries Y rows, so the Y level is corrected; y_ratio: y_father_son's log2 ratio (NaN without a son)."""
+    """The member's whole-X and whole-Y events against the complement its own Y implies (effective_sex: XY with a Y, XX without;
+    the pedigree sex where the Y is unreadable). states: {role: sex_state}; y_ref: the panel carries Y rows, so the Y level is
+    corrected; y_ratio: y_father_son's log2 ratio (NaN without a son)."""
     role = MEMBERS[m]
     st = states[role]
     out = []
-    sex, implied = implied_sex(sexes[m], st)
+    sex, src = effective_sex(sexes[m], st)
     if not sex:
         return out
     ex_x, ex_y = EXPECTED[sex]
-    who = ("male" if sex == "M" else "female") + (" (no pedigree sex; implied by the Y)" if implied else "")
+    who = _who(sex, src, sexes[m])
     k = karyotype(st["x_copies"], st["y_copies"])
     x_raw = st["x_copies_raw"]
     if np.isfinite(x_raw) and abs(x_raw - ex_x) >= min_f:
@@ -180,12 +238,14 @@ def sex_chromosome_events(m, sample, states, sexes, bins, genome, min_f, y_ref=F
             name = " (46,XY/47,XXY mosaic)" if sex == "M" else " (46,XX/47,XXX mosaic)"
         elif kind == "loss":
             name = " (45,X/46,%s mosaic)" % ("XY" if sex == "M" else "XX")
-        note = "whole-chromosome X: %.2f copies against %d expected for a reported %s%s" % (x_raw, ex_x, who, name)
+        note = "whole-chromosome X: %.2f copies against %d expected for %s%s" % (x_raw, ex_x, who, name)
         if sex == "M" and kind == "loss":
             note += "; the single X is maternal"
         out.append(Event(sample, role, "chrX", 0, L, "whole", kind, lrr=float(np.log2(x_raw / 2.0)) if x_raw > 0 else NA, n_bins=st["x_bins"], f_lrr=f, note=note))
     y_raw = st["y_copies_raw"]
-    if sex == "M" and np.isfinite(y_raw) and st["y_in_vcf"]:
+    if not (np.isfinite(y_raw) and st["y_in_vcf"]):
+        return out
+    if sex == "M":
         dev = y_raw - ex_y
         kind = "gain" if dev > 0 else "loss"
         f_level = float(min(abs(dev), 2.0 if kind == "gain" else 1.0))
@@ -209,7 +269,18 @@ def sex_chromosome_events(m, sample, states, sexes, bins, genome, min_f, y_ref=F
         if np.isfinite(f):
             name = (" (%s)" % KARYOTYPE_NAME.get(k, "47,XYY")) if kind == "gain" and f >= 0.9 else " (mosaic loss of Y)" if kind == "loss" and f < 0.9 else " (loss of Y)" if kind == "loss" else ""
             out.append(Event(sample, role, "chrY", 0, genome.length["chrY"], "whole", kind, lrr=float(np.log2(y_raw / 2.0)) if y_raw > 0 else NA, n_bins=st["y_bins"],
-                             f_lrr=f, note="whole-chromosome Y%s: %.2f copies against 1 expected for a reported %s, %s" % (name, y_raw, who, how)))
+                             f_lrr=f, note="whole-chromosome Y%s: %.2f copies against 1 expected for %s, %s" % (name, y_raw, who, how)))
+    elif y_raw >= Y_PRESENT:                                   # a Y in part of the cells of an XX genome
+        f = float(min(y_raw, 1.0))
+        if y_ref:
+            how = "from the Y depth against the panel's male level"
+        elif f >= Y_EVENT_FLOOR_NO_REF:
+            how = "from the Y depth alone, uncorrected for mappability (no panel with Y rows)"
+        else:
+            return out
+        out.append(Event(sample, role, "chrY", 0, genome.length["chrY"], "whole", "gain", lrr=float(np.log2(y_raw / 2.0)), n_bins=st["y_bins"], f_lrr=f,
+                         note="whole-chromosome Y (46,XX/47,XXY mosaic, or an XX/XY mixture): a Y in %.0f%% of the cells of %s, %.2f copies against none expected, %s" % (
+                             100 * f, who, y_raw, how)))
     return out
 
 
@@ -270,7 +341,7 @@ def karyotype_string(events, complement, chrom_order, genome=None):
         doubt = "?" if "may be an artefact" in e.note else ""
         n = e.chrom[3:]
         o, stg = _short_origin(e), _short_stage(e.stage)
-        if e.chrom in ("chrX", "chrY") and e.span == "whole":
+        if e.chrom in ("chrX", "chrY") and e.span == "whole" and e.type in ("gain", "loss"):   # an X LOH or heterodisomy is a upd/loh term below
             a = ",".join(x for x in (o, stg) if x)
             if not mos:
                 ann = "(%s)" % a if a else ""

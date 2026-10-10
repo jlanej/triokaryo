@@ -20,21 +20,23 @@ def _run(tmp_path, name, seed, figures, **kw):
 def test_digest_ranks_the_largest_events_and_embeds_the_figures(tmp_path):
     run = _run(tmp_path, "m", 2, True)                         # the planted trio, with its figures
     null = _run(tmp_path, "n", 9, False, no_events=True, prefix="N")
+    xxy = _run(tmp_path, "x", 5, False, no_events=True, xxy=True, pedigree_sex="F", prefix="X")   # a 47,XXY whose pedigree sex is female
     out = tmp_path / "digest"
-    assert main(["digest", "--runs", run, null, "--out", str(out), "--top", "6", "--allow-first-pass"]) == 0
+    assert main(["digest", "--runs", run, null, xxy, "--out", str(out), "--top", "7", "--allow-first-pass"]) == 0
     page = open(out / "digest.html").read()
     assert "<img src=\"data:image/png;base64," in page and "src=\"http" not in page and "<script" not in page
     rows = [l.rstrip("\n").split("\t") for l in open(out / "digest.tsv")]
     hdr, rows = rows[0], rows[1:]
     col = lambda r, c: r[hdr.index(c)]
-    assert len(rows) == 6 and [col(r, "rank") for r in rows] == [str(i + 1) for i in range(6)]
-    # the whole chromosomes first: the trisomy 21 (a copy-number change in every cell) before the uniparental disomies, those before
-    # the mosaic +12 and the mother's mosaic +8
-    first = [(col(r, "sample"), col(r, "chrom"), col(r, "type"), col(r, "span")) for r in rows[:5]]
-    assert first[0] == ("KID", "chr21", "gain", "whole"), first
-    assert all(col(r, "span") == "whole" for r in rows[:5]) and {f[1] for f in first[1:3]} == {"chr7", "chr15"}, first
-    assert {f[:2] for f in first[3:5]} == {("KID", "chr12"), ("MOM", "chr8")}, first                 # the mosaic whole chromosomes after
+    assert len(rows) == 7 and [col(r, "rank") for r in rows] == [str(i + 1) for i in range(7)]
+    # the whole chromosomes first: the 47,XXY (the largest chromosome changed in every cell; its pedigree sex, female, did not hide it)
+    # and the trisomy 21 before the uniparental disomies, those before the mosaic +12 and the mother's mosaic +8
+    first = [(col(r, "sample"), col(r, "chrom"), col(r, "type"), col(r, "span")) for r in rows[:6]]
+    assert first[0] == ("XKID", "chrX", "gain", "whole") and first[1] == ("KID", "chr21", "gain", "whole"), first
+    assert all(col(r, "span") == "whole" for r in rows[:6]) and {f[1] for f in first[2:4]} == {"chr7", "chr15"}, first
+    assert {f[:2] for f in first[4:6]} == {("KID", "chr12"), ("MOM", "chr8")}, first                 # the mosaic whole chromosomes after
     assert "an extra copy of chromosome 21" in page and "New in the child" in page
+    assert "47,XXY" in page and "a reported female with a Y" in page and "XXY in a reported female" in page
     left = [l.rstrip("\n").split("\t") for l in open(out / "digest_left_out.tsv")]
     lh, left = left[0], left[1:]
     why = {(r[lh.index("sample")], r[lh.index("chrom")], r[lh.index("type")]): r[lh.index("left_out")] for r in left}

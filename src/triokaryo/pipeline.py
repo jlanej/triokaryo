@@ -58,32 +58,34 @@ def run_trio(vcf, trio, out, gc_track=None, events_path=None, bin_size=1_000_000
             apply_x_offset(bins, x_off)
             log("X level corrected within the trio by %+.3f (log2; the members' X deviations from their expected copy number: %s)" % (
                 -x_off, ", ".join("%s %+.3f" % kv for kv in x_devs.items())))
+    # the sex chromosomes first: each member's X and Y copy number and the complement its own Y implies (sexchrom.anchor_complement),
+    # which fixes the sex its X is read with - not the pedigree sex: called from X heterozygosity, as peddy's is, that reads a 47,XXY
+    # as female, and against "female" the two X copies agree and the Y goes unexamined
+    from .sexchrom import effective_sex, sex_check, sex_chromosome_events, sex_state, x_check, y_father_son
+    states = {role: sex_state(bins, scan, m, P["min_sites"], P["min_len"]) for m, role in enumerate(MEMBERS)}
+    sex_read = [effective_sex(trio.sexes[m], states[role])[0] for m, role in enumerate(MEMBERS)]
     events, x_copies = [], {}
     for m, role in enumerate(MEMBERS):
-        ev, xc = call_member(bins, scan, m, trio.members[m], G, P, trio.sexes[m])
+        ev, xc = call_member(bins, scan, m, trio.members[m], G, P, sex_read[m])
         events += ev
         x_copies[role] = xc
-    # the sex chromosomes: each member's X and Y copy number, the complement against the pedigree sex, whole-X and whole-Y events
-    from .sexchrom import sex_check, sex_chromosome_events, sex_state, x_check, y_father_son
-    states = {role: sex_state(bins, scan, m, P["min_sites"], P["min_len"]) for m, role in enumerate(MEMBERS)}
     y_ref = bool(pan is not None and np.isfinite(bins.panel_median[bins.of("chrY")]).sum() >= 3)
     y_ratio, y_ratio_n = y_father_son(scan, bins) if states["child"]["y_copies"] == 1 and states["father"]["y_copies"] == 1 else (float("nan"), 0)
     for m, role in enumerate(MEMBERS):
         states[role]["x_check"] = x_check(trio.sexes[m], states[role])
         states[role]["sex_check"] = sex_check(trio.sexes[m], states[role])
         events += sex_chromosome_events(m, trio.members[m], states, trio.sexes, bins, G, P["min_f"], y_ref=y_ref, y_ratio=y_ratio)
-    sex_info = dict(states=states, y_father_son_log2=y_ratio, y_father_son_sites=y_ratio_n, y_panel=y_ref, x_offset_trio=x_off)
+    sex_info = dict(states=states, sex_read=dict(zip(MEMBERS, sex_read)), y_father_son_log2=y_ratio, y_father_son_sites=y_ratio_n, y_panel=y_ref, x_offset_trio=x_off)
     log("sex chromosomes: %s; Y father/son log2 ratio %s" % ("; ".join("%s %s (%s)" % (role, states[role]["sex_check"] and (("X" * int(states[role]["x_copies"]) if np.isfinite(states[role]["x_copies"]) else "?") +
                                                                       ("Y" * int(states[role]["y_copies"]) if np.isfinite(states[role]["y_copies"]) else "")) or "unknown", states[role]["sex_check"] or "no pedigree sex")
                                                                       for role in MEMBERS), "%.3f over %d sites" % (y_ratio, y_ratio_n) if np.isfinite(y_ratio) else "NA"))
-    from .sexchrom import implied_sex
-    kid_sex = implied_sex(trio.kid_sex, states["child"])[0]
+    kid_sex = sex_read[0]
     child_x_baseline = 1 if kid_sex == "M" else 2 if kid_sex == "F" else (int(x_copies["child"]) if np.isfinite(x_copies["child"]) else 2)
     # the phased tracks: the maternal-allele fraction along the child, the transmitted-allele fraction along each parent
     from .phase import annotate_events, mask_rejected, mask_shared, phased_scan, phased_tracks
     tracks, phase_info, rejected = [], {}, []
     for m, role in enumerate(MEMBERS):
-        t, info = phased_tracks(scan, bins, G, m, min_dp, min_gq, trio.sexes[m], child_x_copies=x_copies["child"])
+        t, info = phased_tracks(scan, bins, G, m, min_dp, min_gq, sex_read[m], child_x_copies=x_copies["child"])
         tracks.append(t)
         phase_info[role] = info
         log("%s: %d phased sites (%d more on the auxiliary tracks), windows of %d, reference bias %+.3f" % (role, info["n_phased"], info["n_aux"], info["window_sites"], info["ref_bias"]))
@@ -92,7 +94,7 @@ def run_trio(vcf, trio, out, gc_track=None, events_path=None, bin_size=1_000_000
         phase_info[role]["windows_shared"] = int(sum(int(t.w_shared.sum()) for t in tracks[m].values() if t.w_shared is not None))
         auto = bins.autosomal & (bins.n_called[m] >= 10)
         base_het = float(np.nanmedian(bins.het_rate[m][auto])) if auto.any() else float("nan")
-        found = phased_scan(tracks[m], bins, scan, m, trio.members[m], G, events, None, min_dp, min_gq, trio.sexes[m], base_het, rejected, x_copies=x_copies[role])
+        found = phased_scan(tracks[m], bins, scan, m, trio.members[m], G, events, None, min_dp, min_gq, sex_read[m], base_het, rejected, x_copies=x_copies[role])
         if found:
             log("%s: %d event(s) from the phased scan not called by the depth" % (role, len(found)))
         events += found
@@ -127,7 +129,7 @@ def run_trio(vcf, trio, out, gc_track=None, events_path=None, bin_size=1_000_000
     from .guide import write_guide
     write_guide(os.path.join(out, "guide.html"))
     with open(os.path.join(out, "summary.json"), "w") as fh:
-        json.dump(dict(trio=trio.name, members=list(trio.members), sexes=list(trio.sexes), x_copies=x_copies, mie_rate_genome=base_mie, phasing=phase_info,
+        json.dump(dict(trio=trio.name, members=list(trio.members), sexes=list(trio.sexes), sexes_read=sex_read, x_copies=x_copies, mie_rate_genome=base_mie, phasing=phase_info,
                        sex_chromosomes={role: {k: v for k, v in states[role].items() if k != "y_in_vcf"} for role in MEMBERS},
                        karyotypes={role: summ.get("%s_karyotype" % role, "") for role in MEMBERS},
                        y_father_son=dict(log2=y_ratio, sites=y_ratio_n), x_offset_trio=x_off, genome=genome_name, mock_note=mock_note,

@@ -138,7 +138,8 @@ def cmd_mock(a):
         switches[parts[0]][parts[1]] = int(float(parts[2]))
     paths = write_mock(a.out, seed=a.seed, sites_per_mb=a.sites_per_mb, no_events=a.no_events, xxy=a.xxy, prefix=a.prefix, events=events,
                        contigs=a.contigs.split(",") if a.contigs else None, child_sex=a.child_sex, xxx=a.xxx, sex_deficit=deficit,
-                       switch_maternal=switches["mat"] or None, switch_paternal=switches["pat"] or None, refined=a.refined, ref_blocks=a.ref_blocks)
+                       switch_maternal=switches["mat"] or None, switch_paternal=switches["pat"] or None, refined=a.refined, ref_blocks=a.ref_blocks,
+                       pedigree_sex=a.pedigree_sex)
     _log("mock trio -> %s" % paths["vcf"])
     return 0
 
@@ -305,6 +306,7 @@ def main(argv=None):
     m.add_argument("--child-sex", default="M", choices=["M", "F"], help="the child's sex (default M)")
     m.add_argument("--xxy", action="store_true", help="a 47,XXY son with both maternal X homologues (a maternal meiosis I error)")
     m.add_argument("--xxx", action="store_true", help="a 47,XXX daughter with both maternal X homologues and the paternal X (a maternal meiosis I error); with --child-sex F")
+    m.add_argument("--pedigree-sex", default="", choices=["", "M", "F"], help="the child's sex as the trios file states it (default: the simulated sex); F with --xxy imitates a sex called from X heterozygosity, as peddy's, which reads a 47,XXY as female")
     m.add_argument("--prefix", default="", help="prefix for the sample names KID, DAD, MOM (several simulated trios in one cohort)")
     m.add_argument("--contigs", default="", help="restrict to these chromosomes, comma-separated (a small dense simulation)")
     m.add_argument("--low-share", action="store_true", help="plant the low-cell-fraction events (below the depth threshold) instead of the default set")

@@ -20,6 +20,107 @@ def test_karyotype_and_check_strings():
     assert sex_check("F", dict(x_copies=2, y_copies=0)) == "agrees" and sex_check("", st) == "" and sex_check("M", dict(x_copies=1, y_copies=float("nan"))) == "agrees (Y not in the VCF)"
 
 
+def test_anchor_complement_from_the_y():
+    """The complement the whole X and Y are read against comes from the Y alone: XY with a Y, XX without; a Y in part of the cells
+    goes with the nearer complement - XY for an X at one copy (loss of Y), XX for an X at two (a Y in part of an XX genome's
+    cells); unreadable Y, no anchor."""
+    from triokaryo.sexchrom import Y_PRESENT, anchor_complement, effective_sex
+    nan = float("nan")
+    assert anchor_complement(2.0, 1.0, 1) == "M" and anchor_complement(1.0, 1.0, 1) == "M" and anchor_complement(1.0, 2.0, 2) == "M"   # XXY, XY, XYY
+    assert anchor_complement(2.0, 0.08, 0) == "F" and anchor_complement(3.0, 0.1, 0) == "F" and anchor_complement(1.0, 0.1, 0) == "F"  # XX, XXX, 45,X
+    assert anchor_complement(1.0, 0.4, 0) == "M" and anchor_complement(2.0, 0.4, 0) == "F"                                           # loss of Y 60%; a Y in 40%
+    assert anchor_complement(1.0, nan, nan) == "" and anchor_complement(nan, 0.9, 1) == "M" and 0 < Y_PRESENT < 0.5
+    # the effective sex: the anchor where the Y is read, whatever the pedigree says; the pedigree sex only otherwise
+    assert effective_sex("F", dict(anchor="M")) == ("M", "Y") and effective_sex("M", dict(anchor="F")) == ("F", "Y")
+    assert effective_sex("F", dict(anchor="")) == ("F", "pedigree") and effective_sex("", dict(anchor="")) == ("", "")
+    assert sex_check("F", dict(x_copies=2, y_copies=1)).startswith("XXY in a reported female (47,XXY; a sex called from X heterozygosity")
+    assert sex_check("M", dict(x_copies=1, y_copies=0)).startswith("X in a reported male (45,X; a sex called from X heterozygosity")
+
+
+def test_whole_events_against_the_y_not_the_pedigree():
+    """From synthetic states: a reported female with a Y and two X's is a whole-X gain (47,XXY), a reported male without a Y and one X
+    a whole-X loss (45,X), a father with his Y in 40% of the cells a mosaic loss of Y (not a 45,X), a mother with a Y in 40% a
+    whole-Y gain in part of the cells; an XY female and an XX male are no event (the check against the pedigree names them)."""
+    from triokaryo.genome import genome
+    from triokaryo.sexchrom import sex_chromosome_events, sex_state  # noqa: F401
+    G = genome()
+    def st(x, y, y_bins=10):
+        from triokaryo.sexchrom import anchor_complement
+        yc = int(round(y)) if np.isfinite(y) else float("nan")
+        a = anchor_complement(x, y, yc)
+        yc = max(1, yc) if a == "M" else 0 if a == "F" else yc
+        return dict(x_copies=int(round(x)) if np.isfinite(x) else float("nan"), x_copies_raw=x, x_bins=100, y_copies=yc, y_copies_raw=y, y_bins=y_bins,
+                    y_in_vcf=True, y_bins_total=20, y_bins_masked=0, y_bins_thin=0, y_min_sites=20, anchor=a)
+    def events(states, sexes, **kw):
+        return [e for m in range(3) for e in sex_chromosome_events(m, ["K", "D", "M"][m], states, sexes, None, G, 0.2, **kw)]
+    # 47,XXY reported female (two X's read female to peddy), the father and mother normal
+    ev = events(dict(child=st(2.0, 1.0), father=st(1.0, 1.0), mother=st(2.0, 0.1)), ["F", "M", "F"], y_ref=True)
+    assert [(e.sample, e.chrom, e.type, round(e.f, 2)) for e in ev] == [("K", "chrX", "gain", 1.0)], ev
+    assert "47,XXY" in ev[0].note and "a reported female with a Y" in ev[0].note, ev[0].note
+    # 45,X reported male (one X reads male), a father with 60% loss of Y, a mother with a Y in 40% of her cells
+    ev = events(dict(child=st(1.0, 0.1), father=st(1.0, 0.4), mother=st(2.0, 0.4)), ["M", "M", "F"], y_ref=True)
+    got = {(e.sample, e.chrom, e.type): e for e in ev}
+    assert sorted(got) == [("D", "chrY", "loss"), ("K", "chrX", "loss"), ("M", "chrY", "gain")], [(e.sample, e.chrom, e.type, e.f, e.note) for e in ev]
+    assert "45,X" in got[("K", "chrX", "loss")].note and "a reported male without a Y" in got[("K", "chrX", "loss")].note
+    assert abs(got[("D", "chrY", "loss")].f - 0.6) < 1e-6 and "mosaic loss of Y" in got[("D", "chrY", "loss")].note
+    assert abs(got[("M", "chrY", "gain")].f - 0.4) < 1e-6 and "46,XX/47,XXY mosaic" in got[("M", "chrY", "gain")].note and "a Y in 40% of the cells" in got[("M", "chrY", "gain")].note
+    # an XY female and an XX male: complements, not aneuploidies - no event; the pedigree check names them
+    ev = events(dict(child=st(1.0, 1.0), father=st(2.0, 0.05), mother=st(2.0, 0.1)), ["F", "M", "F"], y_ref=True)
+    assert ev == [], [(e.sample, e.chrom, e.type, e.f) for e in ev]
+    assert sex_check("F", st(1.0, 1.0)).startswith("XY in a reported female") and sex_check("M", st(2.0, 0.05)).startswith("XX in a reported male")
+    # the Y unreadable: the pedigree sex stands in (an XXY reported male still reads), a reported female with two X's is silent
+    nan = float("nan")
+    ev = events(dict(child=st(2.0, nan), father=st(1.0, nan), mother=st(2.0, nan)), ["M", "M", "F"])
+    assert [(e.sample, e.chrom, e.type) for e in ev] == [("K", "chrX", "gain")] and "47,XXY" in ev[0].note and "the Y unread" in ev[0].note
+    assert events(dict(child=st(2.0, nan), father=st(1.0, nan), mother=st(2.0, nan)), ["F", "M", "F"]) == []
+
+
+def test_xxy_in_a_reported_female(tmp_path):
+    """A 47,XXY son whose trios-file sex is female (a sex called from X heterozygosity, as peddy's): the Y fixes the complement, so the
+    extra X is still a whole-X gain with its parent of origin and stage, the hemizygous X baseline and the karyotype string; the
+    check against the pedigree names the mislabel; NGS-DOSE's complement row (chrom chrX/chrY) matches the event."""
+    m = write_mock(str(tmp_path / "xxyf"), seed=5, no_events=True, xxy=True, pedigree_sex="F")
+    trio = read_trios(m["trios"])[0]
+    assert trio.kid_sex == "F" and json.load(open(m["truth"]))["pedigree_sex"] == "F"
+    res = run_trio(m["vcf"], trio, str(tmp_path / "out"), gc_track=m["gc"], figures=False, log=lambda s: None, events_path=m["events"])
+    (e,) = res["events"]
+    assert e.sample == "KID" and e.chrom == "chrX" and e.type == "gain" and e.span == "whole" and abs(e.f - 1.0) < 0.1, (e.chrom, e.type, e.f)
+    assert "47,XXY" in e.note and "a reported female with a Y" in e.note, e.note
+    assert e.origin == "extra copy maternal" and e.origin_phase == "extra copy maternal" and e.stage == "meiosis I" and e.centromere == "heterodisomic"
+    assert "47,XXY" in (e.external or ""), e.external
+    s = res["summary"]
+    assert s["child_sex_karyotype"] == "XXY" and s["child_sex_anchor"] == "M" and s["child_y_copies"] == 1 and s["child_karyotype"] == "47,XXY(mat,MI)"
+    assert s["child_sex_check"].startswith("XXY in a reported female (47,XXY") and s["child_x_check"] == "agrees"
+    ext = open(os.path.join(str(tmp_path / "out"), "external.tsv")).read().splitlines()
+    assert any(l.startswith("KID\tchrX\t") and "47,XXY" in l and "matched" in l and "unmatched" not in l for l in ext), ext
+
+
+def test_isodisomic_xxy_and_x_isodisomy_one_homologue_read(tmp_path):
+    """Both X's from one parent as ONE homologue: a 47,XXY with the maternal X twice is staged meiosis II or post-zygotic (isodisomic),
+    not meiosis I - the one-or-two-homologues reading pools each site's distance from one half, since the pooled fraction of
+    sites at 0 and at 1 averages to one half like heterozygous sites; and a daughter's maternal isodisomy of the X (no
+    heterozygous X call, which an X-heterozygosity sex call reads as male) is a upd(X)mat(iso) term with the complement XX,
+    no copy-number event, the check against the pedigree saying so."""
+    from triokaryo.mock import KID
+    iso_xxy = [dict(member=KID, chrom="chrX", start=0, end=None, f=1.0, delta={"mat": +1}, label="47,XXY, the maternal X twice", type="gain",
+                    origin="extra copy maternal", inherited=False)]
+    m = write_mock(str(tmp_path / "xxy_iso"), seed=5, events=iso_xxy)
+    res = run_trio(m["vcf"], read_trios(m["trios"])[0], str(tmp_path / "out1"), gc_track=m["gc"], figures=False, log=lambda s: None)
+    (e,) = [x for x in res["events"] if x.sample == "KID"]
+    assert e.chrom == "chrX" and e.type == "gain" and e.span == "whole" and abs(e.f - 1.0) < 0.1 and e.origin_phase == "extra copy maternal"
+    assert e.stage == "mitotic, or meiosis II without a crossover" and e.centromere == "isodisomic", (e.stage, e.centromere)
+    assert res["summary"]["child_karyotype"] == "47,XXY(mat,MII/mit)"
+    upd_x = [dict(member=KID, chrom="chrX", start=0, end=None, f=1.0, delta={"pat": -1, "mat": +1}, label="maternal isodisomy X", type="LOH",
+                  origin="maternal copy retained (paternal replaced)", inherited=False)]
+    m = write_mock(str(tmp_path / "updx"), seed=5, child_sex="F", events=upd_x, pedigree_sex="M")
+    res = run_trio(m["vcf"], read_trios(m["trios"])[0], str(tmp_path / "out2"), gc_track=m["gc"], figures=False, log=lambda s: None)
+    (e,) = [x for x in res["events"] if x.sample == "KID"]
+    assert e.chrom == "chrX" and e.type == "LOH" and e.span == "whole" and e.origin == "maternal copy retained (paternal replaced)", (e.type, e.origin)
+    s = res["summary"]
+    assert s["child_sex_anchor"] == "F" and s["child_sex_karyotype"] == "XX" and s["child_karyotype"] == "46,XX,upd(X)mat(iso)", s["child_karyotype"]
+    assert s["child_sex_check"].startswith("XX in a reported male (an XX male, a sample swap, or an X without heterozygosity")
+
+
 def test_sex_chromosome_mosaics(tmp_path):
     """A 30% loss of Y in the father (from the father/son Y ratio: no panel), a 40% 45,X/46,XX mosaic in the mother with the lost X
     identified as the transmitted one or not, and a 40% 46,XY/47,XXY mosaic in the son with the extra X paternal, from the

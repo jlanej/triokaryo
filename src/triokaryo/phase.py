@@ -87,6 +87,7 @@ class PhasedTrack:
     w_copies_other: np.ndarray
     aux: dict = field(default_factory=dict)   # name -> (per-window pooled fraction, per-window sites): the auxiliary tracks
     aux_sites: dict = field(default_factory=dict)   # name -> (idx, frac) per site
+    aux_dev: dict = field(default_factory=dict)     # name -> per-window pooled |fraction - 1/2| of the any-call classes (one homologue or two)
     w_shared: np.ndarray = None   # windows deviating in two or more members (set across the trio): excluded from the scan and the fits
     w_rejected: np.ndarray = None # windows inside a segment the scan rejected (paralogy, a dense cluster): no copy number drawn there
 
@@ -265,6 +266,8 @@ def phased_tracks(scan, bins, genome, m, min_dp, min_gq, sex="", child_x_copies=
             af, adp = _frac(s, m, ai, at, b)
             t.aux[k] = _pool_by_windows(s.pos[ai], af, adp, ws, we)
             t.aux_sites[k] = (ai, af)
+            if k.endswith("_all"):                                          # per site |fraction - 1/2|, pooled: see _homologue_states
+                t.aux_dev[k] = _pool_by_windows(s.pos[ai], np.abs(af - 0.5), adp, ws, we)[0]
         tracks[c] = t
         allw.append(wf)
     fit_tracks(tracks, bins, m)
@@ -441,10 +444,17 @@ def _homologue_states(ev, track, absent_is_iso=False, upd_like=None):
     main = track.w_frac - 0.5
     other = np.where(np.isfinite(af), af, 0.5) - 0.5
     if upd:
-        # both copies from one parent in a cell fraction f: where they differ, the auxiliary track reads 1/(1+f) or f/(1+f),
-        # i.e. 1/(1+f) - 1/2 from one half (0 at f = 1); where they are one homologue the child has no heterozygous site
+        # both copies from one parent in a cell fraction f: where they differ, the auxiliary track reads 1/(1+f) or f/(1+f) at
+        # every site, i.e. 1/(1+f) - 1/2 from one half (0 at f = 1); where they are one homologue the child is homozygous at
+        # every site, whose fraction sits at 0 or 1 - half a unit from one half. The per-site deviation pooled over the window
+        # (aux_dev) tells the two apart by the nearer of those; the pooled FRACTION cannot: a window of sites at 0 and at 1
+        # averages to one half like a window of heterozygous sites, and read an isodisomic maternal 47,XXY as meiosis I
         f = float(np.clip(ev.f, 0.0, 1.0)) if np.isfinite(ev.f) else 1.0
-        differ = np.abs(other) < min(1.0 / (1.0 + f) - 0.5 + 0.12, 0.4)
+        dev = track.aux_dev.get(name) if hasattr(track, "aux_dev") else None
+        if dev is not None:
+            differ = np.where(np.isfinite(dev), dev, 0.5) < min((1.0 / (1.0 + f) - 0.5 + 0.5) / 2.0, 0.4)
+        else:
+            differ = np.abs(other) < min(1.0 / (1.0 + f) - 0.5 + 0.12, 0.4)
     else:
         differ = np.sign(other) != np.sign(main)
     sel = inside if absent_is_iso else have

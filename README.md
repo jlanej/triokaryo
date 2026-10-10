@@ -144,15 +144,19 @@ depth over the same bins, or as CN-LOH or heterodisomy when the depth is flat. A
 chromosome (arm) is `whole` (`p`, `q`), otherwise a `stretch`.
 
 **Sex chromosomes.** Each member's X and Y copy numbers are read from the depth (raw and rounded) and combined into
-a sex-chromosome complement (XY, XX, XXY, X, XYY, ...) that is checked against the pedigree sex. Against the
-complement the pedigree sex implies, a whole-X or whole-Y deviation of 10% or more is reported as an event with its
-cell fraction: 47,XXY and 46,XY/47,XXY mosaics, 45,X and 45,X/46,XX mosaics, 47,XXX, 47,XYY, and mosaic loss of Y, the
-latter from the panel-corrected Y level or, without a panel, from the father/son Y depth ratio (the two Y chromosomes
-are the same sequence, so mapping cancels). These events receive the parent of origin and, for a child's X, the
+a sex-chromosome complement (XY, XX, XXY, X, XYY, ...) that is checked against the pedigree sex. Whole-X and
+whole-Y events are read against the normal complement the member's own Y implies - XY with a Y, XX without, a Y in
+part of the cells going with the nearer of the two - and against the pedigree sex only where the Y is unreadable. The
+pedigree sex cannot anchor them: called from X heterozygosity, as peddy's is, it reads a 47,XXY as female, and against
+"female" the two X copies agree and the Y goes unexamined (the check against the pedigree sex still names it: "XXY in
+a reported female"). A deviation of 10% or more is reported as an event with its cell fraction: 47,XXY and
+46,XY/47,XXY mosaics, 45,X and 45,X/46,XX mosaics, 47,XXX, 47,XYY, a Y in part of the cells of an XX genome, and mosaic
+loss of Y, the latter from the panel-corrected Y level or, without a panel, from the father/son Y depth ratio (the two
+Y chromosomes are the same sequence, so mapping cancels). These events receive the parent of origin and, for a child's X, the
 meiotic stage: a paternal extra X in a male is a paternal meiosis I error, a paternal extra X in a female is the
 father's single X twice (meiosis II or post-zygotic), and a maternal extra X is staged from the centromere like an
-autosomal trisomy. Segmental X events are called relative to the member's own X level. A male's X uses a hemizygous
-baseline for the parent-of-origin likelihood and for Mendelian errors. Without a pedigree sex, the Y implies it; without
+autosomal trisomy. Segmental X events are called relative to the member's own X level. The X of a member with a Y uses
+a hemizygous baseline for the parent-of-origin likelihood and for Mendelian errors. Without a pedigree sex, the Y implies it; without
 a panel, the X level is corrected within the trio by the median deviation of the members' X from their expected copy
 number, which removes the X's mappability deficit. Each
 member also receives an ISCN-like karyotype string with cytogenetic bands, e.g. `47,XXY(mat,MI)`,
@@ -250,7 +254,8 @@ stage is assigned from a cell fraction of 0.2, and no false call appears on the 
   genomes masks every bin; a panel built from the trio alone follows the trio's own events.
 - The Y is analysed as a whole chromosome only (copy number, mosaic loss); it is not segmented. Without a panel that
   carries Y rows, a male's Y copy number from depth alone is 5–10% low (mappability), and mosaic loss of Y is read
-  from the father/son ratio or not at all. Whole-chromosome sex-chromosome events need the pedigree sex.
+  from the father/son ratio or not at all. Whole-chromosome sex-chromosome events need a readable Y or, failing that,
+  the pedigree sex; with the Y unread, a 47,XXY whose pedigree sex is female (a heterozygosity-called sex) is silent.
 - A constitutional deletion has no heterozygous sites, so `f_baf` is undefined there (`f` comes from depth); its
   Mendelian-error rate and phased fraction of 1 identify it.
 - The parent-of-origin likelihood assumes one event per region and is conditional on an event being present; it does
