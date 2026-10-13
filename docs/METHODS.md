@@ -85,7 +85,11 @@ Per member and chromosome, over unmasked bins with ≥ 20 sites (`min_sites`). T
 first differences, divided by √2, but never below the counting noise of the bin depth (about 1.1 √(depth/sites) reads in
 log2 units: a uniform, deeply sampled genome has first differences that are mostly zero, and a robust scale of zero
 would disable the segmentation). The same floor applies to the depth's standard error in the phased scan's typing and
-to the step fit's penalty. Single-bin spikes are then smoothed as in circular binary segmentation (Olshen et al.
+to the step fit's penalty. Pieces of one event separated by at most three bins, or by a run of bins of any length of
+which fewer than a segment's worth (four) are unmasked (a centromere; the heterochromatin of 1q12, 9q12 and 16q11
+with the few uncalled bins at its flanks, too few to have formed a segment and spoken against continuity), at the
+same level are joined into one event, so a trisomy 9 is one whole-chromosome event rather than two arms. Single-bin spikes
+are then smoothed as in circular binary segmentation (Olshen et al.
 2004): a bin farther than 4σ from every one of its two neighbours on each side is moved to their median plus 2σ on
 its own side. A germline copy-number variant of a few hundred kb, or a bin of collapsed repeats, deviates by far more
 than any mosaic and would otherwise drag the mean of the five-bin segment it falls in; a plateau of two bins or more
@@ -128,9 +132,18 @@ band-deviation excess.
 ## Sex chromosomes
 
 **Copy number.** Each member's X and Y copy number is 2 × 2^(median corrected LRR) over the chromosome's usable bins
-(outside the pseudoautosomal regions, ≥ 20 sites, unmasked; ≥ 5 bins for the X, ≥ 3 for the Y), kept as a raw value
-(`x_copies_raw`, `y_copies_raw`) and rounded (`x_copies`, `y_copies`). A member with depth at fewer than 5% of the
-VCF's Y sites has 0 Y copies; without Y records in the VCF the Y is unknown. The complement (`sex_karyotype`: XY, XX,
+(outside the pseudoautosomal regions, unmasked, ≥ 20 sites and ≥ 5 bins for the X; ≥ 5 sites and ≥ 3 bins for the
+Y, whose variant sites run about ten per Mb), kept as a raw value (`x_copies_raw`, `y_copies_raw`) and rounded
+(`x_copies`, `y_copies`). The Y's median is weighted by each bin's depth sites, capped at 100: its usable bins hold
+from five to two thousand sites, and a bin of twenty would otherwise decide the level (a father in the examples read
+1.24 Y copies from a three-bin median whose site-level ratio to his son was zero), while the one bin of two thousand,
+an ampliconic array, should not decide it alone. Before the level is read, a member whose median depth over the Y's
+euchromatic sites, zeros included, is under 3% of its autosomal depth has 0 Y copies (the sites in unmasked bins
+outside the PARs whose panel level is within two-fold of the genome's, so that the satellite and ampliconic arrays
+and the X-transposed region, where a female's reads land too, do not decide); without Y records in the VCF the Y is
+unknown. A member whose X genotypes outside the PARs are haploid in the VCF (the caller took a male, as DRAGEN did
+for a daughter the pedigree recorded as male) has no heterozygous X call to search, so the X copy-neutral LOH search
+is skipped for it; the depth and the allele fractions, which do not depend on the genotype, still read its X. The complement (`sex_karyotype`: XY, XX,
 XXY, X, XYY, XXX, ...) is compared with the pedigree sex (`sex_check`; `x_check` keeps the X-only wording). Read
 against the autosomes alone, a male's Y carries a mappability deficit of roughly 5–10%, so the raw Y copy number of a
 normal male is slightly under 1. A reference panel corrects it: `triokaryo panel` writes each genome's X and Y on the
@@ -156,13 +169,20 @@ by the father/son ratio.
 **Whole-chromosome events.** With the pedigree sex given, the expected complement is XY or XX. An X whose raw copy
 number deviates from the expectation by at least `min_f` is reported as a whole-X gain or loss with cell fraction
 f = |copies − expected|: 47,XXY (f = 1) or a 46,XY/47,XXY mosaic in a reported male; 45,X, a 45,X/46,XX mosaic or
-47,XXX in a reported female. A Y deviating from one copy in a reported male by at least `min_f` is a whole-Y gain
-(47,XYY) or loss (mosaic loss of Y), with f from the panel-corrected level when the panel carries Y rows; otherwise,
-when the child is male, from the father/son ratio; otherwise only beyond a deviation of 0.25. The **father/son Y
-ratio** (`y_father_son_log2`) is the median over Y sites with depth in both of log2 of the father's depth over the
-son's, each relative to its autosomal median depth; the two Y chromosomes are the same sequence, so mapping cancels,
-and the member with the lower raw Y copy number receives the loss, with f = 1 − 2^−|ratio| and the other taken as one
-copy. Segmental X events are called by the ordinary segmentation relative to the member's own X level; the X
+47,XXX in a reported female. A reported male with two X copies and no Y reads is XX: a daughter recorded as male (the
+phased track shows the paternal X), an XX male, or a sample swap; the check names the three and no X gain is reported.
+A Y deviating from one copy in a reported male by at least `min_f` is a whole-Y gain (47,XYY) or loss (mosaic loss of
+Y). The **father/son Y ratio** (`y_father_son_log2`) is the median over Y sites with depth in both of log2 of the
+father's depth over the son's, each relative to its autosomal median depth; the two Y chromosomes are the same
+sequence, so mapping cancels, and it is read whenever both carry a Y: zero where both have one, about −1 where the
+son has two. It implies each male's Y copies from the other's level. A whole Y gained or lost (a deviation of 0.9 or
+more) is read from the panel-corrected level, the ratio a confirmation named in the event; a mosaic deviation of the
+father's or the son's Y is reported only as the ratio bears it out, since the Y's usable bins are few, with f from the
+ratio-implied copies and the panel level named beside it, and only while the other male's Y is at one copy (beside a
+47,XYY son the father's level alone is read); without a son the panel level alone decides. Without a
+panel both males carry the Y's mappability deficit, so only the ratio, their difference, is read: the member farther
+from one copy owns it, a loss with f = 1 − 2^−|ratio| or, beyond a two-fold, a whole extra Y; without a son either,
+only a deviation of 0.25 or more. Segmental X events are called by the ordinary segmentation relative to the member's own X level; the X
 copy-neutral LOH search is skipped for a male and for a whole-X mosaic, whose split bands the copy change explains.
 
 **Parent of origin and Mendelian errors on the X.** For a female child (expected XX) the autosomal models apply, the

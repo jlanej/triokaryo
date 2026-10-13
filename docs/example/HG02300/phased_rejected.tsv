@@ -1,0 +1,4 @@
+sample	role	chrom	start	end	shift	windows	reason
+HG02300	child	chr6	31195186	33068456	-0.2761	10	spans 1.87 Mb, under the floor of 2 Mb (a dense cluster of sites)
+HG02300	child	chr11	194903	5560503	0.02958	9	its windows do not agree with its mean (median shift -0.006, 33% the mean's way): a few parted windows, not an event
+HG02299	father	chr19	54705812	58594929	0.02268	14	the depth is flat and the shift (0.023) is under the floor for the bands alone (0.025)

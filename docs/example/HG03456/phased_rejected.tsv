@@ -1,0 +1,6 @@
+sample	role	chrom	start	end	shift	windows	reason
+HG03456	child	chr8	89650	32823045	-0.01549	131	its windows do not agree with its mean (median shift -0.011, 71% the mean's way): a few parted windows, not an event
+HG03456	child	chr10	39561222	46564399	0.02478	11	its windows do not agree with its mean (median shift +0.009, 64% the mean's way): a few parted windows, not an event
+HG03454	father	chr3	195186286	198194178	0.02067	8	its windows do not agree with its mean (median shift +0.014, 88% the mean's way): a few parted windows, not an event
+HG03454	father	chr9	61321560	138279169	0.01683	179	the depth is flat and the shift (0.017) is under the floor for the bands alone (0.025)
+HG03455	mother	chr3	195254102	198194178	0.02099	8	the depth is flat and the shift (0.021) is under the floor for the bands alone (0.025)

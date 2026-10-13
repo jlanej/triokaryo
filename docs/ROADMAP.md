@@ -58,6 +58,15 @@ ordered by expected value; "done" items are kept for the record with the commit 
   son's X as diploid; and the reference-block depth GenotypeGVCFs gives homozygous-reference genotypes (`MIN_DP`, a running
   minimum) is left out of the depth track, which is taken over each member's own variant genotypes. `triokaryo mock
   --refined --ref-blocks` imitates both.
+- A scan of the 1000 Genomes DRAGEN cohort for whole-chromosome aneuploidies from the per-sample ploidy VCFs
+  (`docs/example/aneuploidy_scan/`), with the trios and the long-read assemblies each sample has; six more trios on the
+  pages from it (a trisomy 9, a 47,XXY, a 47,XYY and a daughter recorded as male with assemblies, two parental
+  trisomies), DRAGEN's own CNV and ploidy calls as the comparison (`dragen_events.py`), and the assemblies held against
+  the trio reading (`assembly.sh`: the two identical Y chromosomes of the XYY genome collapse into one verkko haplotype).
+  Three fixes from those trios: event pieces join across any run of masked bins (a trisomy 9 is one event, not two arms);
+  the Y level is a site-weighted median and a mosaic Y deviation needs the father/son ratio's agreement (a three-bin
+  median had read a father at 1.24 Y copies); a reported male with two X's and no Y reads as XX, a daughter recorded as
+  male, rather than a paternal 47,XXY.
 - A parent's phased shift is read folded onto the sign runs of its windows: the transmitted homologue switches at the
   child's crossovers in that parent's meiosis, so a parent's event spanning one no longer cancels or fragments, and the
   crossovers are reported (`crossovers`, `crossover_states`, `crossovers.tsv`); `triokaryo mock --switch` plants them.

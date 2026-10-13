@@ -4,8 +4,35 @@ HG01103	HG01103	child	chr6	32545170	32656630	-0.3427	12	spans 0.11 Mb, under the
 HG01103	HG01103	child	chr15	31523703	34386486	-0.04737	9	its windows do not agree with its mean (median shift -0.009, 78% the mean's way): a few parted windows, not an event
 HG01103	HG01103	child	chr22	16141593	16380631	-0.1875	9	spans 0.24 Mb, under the floor of 2 Mb (a dense cluster of sites)
 HG01103	HG01102	mother	chrX	145941303	155672303	0.0192	12	the depth is flat and the shift (0.019) is under the floor for the bands alone (0.025)
+HG01358	HG01358	child	chr4	68510697	69337790	0.2886	13	spans 0.83 Mb, under the floor of 2 Mb (a dense cluster of sites)
+HG01358	HG01358	child	chr11	4417580	5544882	-0.0376	9	spans 1.13 Mb, under the floor of 2 Mb (a dense cluster of sites)
+HG01358	HG01358	child	chr14	105704858	106882543	-0.1311	11	spans 1.18 Mb, under the floor of 2 Mb (a dense cluster of sites)
+HG01358	HG01358	child	chr22	16834731	19594423	-0.03688	9	its windows do not agree with its mean (median shift -0.022, 67% the mean's way): a few parted windows, not an event
+HG01358	HG01357	mother	chr14	101413216	106881094	0.01571	13	its windows do not agree with its mean (median shift +0.009, 92% the mean's way): a few parted windows, not an event
+HG01683	HG01683	child	chr4	186191887	189811018	0.03404	8	its windows do not agree with its mean (median shift +0.001, 50% the mean's way): a few parted windows, not an event
+HG01683	HG01683	child	chr6	31303543	32518670	-0.02704	15	spans 1.22 Mb, under the floor of 2 Mb (a dense cluster of sites)
+HG01683	HG01683	child	chr6	32518679	32544413	-0.4887	15	spans 0.03 Mb, under the floor of 2 Mb (a dense cluster of sites)
+HG01683	HG01683	child	chr6	32562768	32577900	-0.4954	13	spans 0.02 Mb, under the floor of 2 Mb (a dense cluster of sites)
+HG01683	HG01683	child	chr14	105823373	106875390	0.1276	11	spans 1.05 Mb, under the floor of 2 Mb (a dense cluster of sites)
+HG01683	HG01683	child	chr15	19781949	24534990	-0.02817	10	its windows do not agree with its mean (median shift -0.003, 70% the mean's way): a few parted windows, not an event
+HG01683	HG01683	child	chr22	16332534	17654508	0.1735	8	spans 1.32 Mb, under the floor of 2 Mb (a dense cluster of sites)
+HG02300	HG02300	child	chr6	31195186	33068456	-0.2761	10	spans 1.87 Mb, under the floor of 2 Mb (a dense cluster of sites)
+HG02300	HG02300	child	chr11	194903	5560503	0.02958	9	its windows do not agree with its mean (median shift -0.006, 33% the mean's way): a few parted windows, not an event
+HG02300	HG02299	father	chr19	54705812	58594929	0.02268	14	the depth is flat and the shift (0.023) is under the floor for the bands alone (0.025)
+HG03456	HG03456	child	chr8	89650	32823045	-0.01549	131	its windows do not agree with its mean (median shift -0.011, 71% the mean's way): a few parted windows, not an event
+HG03456	HG03456	child	chr10	39561222	46564399	0.02478	11	its windows do not agree with its mean (median shift +0.009, 64% the mean's way): a few parted windows, not an event
+HG03456	HG03454	father	chr3	195186286	198194178	0.02067	8	its windows do not agree with its mean (median shift +0.014, 88% the mean's way): a few parted windows, not an event
+HG03456	HG03454	father	chr9	61321560	138279169	0.01683	179	the depth is flat and the shift (0.017) is under the floor for the bands alone (0.025)
+HG03456	HG03455	mother	chr3	195254102	198194178	0.02099	8	the depth is flat and the shift (0.021) is under the floor for the bands alone (0.025)
+NA10865	NA10865	child	chr3	192602872	198140256	0.02796	13	its windows do not agree with its mean (median shift +0.012, 62% the mean's way): a few parted windows, not an event
+NA10865	NA10865	child	chr4	5230645	9920949	0.03066	19	its windows do not agree with its mean (median shift +0.008, 63% the mean's way): a few parted windows, not an event
+NA10865	NA10865	child	chr6	31262189	32139362	-0.05901	8	spans 0.88 Mb, under the floor of 2 Mb (a dense cluster of sites)
+NA10865	NA10865	child	chr6	32533367	32577516	-0.502	28	spans 0.04 Mb, under the floor of 2 Mb (a dense cluster of sites)
+NA10865	NA10865	child	chr14	105652658	106875390	0.2393	11	spans 1.22 Mb, under the floor of 2 Mb (a dense cluster of sites)
+NA10865	NA10865	child	chr15	97270632	101973581	0.03519	14	its windows do not agree with its mean (median shift -0.001, 50% the mean's way): a few parted windows, not an event
 NA12739	NA12739	child	chr6	31605179	32587125	0.4792	18	spans 0.98 Mb, under the floor of 2 Mb (a dense cluster of sites)
 NA12739	NA12739	child	chr8	8079657	12400682	0.05234	16	its windows do not agree with its mean (median shift +0.001, 50% the mean's way): a few parted windows, not an event
 NA12739	NA12739	child	chr19	42822904	43034215	0.504	10	spans 0.21 Mb, under the floor of 2 Mb (a dense cluster of sites)
 NA12739	NA12748	father	chr3	194900071	198140256	0.02535	9	its windows do not agree with its mean (median shift +0.013, 78% the mean's way): a few parted windows, not an event
 NA12739	NA12749	mother	chrX	9413685	25150651	0.01743	47	the depth is flat and the shift (0.017) is under the floor for the bands alone (0.025)
+NA19208	NA19208	child	chr6	32517327	32635826	0.02921	8	spans 0.12 Mb, under the floor of 2 Mb (a dense cluster of sites)

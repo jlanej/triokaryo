@@ -1,1 +1,3 @@
 trio	sample	role	complement	karyotype	label	chrom	type	f	origin	stage	centromere	n_crossovers	crossovers	mie_rate	note
+HG01683	HG01683	child	XXY	47,XXY(pat,MI)	47,XXY	chrX	gain	0.9959	extra copy paternal	meiosis I (paternal: X and Y transmitted together)		0		0.3362	whole-chromosome X: 2.00 copies against 1 expected for a reported male (47,XXY)
+HG03456	HG03456	child	XYY	47,XYY	47,XYY	chrY	gain	1.063				0		NA	whole-chromosome Y (47,XYY): 2.06 copies against 1 expected for a reported male, from the Y depth against the panel's male level; the father/son Y depth ratio (-0.74 log2 over 4421 sites) against the father's 0.99 copies implies 1.65

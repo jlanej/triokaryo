@@ -1,0 +1,17 @@
+sample	chrom	start	end	label	match
+HG01357	chr12	78304	5112389	DRAGEN CNV: CN 3 (segment mean 1.43)	matched: gain whole chr12 f 0.79
+HG01357	chr12	5114413	7669796	DRAGEN CNV: CN 3 (segment mean 1.43)	matched: gain whole chr12 f 0.79
+HG01357	chr12	11875051	16266234	DRAGEN CNV: CN 3 (segment mean 1.42)	matched: gain whole chr12 f 0.79
+HG01357	chr12	16268353	30324660	DRAGEN CNV: CN 3 (segment mean 1.39)	matched: gain whole chr12 f 0.79
+HG01357	chr12	37261900	45508891	DRAGEN CNV: CN 3 (segment mean 1.38)	matched: gain whole chr12 f 0.79
+HG01357	chr12	45516758	57633798	DRAGEN CNV: CN 3 (segment mean 1.44)	matched: gain whole chr12 f 0.79
+HG01357	chr12	62000919	71208215	DRAGEN CNV: CN 3 (segment mean 1.41)	matched: gain whole chr12 f 0.79
+HG01357	chr12	71964009	81745660	DRAGEN CNV: CN 3 (segment mean 1.36)	matched: gain whole chr12 f 0.79
+HG01357	chr12	81750659	86031420	DRAGEN CNV: CN 3 (segment mean 1.34)	matched: gain whole chr12 f 0.79
+HG01357	chr12	87540376	98561694	DRAGEN CNV: CN 3 (segment mean 1.42)	matched: gain whole chr12 f 0.79
+HG01357	chr12	98565769	108849370	DRAGEN CNV: CN 3 (segment mean 1.42)	matched: gain whole chr12 f 0.79
+HG01357	chr12	108850550	114012027	DRAGEN CNV: CN 3 (segment mean 1.45)	matched: gain whole chr12 f 0.79
+HG01357	chr12	114013107	123910210	DRAGEN CNV: CN 3 (segment mean 1.42)	matched: gain whole chr12 f 0.79
+HG01357	chr12	124542085	127123091	DRAGEN CNV: CN 3 (segment mean 1.39)	matched: gain whole chr12 f 0.79
+HG01357	chr12	128086892	131645699	DRAGEN CNV: CN 3 (segment mean 1.36)	matched: gain whole chr12 f 0.79
+HG01357	chr12	0	133275309	DRAGEN ploidy: DUP, 2.82 copies (1.41 of the expected depth)	matched: gain whole chr12 f 0.79

@@ -32,7 +32,11 @@ DRAGEN's CNV calls. In trio NA12739: a trisomy 12 in the child (paternal extra c
 sites), a mosaic gain of 13q in the father (68% of cells, read across a crossover of the son's paternal chromosome 13
 at 112.7 Mb) that NGS-DOSE did not report, a mosaic loss of terminal 21q in the father found by the phased scan alone,
 and a loss of one X in about 5% of the mother's cells, below the floors. In trio HG01103: a mosaic loss of 2q
-(141–173 Mb, 67% of cells, paternal copy) with a subclonal extension to 180 Mb, and a mosaic loss of 14q.
+(141–173 Mb, 67% of cells, paternal copy) with a subclonal extension to 180 Mb, and a mosaic loss of 14q. Six more
+trios come from a scan of the cohort's per-sample ploidy calls (`docs/example/aneuploidy_scan/`): a trisomy 9, a
+47,XXY of paternal meiosis I, a 47,XYY whose verkko assembly collapses the two identical Y chromosomes into one
+haplotype, a daughter recorded as male, and a trisomy 12 and a trisomy 15 in parents' cell lines, read across the
+children's crossovers.
 Pages: [NA12739](docs/example/NA12739/index.html), [HG01103](docs/example/HG01103/index.html), and the
 [cohort report](docs/example/cohort/index.html). They are self-contained HTML files; open them from a clone (GitHub
 displays their source). The fetch script in `docs/example/` reproduces them.

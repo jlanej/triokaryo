@@ -1,0 +1,2 @@
+trio	sample	role	chrom	position	position_mb	from_state	to_state	event_type	event_f	stage	parent
+HG01358	HG01357	mother	chr12	27670000	27.67	transmitted	untransmitted	gain	0.7925		

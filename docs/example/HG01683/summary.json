@@ -1,0 +1,315 @@
+{
+ "trio": "HG01683",
+ "members": [
+  "HG01683",
+  "HG01682",
+  "HG01684"
+ ],
+ "sexes": [
+  "M",
+  "M",
+  "F"
+ ],
+ "sexes_read": [
+  "M",
+  "M",
+  "F"
+ ],
+ "x_copies": {
+  "child": 2,
+  "father": 1,
+  "mother": 2
+ },
+ "mie_rate_genome": 0.01045112301266023,
+ "phasing": {
+  "child": {
+   "ref_bias": -0.0057724329738564895,
+   "window_sites": 54,
+   "n_phased": 390767,
+   "n_aux": 3260178,
+   "windows_shared": 17
+  },
+  "father": {
+   "ref_bias": -0.004206947816374262,
+   "window_sites": 157,
+   "n_phased": 1129471,
+   "n_aux": 707321,
+   "windows_shared": 30
+  },
+  "mother": {
+   "ref_bias": -0.004202696057770017,
+   "window_sites": 156,
+   "n_phased": 1175880,
+   "n_aux": 715126,
+   "windows_shared": 41
+  }
+ },
+ "sex_chromosomes": {
+  "child": {
+   "x_copies": 2,
+   "x_copies_raw": 1.9959451529407597,
+   "x_bins": 147,
+   "y_copies": 1,
+   "y_copies_raw": 0.9508535381149952,
+   "y_bins": 13,
+   "y_bins_total": 58,
+   "y_bins_masked": 45,
+   "y_bins_thin": 36,
+   "y_min_sites": 5,
+   "anchor": "M",
+   "y_from_sites": false,
+   "x_check": "X copies 2 in a reported male (47,XXY)",
+   "sex_check": "XXY in a reported male (47,XXY)"
+  },
+  "father": {
+   "x_copies": 1,
+   "x_copies_raw": 1.0060073047669171,
+   "x_bins": 147,
+   "y_copies": 1,
+   "y_copies_raw": 0.9710388414906082,
+   "y_bins": 13,
+   "y_bins_total": 58,
+   "y_bins_masked": 45,
+   "y_bins_thin": 36,
+   "y_min_sites": 5,
+   "anchor": "M",
+   "y_from_sites": false,
+   "x_check": "agrees",
+   "sex_check": "agrees"
+  },
+  "mother": {
+   "x_copies": 2,
+   "x_copies_raw": 2.0297270523335937,
+   "x_bins": 147,
+   "y_copies": 0,
+   "y_copies_raw": 0.0,
+   "y_bins": 0,
+   "y_bins_total": 58,
+   "y_bins_masked": 45,
+   "y_bins_thin": 58,
+   "y_min_sites": 5,
+   "anchor": "F",
+   "y_from_sites": true,
+   "x_check": "agrees",
+   "sex_check": "agrees"
+  }
+ },
+ "karyotypes": {
+  "child": "47,XXY(pat,MI)",
+  "father": "46,XY",
+  "mother": "46,XX"
+ },
+ "y_father_son": {
+  "log2": 0.02729952142098782,
+  "sites": 2655
+ },
+ "x_offset_trio": 0.0,
+ "genome": "grch38",
+ "mock_note": "",
+ "events": [
+  {
+   "sample": "HG01683",
+   "role": "child",
+   "chrom": "chrX",
+   "start": 0,
+   "end": 156040895,
+   "span": "whole",
+   "type": "gain",
+   "bands": "p22.33q28",
+   "lrr": -0.002927922945841704,
+   "lrr_se": NaN,
+   "n_bins": 147,
+   "f_lrr": 0.9959451529407597,
+   "d_hat": NaN,
+   "llr_baf": NaN,
+   "f_baf": NaN,
+   "het_rate": NaN,
+   "het_rate_rel": NaN,
+   "n_het": 0,
+   "n_called": 0,
+   "mie_rate": 0.33622861782244745,
+   "origin": "extra copy paternal",
+   "origin_llr": -204745.84694033762,
+   "origin_n": 3526,
+   "inheritance": "new (neither parent carries it)",
+   "external": "DRAGEN CNV: CN 2 (segment mean 1.96); DRAGEN CNV: CN 2 (segment mean 1.92); DRAGEN CNV: CN 2 (segment mean 1.97); DRAGEN CNV: CN 2 (segment mean 1.91); DRAGEN CNV: CN 2 (segment mean 1.94); DRAGEN CNV: CN 2 (segment mean 1.90); DRAGEN CNV: CN 2 (segment mean 1.91); DRAGEN CNV: CN 2 (segment mean 1.91); DRAGEN CNV: CN 2 (segment mean 1.88); DRAGEN CNV: CN 2 (segment mean 1.90); DRAGEN CNV: CN 2 (segment mean 1.92); DRAGEN CNV: CN 2 (segment mean 1.96); DRAGEN CNV: CN 2 (segment mean 1.91); DRAGEN CNV: CN 2 (segment mean 1.95); DRAGEN CNV: CN 2 (segment mean 1.92); DRAGEN CNV: CN 2 (segment mean 1.88); DRAGEN CNV: CN 2 (segment mean 1.90); DRAGEN ploidy: DUP, 1.93 copies (1.93 of the expected depth)",
+   "note": "whole-chromosome X: 2.00 copies against 1 expected for a reported male (47,XXY)",
+   "source": "depth",
+   "phase_shift": 0.012271683356787966,
+   "phase_se": 0.001702059239555145,
+   "n_phased": 2873,
+   "f_phase": 0.952089159891194,
+   "origin_phase": "extra copy paternal",
+   "start_fine": NaN,
+   "end_fine": NaN,
+   "edge_sites": 0,
+   "homologues": "",
+   "hetero_share": NaN,
+   "stage": "meiosis I (paternal: X and Y transmitted together)",
+   "centromere": "",
+   "n_crossovers": 0,
+   "crossovers": "",
+   "crossover_states": "",
+   "f": 0.9959451529407597
+  }
+ ],
+ "external": [
+  {
+   "sample": "HG01683",
+   "chrom": "chrX",
+   "start": 5245493,
+   "end": 30019024,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.96)",
+   "match": "matched: gain whole chrX f 1.00"
+  },
+  {
+   "sample": "HG01683",
+   "chrom": "chrX",
+   "start": 30547425,
+   "end": 37084065,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.92)",
+   "match": "matched: gain whole chrX f 1.00"
+  },
+  {
+   "sample": "HG01683",
+   "chrom": "chrX",
+   "start": 37518782,
+   "end": 49317161,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.97)",
+   "match": "matched: gain whole chrX f 1.00"
+  },
+  {
+   "sample": "HG01683",
+   "chrom": "chrX",
+   "start": 49604504,
+   "end": 52668501,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.91)",
+   "match": "matched: gain whole chrX f 1.00"
+  },
+  {
+   "sample": "HG01683",
+   "chrom": "chrX",
+   "start": 52795214,
+   "end": 57696712,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.94)",
+   "match": "matched: gain whole chrX f 1.00"
+  },
+  {
+   "sample": "HG01683",
+   "chrom": "chrX",
+   "start": 62507156,
+   "end": 67415844,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.90)",
+   "match": "matched: gain whole chrX f 1.00"
+  },
+  {
+   "sample": "HG01683",
+   "chrom": "chrX",
+   "start": 67518894,
+   "end": 71682599,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.91)",
+   "match": "matched: gain whole chrX f 1.00"
+  },
+  {
+   "sample": "HG01683",
+   "chrom": "chrX",
+   "start": 72980209,
+   "end": 77865333,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.91)",
+   "match": "matched: gain whole chrX f 1.00"
+  },
+  {
+   "sample": "HG01683",
+   "chrom": "chrX",
+   "start": 79669899,
+   "end": 89208198,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.88)",
+   "match": "matched: gain whole chrX f 1.00"
+  },
+  {
+   "sample": "HG01683",
+   "chrom": "chrX",
+   "start": 92856625,
+   "end": 102186359,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.90)",
+   "match": "matched: gain whole chrX f 1.00"
+  },
+  {
+   "sample": "HG01683",
+   "chrom": "chrX",
+   "start": 102489426,
+   "end": 115720303,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.92)",
+   "match": "matched: gain whole chrX f 1.00"
+  },
+  {
+   "sample": "HG01683",
+   "chrom": "chrX",
+   "start": 115889844,
+   "end": 120872168,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.96)",
+   "match": "matched: gain whole chrX f 1.00"
+  },
+  {
+   "sample": "HG01683",
+   "chrom": "chrX",
+   "start": 120986880,
+   "end": 129366304,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.91)",
+   "match": "matched: gain whole chrX f 1.00"
+  },
+  {
+   "sample": "HG01683",
+   "chrom": "chrX",
+   "start": 129368316,
+   "end": 135747411,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.95)",
+   "match": "matched: gain whole chrX f 1.00"
+  },
+  {
+   "sample": "HG01683",
+   "chrom": "chrX",
+   "start": 135889654,
+   "end": 140994965,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.92)",
+   "match": "matched: gain whole chrX f 1.00"
+  },
+  {
+   "sample": "HG01683",
+   "chrom": "chrX",
+   "start": 141601939,
+   "end": 143652805,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.88)",
+   "match": "matched: gain whole chrX f 1.00"
+  },
+  {
+   "sample": "HG01683",
+   "chrom": "chrX",
+   "start": 145342782,
+   "end": 152998160,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.90)",
+   "match": "matched: gain whole chrX f 1.00"
+  },
+  {
+   "sample": "HG01683",
+   "chrom": "chrX",
+   "start": 0,
+   "end": 156040895,
+   "label": "DRAGEN ploidy: DUP, 1.93 copies (1.93 of the expected depth)",
+   "match": "matched: gain whole chrX f 1.00"
+  }
+ ],
+ "sites_used": 5510316,
+ "records": 5587508,
+ "skipped": {
+  "contig": 77192
+ },
+ "seconds": 75.4,
+ "genotypes_from_pl": false,
+ "depth_sites": "all",
+ "homref_depth_ratio": {
+  "child": null,
+  "father": null,
+  "mother": null
+ }
+}

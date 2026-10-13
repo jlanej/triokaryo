@@ -74,7 +74,7 @@ def _gt(alt, dp):
 
 def write_mock(out_dir, seed=1, sites_per_mb=60, no_events=False, xxy=False, depth=(30.0, 32.0, 28.0), gc_beta=(-0.8, -0.5, -1.0), bin_size=1_000_000,
                events=None, prefix="", contigs=None, child_sex="M", xxx=False, sex_deficit=(1.0, 1.0), with_gq=True, switch_maternal=None, switch_paternal=None,
-               refined=False, ref_blocks=False, pedigree_sex=""):
+               refined=False, ref_blocks=False, pedigree_sex="", xyy=False):
     """prefix: a tag before the sample names (KID, DAD, MOM), so that several mock trios can sit in one cohort.
     contigs: only these chromosomes (a dense small mock), else all. child_sex: M (one maternal X, the father's Y) or F (one X
     from each parent, no Y). xxy: a son with both maternal X homologues (a maternal meiosis I 47,XXY); xxx: a daughter with
@@ -82,6 +82,7 @@ def write_mock(out_dir, seed=1, sites_per_mb=60, no_events=False, xxy=False, dep
     the Y, imitating the mappability deficit of real data (e.g. 0.93, 0.90). with_gq=False writes no GQ, as some callers do.
     switch_maternal / switch_paternal: {chrom: position}, a crossover in that parent's meiosis: the child's inherited homologue
     switches to the parent's other one beyond the position (the transmitted-allele sign of a parent's event flips there).
+    xyy: a son with two copies of the father's Y (47,XYY).
     refined: PL from the reads and, as GATK CalculateGenotypePosteriors with a pedigree does, GT and GQ refined under a family
     prior that penalises a Mendelian violation by 80 phred (the child moved to the consistent genotype where its PL gap is
     smaller; otherwise kept with the GQ reduced) and PP, the posterior PL. ref_blocks: homozygous-reference genotypes
@@ -157,7 +158,7 @@ def write_mock(out_dir, seed=1, sites_per_mb=60, no_events=False, xxy=False, dep
                 base[KID] = ({"mat": 1, "mat_other": 1} if xxy else {"mat": 1}) if son else ({"mat": 1, "mat_other": 1, "pat": 1} if xxx else {"mat": 1, "pat": 1})
                 base[DAD] = {"h0": 1}
             if c == "chrY":
-                base = {KID: {"pat_y": 1} if son else {}, DAD: {"h0": 1}, MOM: {}}
+                base = {KID: {"pat_y": 2 if xyy else 1} if son else {}, DAD: {"h0": 1}, MOM: {}}
             alleles = {KID: dict(hom, pat_y=d0), DAD: {"h0": d0, "h1": d1}, MOM: {"h0": m0, "h1": m1}}
             gcs = np.array([gc[(c, int(x // bin_size) * bin_size)] for x in pos])
             cols = {}
@@ -254,7 +255,7 @@ def write_mock(out_dir, seed=1, sites_per_mb=60, no_events=False, xxy=False, dep
         truth["events"].append(dict(sample=nm[ev["member"]], chrom=ev["chrom"], start=ev["start"], end=ev["end"] if ev["end"] is not None else G.length[ev["chrom"]],
                                     f=ev["f"], type=ev["type"], label=ev["label"], origin=ev["origin"], inherited=ev["inherited"]))
     truth["x_copies"] = {nm[KID]: (2 if xxy else 1) if son else (3 if xxx else 2), nm[DAD]: 1, nm[MOM]: 2}
-    truth["y_copies"] = {nm[KID]: 1 if son else 0, nm[DAD]: 1, nm[MOM]: 0}
+    truth["y_copies"] = {nm[KID]: (2 if xyy else 1) if son else 0, nm[DAD]: 1, nm[MOM]: 0}
     kid_sex = {"M": "1", "F": "2"}[pedigree_sex.upper()[:1]] if pedigree_sex else ("1" if son else "2")
     truth["pedigree_sex"] = {"1": "M", "2": "F"}[kid_sex]
     with open(os.path.join(out_dir, "truth.json"), "w") as fh:

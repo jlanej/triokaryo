@@ -1,0 +1,110 @@
+sample	sex	population	superpopulation	trio	flags	x_copies	y_copies	autosomal_depth	assembly
+HG00142	M	GBR	EUR	no trio	chr11 trisomy (2.67 copies, DRAGEN DUP); chr13 trisomy (2.59 copies, DRAGEN DUP)	0.97	0.92	35.9	none
+HG00154	F	GBR	EUR	no trio	sex chromosomes X against the pedigree's XX (X 1.30, Y nan copies)	1.30	nan	37.8	none
+HG00176	F	FIN	EUR	no trio	mosaic sex chromosomes (X 1.74, Y nan copies)	1.74	nan	37.8	none
+HG00189	M	FIN	EUR	no trio	chr9 mosaic gain (2.22 copies, DRAGEN DUP)	0.96	0.96	32.4	none
+HG00246	M	GBR	EUR	no trio	sex chromosomes X against the pedigree's XY (X 0.98, Y 0.31 copies)	0.98	0.31	36.6	none
+HG00361	F	FIN	EUR	no trio	sex chromosomes X against the pedigree's XX (X 1.12, Y nan copies)	1.12	nan	36.3	none
+HG00384	F	FIN	EUR	no trio	mosaic sex chromosomes (X 1.72, Y nan copies)	1.72	nan	36.9	none
+HG00501	F	CHS	EAS	parent of HG00502	chr12 trisomy (2.66 copies, DRAGEN DUP)	1.91	nan	33.3	none
+HG00623	F	CHS	EAS	no trio	chr12 trisomy (2.71 copies, DRAGEN DUP)	1.90	nan	38.5	none
+HG00732	F	PUR	AMR	parent of HG00733	mosaic sex chromosomes (X 1.57, Y nan copies)	1.57	nan	35.4	HGSVC3 verkko
+HG00864	F	CDX	EAS	no trio	mosaic sex chromosomes (X 1.70, Y nan copies)	1.70	nan	37.5	HGSVC3 verkko
+HG01053	F	PUR	AMR	child of HG01051 x HG01052	sex chromosomes X against the pedigree's XX (X 1.46, Y nan copies)	1.46	nan	37.1	none
+HG01137	F	CLM	AMR	parent of HG01138	chr12 mosaic gain (2.33 copies, DRAGEN DUP); sex chromosomes X against the pedigree's XX (X 1.47, Y nan copies)	1.47	nan	37.0	none
+HG01303	F	PUR	AMR	no trio	chr5 mosaic gain (2.44 copies, DRAGEN DUP); chr12 mosaic gain (2.45 copies, DRAGEN DUP)	1.93	nan	33.6	none
+HG01357	F	CLM	AMR	parent of HG01358	chr12 trisomy (2.82 copies, DRAGEN DUP)	1.91	nan	33.6	none
+HG01366	F	CLM	AMR	parent of HG01367	sex chromosomes X against the pedigree's XX (X 1.25, Y nan copies)	1.25	nan	36.4	none
+HG01495	F	CLM	AMR	parent of HG01496	chr19 mosaic gain (2.24 copies, DRAGEN DUP; GC-rich, possibly the library's GC bias)	1.84	nan	35.0	none
+HG01506	M	IBS	EUR	parent of HG01508	chr11 mosaic gain (2.30 copies, DRAGEN DUP)	0.97	0.97	35.8	none
+HG01532	M	IBS	EUR	child of HG01530 x HG01531	mosaic sex chromosomes (X 0.98, Y 0.72 copies)	0.98	0.72	38.1	none
+HG01602	F	IBS	EUR	parent of HG01601	chr9 trisomy (2.62 copies, DRAGEN DUP)	1.93	nan	34.7	none
+HG01683	M	IBS	EUR	child of HG01682 x HG01684	sex chromosomes XXY against the pedigree's XY (X 1.93, Y 0.96 copies)	1.93	0.96	37.4	none
+HG01702	F	IBS	EUR	parent of HG01701	chr12 mosaic gain (2.21 copies, DRAGEN DUP)	1.89	nan	34.8	none
+HG01806	F	CDX	EAS	no trio	mosaic sex chromosomes (X 1.74, Y nan copies)	1.74	nan	36.9	none
+HG01917	M	PEL	AMR	parent of HG01919	chr19 mosaic gain (2.26 copies, DRAGEN DUP; GC-rich, possibly the library's GC bias)	0.96	0.94	35.0	none
+HG01961	M	PEL	AMR	no trio	chr19 mosaic gain (2.21 copies, DRAGEN DUP; GC-rich, possibly the library's GC bias)	0.97	0.96	33.3	none
+HG01967	M	PEL	AMR	parent of HG01969	mosaic sex chromosomes (X 0.97, Y 1.42 copies)	0.97	1.42	34.2	none
+HG01977	M	PEL	AMR	parent of HG01978	chr19 mosaic gain (2.20 copies, DRAGEN DUP; GC-rich, possibly the library's GC bias)	0.96	0.94	33.8	none
+HG01980	F	PEL	AMR	parent of HG01981	chr19 mosaic gain (2.22 copies, DRAGEN DUP; GC-rich, possibly the library's GC bias)	1.89	nan	32.7	none
+HG01983	F	PEL	AMR	parent of HG01984	chr12 mosaic gain (2.42 copies, DRAGEN DUP)	1.92	nan	44.4	none
+HG02053	M	ACB	AFR	parent of HG02055	mosaic sex chromosomes (X 0.98, Y 0.52 copies)	0.98	0.52	34.4	none
+HG02068	F	KHV	EAS	child of HG02070 x HG02069	chr19 mosaic gain (2.31 copies, DRAGEN DUP; GC-rich, possibly the library's GC bias); chr22 mosaic gain (2.23 copies, DRAGEN DUP; GC-rich, possibly the library's GC bias)	1.85	nan	36.6	none
+HG02077	M	KHV	EAS	child of HG02079 x HG02078	chr12 mosaic gain (2.33 copies, DRAGEN DUP)	0.97	0.97	43.8	none
+HG02086	F	KHV	EAS	no trio	chr19 mosaic gain (2.24 copies, DRAGEN DUP; GC-rich, possibly the library's GC bias)	1.87	nan	34.1	none
+HG02120	M	KHV	EAS	child of HG02122 x HG02121	chr19 mosaic gain (2.21 copies, DRAGEN DUP; GC-rich, possibly the library's GC bias)	0.97	0.97	37.8	none
+HG02144	F	ACB	AFR	parent of HG02145	mosaic sex chromosomes (X 1.67, Y nan copies)	1.67	nan	33.1	none
+HG02225	F	IBS	EUR	child of HG02224 x HG02223	chr19 mosaic gain (2.20 copies, DRAGEN DUP; GC-rich, possibly the library's GC bias)	1.90	nan	36.5	none
+HG02234	M	IBS	EUR	child of HG02233 x HG02232	chr22 mosaic gain (2.24 copies, DRAGEN DUP; GC-rich, possibly the library's GC bias)	0.95	0.95	36.6	none
+HG02281	M	ACB	AFR	parent of HG02321	chr22 mosaic gain (2.22 copies, DRAGEN DUP; GC-rich, possibly the library's GC bias)	0.96	0.95	34.0	none
+HG02300	M	PEL	AMR	child of HG02299 x HG02298	sex chromosomes XX against the pedigree's XY (X 1.91, Y 0.00 copies)	1.91	0.00	38.0	HPRC-r2 hifiasm trio
+HG02321	F	ACB	AFR	child of HG02281 x HG02282	chr19 mosaic gain (2.21 copies, DRAGEN DUP; GC-rich, possibly the library's GC bias)	1.89	nan	38.3	none
+HG02322	F	ACB	AFR	no trio	chr12 trisomy (2.85 copies, DRAGEN DUP)	1.90	nan	33.3	none
+HG02634	M	GWD	AFR	parent of HG02636	chr11 mosaic gain (2.42 copies, DRAGEN DUP)	0.97	0.97	40.0	none
+HG02651	M	PJL	SAS	parent of HG02653	chr12 mosaic gain (2.34 copies, DRAGEN DUP)	0.98	0.97	35.4	none
+HG02652	F	PJL	SAS	parent of HG02653	chr12 mosaic gain (2.20 copies, DRAGEN DUP); mosaic sex chromosomes (X 1.71, Y nan copies)	1.71	nan	37.0	none
+HG02805	F	GWD	AFR	parent of HG02806	sex chromosomes XXX against the pedigree's XX (X 2.50, Y nan copies)	2.50	nan	35.1	none
+HG02869	M	GWD	AFR	parent of HG02871	sex chromosomes XYY against the pedigree's XY (X 0.97, Y 1.83 copies)	0.97	1.83	38.5	none
+HG02966	M	ESN	AFR	child of HG02965 x HG02964	sex chromosomes XYY against the pedigree's XY (X 0.98, Y 1.55 copies)	0.98	1.55	36.3	none
+HG03016	F	PJL	SAS	parent of HG03017	mosaic sex chromosomes (X 1.70, Y nan copies)	1.70	nan	37.4	none
+HG03019	F	PJL	SAS	no trio	sex chromosomes X against the pedigree's XX (X 1.26, Y nan copies)	1.26	nan	35.7	none
+HG03055	F	MSL	AFR	parent of HG03056	mosaic sex chromosomes (X 1.54, Y nan copies)	1.54	nan	37.9	none
+HG03250	F	GWD	AFR	parent of HG03251	sex chromosomes X against the pedigree's XX (X 1.03, Y nan copies)	1.03	nan	37.9	none
+HG03401	F	MSL	AFR	no trio	mosaic sex chromosomes (X 1.62, Y nan copies)	1.62	nan	32.2	none
+HG03456	M	MSL	AFR	child of HG03454 x HG03455	sex chromosomes XYY against the pedigree's XY (X 0.98, Y 1.94 copies)	0.98	1.94	35.4	HGSVC3 verkko
+HG03511	F	ESN	AFR	no trio	sex chromosomes X against the pedigree's XX (X 0.97, Y nan copies)	0.97	nan	38.4	none
+HG03615	M	BEB	SAS	parent of HG03617	mosaic sex chromosomes (X 0.98, Y 0.63 copies)	0.98	0.63	40.3	none
+HG03634	F	PJL	SAS	parent of HG03635	mosaic sex chromosomes (X 1.72, Y nan copies)	1.72	nan	37.7	none
+HG03940	F	BEB	SAS	parent of HG03942	chr12 mosaic gain (2.24 copies, DRAGEN DUP)	1.91	nan	34.5	none
+HG04198	M	ITU	SAS	parent of HG04217	chr12 mosaic gain (2.27 copies, DRAGEN DUP)	0.98	0.98	47.5	none
+HG04202	F	ITU	SAS	no trio	sex chromosomes X against the pedigree's XX (X 1.34, Y nan copies)	1.34	nan	34.9	none
+NA07348	F	CEU	EUR	child of NA07357 x NA07345	sex chromosomes X against the pedigree's XX (X 1.17, Y nan copies)	1.17	nan	35.9	none
+NA07435	M	CEU	EUR	parent of NA06995	chr12 mosaic gain (2.27 copies, DRAGEN DUP)	0.97	0.96	38.0	none
+NA10836	F	CEU	EUR	child of NA12274 x NA12275	chr22 mosaic gain (2.21 copies, DRAGEN DUP; GC-rich, possibly the library's GC bias)	1.86	nan	36.8	none
+NA10840	F	CEU	EUR	child of NA12286 x NA12287	chr22 mosaic gain (2.21 copies, DRAGEN DUP; GC-rich, possibly the library's GC bias)	1.86	nan	32.3	none
+NA10843	F	CEU	EUR	child of NA11919 x NA11920	chr10 mosaic gain (2.20 copies, DRAGEN DUP); chr15 mosaic gain (2.24 copies, DRAGEN DUP)	1.87	nan	36.8	none
+NA10854	F	CEU	EUR	child of NA11839 x NA11840	sex chromosomes X against the pedigree's XX (X 1.06, Y nan copies)	1.06	nan	38.5	none
+NA10859	F	CEU	EUR	child of NA11881 x NA11882	mosaic sex chromosomes (X 1.70, Y nan copies)	1.70	nan	37.0	none
+NA11891	M	CEU	EUR	parent of NA10865	chr15 trisomy (2.98 copies, DRAGEN DUP)	0.98	1.01	36.3	none
+NA11917	M	CEU	EUR	parent of NA10842	mosaic sex chromosomes (X 0.97, Y 1.38 copies)	0.97	1.38	36.8	none
+NA11933	F	CEU	EUR	no trio	mosaic sex chromosomes (X 1.73, Y nan copies)	1.73	nan	36.4	none
+NA12058	F	CEU	EUR	no trio	chr15 mosaic gain (2.32 copies, DRAGEN DUP)	1.95	nan	36.9	none
+NA12156	F	CEU	EUR	parent of NA10831	chr9 mosaic gain (2.29 copies, DRAGEN DUP)	1.94	nan	40.8	none
+NA12236	F	CEU	EUR	parent of NA10830	chr14 trisomy (2.92 copies, DRAGEN DUP)	1.95	nan	35.7	none
+NA12248	M	CEU	EUR	parent of NA10835	chr14 mosaic gain (2.22 copies, DRAGEN DUP); chr22 mosaic gain (2.30 copies, DRAGEN DUP; GC-rich, possibly the library's GC bias)	0.97	0.97	35.7	none
+NA12274	M	CEU	EUR	parent of NA10836	chr11 mosaic gain (2.35 copies, DRAGEN DUP)	0.98	0.98	35.2	none
+NA12739	M	CEU	EUR	child of NA12748 x NA12749	chr12 trisomy (2.99 copies, DRAGEN DUP)	0.97	0.97	35.1	none
+NA12865	F	CEU	EUR	child of NA12874 x NA12875	mosaic sex chromosomes (X 1.50, Y nan copies)	1.50	nan	35.5	none
+NA18497	M	YRI	AFR	child of NA18498 x NA18499	chr19 mosaic gain (2.23 copies, DRAGEN DUP; GC-rich, possibly the library's GC bias)	0.95	0.92	37.2	none
+NA18520	F	YRI	AFR	parent of NA18518	mosaic sex chromosomes (X 1.71, Y nan copies)	1.71	nan	34.8	none
+NA18864	F	YRI	AFR	no trio	sex chromosomes X against the pedigree's XX (X 1.46, Y nan copies)	1.46	nan	33.2	none
+NA18946	F	JPT	EAS	no trio	mosaic sex chromosomes (X 2.34, Y nan copies)	2.34	nan	32.9	none
+NA18963	F	JPT	EAS	no trio	mosaic sex chromosomes (X 1.58, Y nan copies)	1.58	nan	36.3	none
+NA18966	M	JPT	EAS	no trio	mosaic sex chromosomes (X 0.97, Y 1.28 copies)	0.97	1.28	39.6	none
+NA18978	F	JPT	EAS	no trio	sex chromosomes X against the pedigree's XX (X 1.47, Y nan copies)	1.47	nan	35.9	none
+NA19054	F	JPT	EAS	no trio	sex chromosomes X against the pedigree's XX (X 1.33, Y nan copies)	1.33	nan	36.4	none
+NA19080	F	JPT	EAS	no trio	chr19 mosaic gain (2.25 copies, DRAGEN DUP; GC-rich, possibly the library's GC bias)	1.88	nan	34.1	none
+NA19176	F	YRI	AFR	parent of NA19177	sex chromosomes X against the pedigree's XX (X 0.99, Y nan copies)	0.99	nan	35.1	none
+NA19208	M	YRI	AFR	child of NA19207 x NA19206	chr9 trisomy (2.87 copies, DRAGEN DUP)	0.96	0.98	36.6	none
+NA19226	M	YRI	AFR	parent of NA19224	sex chromosomes X against the pedigree's XY (X 0.97, Y 0.00 copies)	0.97	0.00	37.2	none
+NA19332	F	LWK	AFR	no trio	sex chromosomes X against the pedigree's XX (X 1.00, Y nan copies)	1.00	nan	36.9	none
+NA19378	F	LWK	AFR	no trio	chr12 mosaic gain (2.43 copies, DRAGEN DUP)	1.91	nan	32.8	none
+NA19395	F	LWK	AFR	no trio	sex chromosomes X against the pedigree's XX (X 1.09, Y nan copies)	1.09	nan	39.2	none
+NA19454	M	LWK	AFR	no trio	chr20 mosaic gain (2.31 copies, DRAGEN DUP; GC-rich, possibly the library's GC bias)	0.98	0.97	36.5	none
+NA19675	F	MXL	AMR	child of NA19679 x NA19678	chr19 mosaic gain (2.22 copies, DRAGEN DUP; GC-rich, possibly the library's GC bias)	1.85	nan	38.8	none
+NA19747	M	MXL	AMR	parent of NA19748	chr19 mosaic gain (2.21 copies, DRAGEN DUP; GC-rich, possibly the library's GC bias); chr22 mosaic gain (2.21 copies, DRAGEN DUP; GC-rich, possibly the library's GC bias)	0.95	0.97	34.7	none
+NA20506	F	TSI	EUR	no trio	sex chromosomes X against the pedigree's XX (X 1.05, Y nan copies)	1.05	nan	36.6	none
+NA20530	F	TSI	EUR	no trio	sex chromosomes X against the pedigree's XX (X 1.09, Y nan copies)	1.09	nan	38.3	none
+NA20533	F	TSI	EUR	no trio	chr13 mosaic gain (2.47 copies, DRAGEN DUP); sex chromosomes X against the pedigree's XX (X 1.16, Y nan copies)	1.16	nan	36.7	none
+NA20535	F	TSI	EUR	no trio	mosaic sex chromosomes (X 1.72, Y nan copies)	1.72	nan	36.0	none
+NA20754	M	TSI	EUR	no trio	sex chromosomes X against the pedigree's XY (X 0.98, Y 0.39 copies)	0.98	0.39	38.4	none
+NA20759	M	TSI	EUR	no trio	chr12 trisomy (2.53 copies, DRAGEN DUP)	0.97	0.96	39.6	none
+NA20769	F	TSI	EUR	no trio	mosaic sex chromosomes (X 1.71, Y nan copies)	1.71	nan	37.2	none
+NA20790	F	TSI	EUR	no trio	mosaic sex chromosomes (X 1.56, Y nan copies)	1.56	nan	37.4	none
+NA20821	F	TSI	EUR	no trio	sex chromosomes XXX against the pedigree's XX (X 2.77, Y nan copies)	2.77	nan	35.6	none
+NA20826	F	TSI	EUR	no trio	chr19 mosaic gain (2.21 copies, DRAGEN DUP; GC-rich, possibly the library's GC bias); chr22 mosaic gain (2.23 copies, DRAGEN DUP; GC-rich, possibly the library's GC bias)	1.86	nan	40.6	none
+NA20828	F	TSI	EUR	no trio	chr19 mosaic gain (2.21 copies, DRAGEN DUP; GC-rich, possibly the library's GC bias); chr22 mosaic gain (2.23 copies, DRAGEN DUP; GC-rich, possibly the library's GC bias)	1.87	nan	36.5	none
+NA20832	F	TSI	EUR	no trio	sex chromosomes X against the pedigree's XX (X 1.45, Y nan copies)	1.45	nan	36.9	none
+NA20846	M	GIH	SAS	no trio	chr19 mosaic gain (2.22 copies, DRAGEN DUP; GC-rich, possibly the library's GC bias)	0.97	0.96	35.1	none
+NA20886	F	GIH	SAS	no trio	chr19 mosaic gain (2.21 copies, DRAGEN DUP; GC-rich, possibly the library's GC bias); chr22 mosaic gain (2.22 copies, DRAGEN DUP; GC-rich, possibly the library's GC bias)	1.82	nan	38.2	none
+NA21142	F	GIH	SAS	no trio	mosaic sex chromosomes (X 1.75, Y nan copies)	1.75	nan	41.2	none

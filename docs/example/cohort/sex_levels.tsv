@@ -1,0 +1,4 @@
+role	n_x	x_median	x_p05	x_p95	n_y	y_median	y_p05	y_p95	y_max	y_present_floor
+child	8	1.014	0.9983	2.004	8	0.994	0	1.71	2.063	0.25
+father	8	1.006	1.002	1.01	8	0.9916	0.9554	1.005	1.006	0.25
+mother	8	2	1.946	2.024	8	0	0	0	0	0.25

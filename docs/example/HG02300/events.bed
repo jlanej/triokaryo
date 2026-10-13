@@ -1,0 +1,3 @@
+track name="triokaryo HG02300" description="large chromosomal events (triokaryo)" useScore=1
+chr10	130790735	133763665	HG02300|child|LOH|q26.3|f=0.06|paternal_copy_retained_(maternal_replaced)	58	.
+chr22	18208470	21320674	HG02300|child|LOH|q11.21|f=0.25|maternal_copy_retained_(paternal_replaced)	248	.

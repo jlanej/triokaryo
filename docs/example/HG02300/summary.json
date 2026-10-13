@@ -1,0 +1,368 @@
+{
+ "trio": "HG02300",
+ "members": [
+  "HG02300",
+  "HG02299",
+  "HG02298"
+ ],
+ "sexes": [
+  "M",
+  "M",
+  "F"
+ ],
+ "sexes_read": [
+  "F",
+  "M",
+  "F"
+ ],
+ "x_copies": {
+  "child": 2,
+  "father": 1,
+  "mother": 2
+ },
+ "mie_rate_genome": 0.00972801305725462,
+ "phasing": {
+  "child": {
+   "ref_bias": -0.0037006175391802176,
+   "window_sites": 54,
+   "n_phased": 393194,
+   "n_aux": 3076374,
+   "windows_shared": 22
+  },
+  "father": {
+   "ref_bias": -0.004307524940016516,
+   "window_sites": 132,
+   "n_phased": 948357,
+   "n_aux": 615840,
+   "windows_shared": 36
+  },
+  "mother": {
+   "ref_bias": -0.004073715247250531,
+   "window_sites": 143,
+   "n_phased": 1071334,
+   "n_aux": 715383,
+   "windows_shared": 33
+  }
+ },
+ "sex_chromosomes": {
+  "child": {
+   "x_copies": 2,
+   "x_copies_raw": 1.9934885916970486,
+   "x_bins": 147,
+   "y_copies": 0,
+   "y_copies_raw": 0.0,
+   "y_bins": 0,
+   "y_bins_total": 58,
+   "y_bins_masked": 45,
+   "y_bins_thin": 47,
+   "y_min_sites": 5,
+   "anchor": "F",
+   "y_from_sites": true,
+   "x_check": "X copies 2 in a reported male (a daughter recorded as male, an XX male, or a sample swap)",
+   "sex_check": "XX in a reported male (two X chromosomes and no Y: a daughter recorded as male (the paternal X present, as the phased track shows), an XX male, a sample swap, or an X without heterozygosity (an isodisomy) that a sex called from X heterozygosity reads male)"
+  },
+  "father": {
+   "x_copies": 1,
+   "x_copies_raw": 1.0099013883894619,
+   "x_bins": 147,
+   "y_copies": 1,
+   "y_copies_raw": 0.9943408383745761,
+   "y_bins": 13,
+   "y_bins_total": 58,
+   "y_bins_masked": 45,
+   "y_bins_thin": 32,
+   "y_min_sites": 5,
+   "anchor": "M",
+   "y_from_sites": false,
+   "x_check": "agrees",
+   "sex_check": "agrees"
+  },
+  "mother": {
+   "x_copies": 2,
+   "x_copies_raw": 2.000165239774383,
+   "x_bins": 147,
+   "y_copies": 0,
+   "y_copies_raw": 0.0,
+   "y_bins": 0,
+   "y_bins_total": 58,
+   "y_bins_masked": 45,
+   "y_bins_thin": 58,
+   "y_min_sites": 5,
+   "anchor": "F",
+   "y_from_sites": true,
+   "x_check": "agrees",
+   "sex_check": "agrees"
+  }
+ },
+ "karyotypes": {
+  "child": "mos 46,XX,loh(10)(q26.3)pat[0.06]/46,XX,loh(22)(q11.21)mat[0.25]/46,XX",
+  "father": "46,XY",
+  "mother": "46,XX"
+ },
+ "y_father_son": {
+  "log2": NaN,
+  "sites": 0
+ },
+ "x_offset_trio": 0.0,
+ "genome": "grch38",
+ "mock_note": "",
+ "events": [
+  {
+   "sample": "HG02300",
+   "role": "child",
+   "chrom": "chr10",
+   "start": 130790735,
+   "end": 133763665,
+   "span": "stretch",
+   "type": "LOH",
+   "bands": "q26.3",
+   "lrr": 0.004797817761961883,
+   "lrr_se": 0.007367112734657928,
+   "n_bins": 3,
+   "f_lrr": NaN,
+   "d_hat": 0.029194700996364016,
+   "llr_baf": NaN,
+   "f_baf": 0.05838940199272803,
+   "het_rate": 0.6249523082792827,
+   "het_rate_rel": 1.0497520090338295,
+   "n_het": 3276,
+   "n_called": 5242,
+   "mie_rate": 0.033272561531449404,
+   "origin": "paternal copy retained (maternal replaced)",
+   "origin_llr": -179.81033042949957,
+   "origin_n": 547,
+   "inheritance": "new (neither parent carries it)",
+   "external": "",
+   "note": "from the phased bands: the depth is flat (0.7 standard errors); a copy-neutral LOH at this share, or a gain in 12% / a loss in 11% of cells",
+   "source": "phased",
+   "phase_shift": -0.036925893053288916,
+   "phase_se": 0.0033796129402242194,
+   "n_phased": 547,
+   "f_phase": 0.07385178610657783,
+   "origin_phase": "paternal copy retained (maternal replaced)",
+   "start_fine": 129477460,
+   "end_fine": NaN,
+   "edge_sites": 731,
+   "homologues": "the two paternal copies differ over 60% of the event and are one homologue over the rest (a meiotic error with crossovers)",
+   "hetero_share": 0.6,
+   "stage": "",
+   "centromere": "",
+   "n_crossovers": 0,
+   "crossovers": "",
+   "crossover_states": "",
+   "f": 0.05838940199272803
+  },
+  {
+   "sample": "HG02300",
+   "role": "child",
+   "chrom": "chr22",
+   "start": 18208470,
+   "end": 21320674,
+   "span": "stretch",
+   "type": "LOH",
+   "bands": "q11.21",
+   "lrr": 0.006904247117962545,
+   "lrr_se": 0.013554871484002036,
+   "n_bins": 2,
+   "f_lrr": NaN,
+   "d_hat": 0.12391491590317304,
+   "llr_baf": NaN,
+   "f_baf": 0.24782983180634607,
+   "het_rate": 0.48327627074005797,
+   "het_rate_rel": 0.8117743216671794,
+   "n_het": 1835,
+   "n_called": 3797,
+   "mie_rate": 0.06003394145099703,
+   "origin": "maternal copy retained (paternal replaced)",
+   "origin_llr": 1413.8126927912294,
+   "origin_n": 485,
+   "inheritance": "new (neither parent carries it)",
+   "external": "",
+   "note": "from the phased bands: the depth is flat (0.5 standard errors); a copy-neutral LOH at this share, or a gain in 66% / a loss in 40% of cells",
+   "source": "phased",
+   "phase_shift": 0.09162244910711836,
+   "phase_se": 0.004077457138148748,
+   "n_phased": 485,
+   "f_phase": 0.18324489821423673,
+   "origin_phase": "maternal copy retained (paternal replaced)",
+   "start_fine": 18090525,
+   "end_fine": 21344776,
+   "edge_sites": 430,
+   "homologues": "the two maternal copies differ over 56% of the event and are one homologue over the rest (a meiotic error with crossovers)",
+   "hetero_share": 0.5555555555555556,
+   "stage": "",
+   "centromere": "",
+   "n_crossovers": 0,
+   "crossovers": "",
+   "crossover_states": "",
+   "f": 0.24782983180634607
+  }
+ ],
+ "external": [
+  {
+   "sample": "HG02300",
+   "chrom": "chrX",
+   "start": 5245493,
+   "end": 30019024,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.95)",
+   "match": "unmatched"
+  },
+  {
+   "sample": "HG02300",
+   "chrom": "chrX",
+   "start": 30020374,
+   "end": 37084065,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.91)",
+   "match": "unmatched"
+  },
+  {
+   "sample": "HG02300",
+   "chrom": "chrX",
+   "start": 38728948,
+   "end": 49317161,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.96)",
+   "match": "unmatched"
+  },
+  {
+   "sample": "HG02300",
+   "chrom": "chrX",
+   "start": 49604504,
+   "end": 52668501,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.90)",
+   "match": "unmatched"
+  },
+  {
+   "sample": "HG02300",
+   "chrom": "chrX",
+   "start": 52795214,
+   "end": 57696712,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.94)",
+   "match": "unmatched"
+  },
+  {
+   "sample": "HG02300",
+   "chrom": "chrX",
+   "start": 62507156,
+   "end": 67903887,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.88)",
+   "match": "unmatched"
+  },
+  {
+   "sample": "HG02300",
+   "chrom": "chrX",
+   "start": 67910317,
+   "end": 71682599,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.92)",
+   "match": "unmatched"
+  },
+  {
+   "sample": "HG02300",
+   "chrom": "chrX",
+   "start": 72980209,
+   "end": 87023340,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.89)",
+   "match": "unmatched"
+  },
+  {
+   "sample": "HG02300",
+   "chrom": "chrX",
+   "start": 87025801,
+   "end": 89208198,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.86)",
+   "match": "unmatched"
+  },
+  {
+   "sample": "HG02300",
+   "chrom": "chrX",
+   "start": 95140545,
+   "end": 102186359,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.90)",
+   "match": "unmatched"
+  },
+  {
+   "sample": "HG02300",
+   "chrom": "chrX",
+   "start": 102489426,
+   "end": 115720303,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.91)",
+   "match": "unmatched"
+  },
+  {
+   "sample": "HG02300",
+   "chrom": "chrX",
+   "start": 115889844,
+   "end": 119738884,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.93)",
+   "match": "unmatched"
+  },
+  {
+   "sample": "HG02300",
+   "chrom": "chrX",
+   "start": 120986880,
+   "end": 127462949,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.89)",
+   "match": "unmatched"
+  },
+  {
+   "sample": "HG02300",
+   "chrom": "chrX",
+   "start": 127468217,
+   "end": 135747411,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.92)",
+   "match": "unmatched"
+  },
+  {
+   "sample": "HG02300",
+   "chrom": "chrX",
+   "start": 135889654,
+   "end": 140411815,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.92)",
+   "match": "unmatched"
+  },
+  {
+   "sample": "HG02300",
+   "chrom": "chrX",
+   "start": 141601939,
+   "end": 143652805,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.85)",
+   "match": "unmatched"
+  },
+  {
+   "sample": "HG02300",
+   "chrom": "chrX",
+   "start": 145342782,
+   "end": 154143684,
+   "label": "DRAGEN CNV: CN 2 (segment mean 1.90)",
+   "match": "unmatched"
+  },
+  {
+   "sample": "HG02300",
+   "chrom": "chrX",
+   "start": 0,
+   "end": 156040895,
+   "label": "DRAGEN ploidy: DUP, 1.91 copies (1.91 of the expected depth)",
+   "match": "unmatched"
+  },
+  {
+   "sample": "HG02300",
+   "chrom": "chrY",
+   "start": 0,
+   "end": 57227415,
+   "label": "DRAGEN ploidy: DEL, 0.00 copies (0.00 of the expected depth)",
+   "match": "unmatched"
+  }
+ ],
+ "sites_used": 5317110,
+ "records": 5390467,
+ "skipped": {
+  "contig": 73357
+ },
+ "seconds": 83.8,
+ "genotypes_from_pl": false,
+ "depth_sites": "all",
+ "homref_depth_ratio": {
+  "child": null,
+  "father": null,
+  "mother": null
+ }
+}

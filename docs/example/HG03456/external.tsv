@@ -1,0 +1,4 @@
+sample	chrom	start	end	label	match
+HG03456	chrY	6533633	9334360	DRAGEN CNV: CN 2 (segment mean 1.93)	matched: gain whole chrY f 1.06
+HG03456	chrY	12513396	15208729	DRAGEN CNV: CN 2 (segment mean 2.01)	matched: gain whole chrY f 1.06
+HG03456	chrY	0	57227415	DRAGEN ploidy: DUP, 1.94 copies (1.94 of the expected depth)	matched: gain whole chrY f 1.06

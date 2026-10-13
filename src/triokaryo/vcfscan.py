@@ -35,6 +35,7 @@ class Scan:
     gq_in_header: bool = True                       # False: the caller writes no GQ; a called genotype with reads is then taken as confident
     formats: set = field(default_factory=set)       # the FORMAT tags the header declares
     genotypes_from_pl: bool = False                 # the genotype class and GQ were re-derived from PL (a VCF with posterior genotypes)
+    x_haploid_frac: np.ndarray = None               # per member, the share of its called X genotypes outside the PARs that are haploid (the caller took a male)
 
     def sites(self, chrom):
         return self.chroms.get(chrom)
@@ -117,6 +118,7 @@ def scan_vcf(path, samples, genome, thin=1, pass_only=True, log=None, contigs=No
             log("  %s: %d sites" % (cur, n))
 
     k = 0
+    x_hap = np.zeros((len(samples), 2), dtype=np.int64)        # per member: haploid X calls, called X genotypes
     for rec in vf:
         scan.n_records += 1
         chrom = genome.normalize(rec.contig)
@@ -151,7 +153,8 @@ def scan_vcf(path, samples, genome, thin=1, pass_only=True, log=None, contigs=No
             if d is None:
                 d = sum(x for x in ad if x is not None) if ad is not None else 0
             q = s.get("GQ") if has_gq else None
-            g = _gt_class(s.get("GT"))
+            gt_raw = s.get("GT")
+            g = _gt_class(gt_raw)
             if use_pl:
                 r = _from_pl(s.get("PL"))
                 if r is not None:
@@ -162,6 +165,11 @@ def scan_vcf(path, samples, genome, thin=1, pass_only=True, log=None, contigs=No
             # homozygous reference call by convention, marked GQ -2 so that the trio reading can take it as confident
             if g == GT_HOMREF and d == 0 and q is None and (ad is None or all(x is None for x in ad)):
                 q = -2
+            if chrom == "chrX" and g != GT_MISSING and q != -2 and not genome.is_par(chrom, rec.pos):
+                j = samples.index(name)                            # the member's own X calls (not a merge's filled-in homozygotes): haploid or diploid
+                x_hap[j, 1] += 1
+                if len([a for a in gt_raw if a is not None]) == 1:
+                    x_hap[j, 0] += 1
             buf["dp"].append(int(d))
             buf["alt"].append(a)
             buf["gt"].append(g)
@@ -169,4 +177,6 @@ def scan_vcf(path, samples, genome, thin=1, pass_only=True, log=None, contigs=No
         scan.n_used += 1
     flush()
     vf.close()
+    with np.errstate(invalid="ignore", divide="ignore"):
+        scan.x_haploid_frac = np.where(x_hap[:, 1] > 0, x_hap[:, 0] / np.maximum(x_hap[:, 1], 1), 0.0)
     return scan

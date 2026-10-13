@@ -46,6 +46,32 @@ tested the band deviation before the heterozygosity rate, had called a 42% CN-LO
 segments in HG01101; with the heterozygosity rate tested first they are constitutional runs of homozygosity, as the
 phased fraction (at 1/2, from few sites) confirms.
 
+## Six more trios from the aneuploidy scan
+
+[`aneuploidy_scan/`](aneuploidy_scan/README.md) scans DRAGEN's per-sample ploidy VCFs across the 3,202 genomes for
+whole-chromosome deviations and crosses them with the cohort's trios and the HPRC and HGSVC3 assemblies. Six trios from
+it, run as the two above (`fetch_1kg_trio.sh`, the shipped panel; none of their members is in it), with DRAGEN's own
+CNV and ploidy calls as the comparison (`dragen_events.py` writes them from `cnv.vcf.gz` and `ploidy.vcf.gz`).
+
+| trio (child) | DRAGEN ploidy | triokaryo | assembly |
+| --- | --- | --- | --- |
+| YRI, **NA19208** (father NA19207, mother NA19206) | chr9 2.87 copies | **trisomy 9 in 87% of the child's cells** (0.86 bands, 0.85 phased, 20,216 sites), extra copy paternal, the two paternal copies one homologue throughout (mitotic, or meiosis II without a crossover); one event across the 28 masked bins of 9q12. A 19% loss over 2p11.2–q11.1 with the paternal copy lost, the IGK locus rearranged in the lymphoblastoid clone. The mother: a mosaic X loss over Xq11–q21 (8%, phased) | none |
+| IBS, **HG01683** (father HG01682, mother HG01684) | chrX 1.93 copies | **47,XXY**: 2.00 X copies, 0.95 Y, the father/son Y ratio 0.03 log2; the extra X **paternal** (2,873 phased sites), a paternal meiosis I error (X and Y transmitted together). Nothing else | none |
+| MSL, **HG03456** (father HG03454, mother HG03455) | chrY 1.94 copies | **47,XYY**: 2.06 Y copies, the father/son Y depth ratio −0.74 log2 over 4,421 sites; one X. The mother: a mosaic +12 in 9% of her cells (phased, folded across the son's crossovers at 12.6, 40.6 and 86.6 Mb; the depth +55 SE under its floor) and a 9% loss over 11q21–q22.3 | HGSVC3 verkko: X one contig in one haplotype, Y one 36-Mb contig in the other, no second Y: the identical Y chromosomes collapsed into one path, as the 46,XY control ([details](aneuploidy_scan/README.md#the-assemblies)) |
+| PEL, **HG02300** (father HG02299, mother HG02298), recorded male | chrX 1.93 "of the expected", expecting one | **XX**: 1.99 X copies, no Y reads, the paternal X present in the phased track: a daughter recorded as male (HPRC's sample table: female), an XX male, or a swap. DRAGEN called her X haploid, so the X LOH search is skipped. Two phased-scan finds at the floor: 22q11.21 (25%, over the LCR22 repeats) and 10q26.3 (6%) | HPRC release 2 hifiasm trio: an X covered once in each haplotype, no Y euchromatin |
+| CLM, **HG01358** (father HG01356, mother HG01357) | mother chr12 2.82 copies | **trisomy 12 in 79% of the mother's cells** (0.78 bands, 0.76 phased, 55,104 sites), the duplicated homologue the one passed to the son up to his crossover at 27.7 Mb; the son disomic. ROH: son 16p13.3, mother 15q23–q25.2 | the son, HPRC year 1 (disomic) |
+| CEU, **NA10865** (father NA11891, mother NA11892) | father chr15 2.98 copies | **trisomy 15 in 93% of the father's cells** (0.90 bands, 0.85 phased, 30,404 sites), the duplicated homologue the one not passed up to the son's crossover at 48.2 Mb; the son disomic. The son: a 10% gain over 11q24.3–q25 by depth, 1% by phase, flagged | none |
+
+The pages: [`NA19208`](NA19208/index.html), [`HG01683`](HG01683/index.html), [`HG03456`](HG03456/index.html),
+[`HG02300`](HG02300/index.html), [`HG01358`](HG01358/index.html), [`NA10865`](NA10865/index.html); the cohort report
+covers all eight trios: of 110 supplied calls 90 are matched; the 20 unmatched are HG01103's 2.1-Mb DRAGEN segment and
+DRAGEN's calls along HG02300's X (eighteen CN 2 segments, the X "DUP" and the Y "DEL" of its ploidy VCF), each a gain or
+a loss only against the male it was told to expect. Three fixes came from these trios (METHODS): pieces of an event join across a masked
+heterochromatin block (the trisomy 9 had been two arms); the Y level is a site-weighted median, read as absent from
+the Y's euchromatic depth, and a mosaic Y deviation needs the father/son ratio's agreement (a three-bin median had read
+HG01683's father at 1.24 Y copies, and HG02300's stray X-transposed-region reads as a Y in 38% of cells); and an X the
+caller called haploid is not searched for loss of heterozygosity.
+
 ## The reference panel
 
 Each genome carries the reference's depth structure (centromere flanks, segmental duplications, acrocentric short

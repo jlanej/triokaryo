@@ -28,7 +28,8 @@ import numpy as np
 from .model import NA, MEMBERS, chrom_level
 from .segment import Event
 
-Y_MIN_BINS = 3                 # usable Y bins for a Y copy number
+Y_MIN_BINS = 3                 # usable Y bins for a Y copy number ...
+Y_MIN_SITES = 5                # ... each with at least this many depth sites: a male's Y variant sites are sparse (about ten per Mb)
 X_OFFSET_MAX = 0.3             # the largest within-trio X correction applied (log2); beyond it the members' X levels contradict the pedigree
 Y_EVENT_FLOOR_NO_REF = 0.25    # a whole-Y deviation this large is reported without a panel or a father/son comparison
 Y_PRESENT = 0.25               # a Y read at this many copies or more is a Y, in all or part of the cells; less is stray depth
@@ -68,11 +69,30 @@ def sex_state(bins, scan, m, min_sites=20, min_bins=5):
     but the member has depth at fewer than 5% of them, or the level is under Y_PRESENT), at least 1 with one, so that a Y
     lost in part of the cells still reads XY."""
     x_raw, x_cp, nx = chrom_level(bins, m, "chrX", min_sites, min_bins)
-    y_raw, y_cp, ny = chrom_level(bins, m, "chrY", min_sites, Y_MIN_BINS)
     ys = scan.sites("chrY")
     y_in_vcf = ys is not None and ys.n > 0
-    if y_in_vcf and not np.isfinite(y_raw) and float((ys.dp[m] > 0).mean()) < 0.05:
-        y_raw, y_cp = 0.0, 0
+    y_from_sites = False
+    y_raw, y_cp, ny = NA, NA, 0
+    if y_in_vcf:
+        # a genome without a Y has depth at almost none of the Y's euchromatic sites: those in unmasked bins outside the PARs whose
+        # panel level is within a two-fold of the genome's (the satellite and ampliconic arrays, where a female's reads land too,
+        # left out). Read first, so that stray depth there never makes a Y.
+        sl = bins.of("chrY")
+        bi = np.clip(ys.pos // bins.bin_size, 0, sl.stop - sl.start - 1)
+        plain = np.ones(ys.n, dtype=bool)
+        if bins.masked is not None:
+            plain &= ~bins.masked[sl][bi]
+        if bins.panel_median is not None:
+            pm = bins.panel_median[sl][bi]
+            plain &= ~(np.isfinite(pm) & (np.abs(pm) > 1.0))
+        plain &= ~ys.par
+        auto_depth = float(np.nanmedian(bins.depth[m][bins.autosomal])) if np.isfinite(bins.depth[m][bins.autosomal]).any() else NA
+        no_y = (plain.sum() >= 50 and np.isfinite(auto_depth) and float(np.median(ys.dp[m][plain])) < 0.03 * auto_depth) or \
+               (plain.sum() < 50 and float((ys.dp[m] > 0).mean()) < 0.05)
+        if no_y:                                                   # the median depth over the euchromatic Y sites, zeros included, under 3% of the autosomes'
+            y_raw, y_cp, y_from_sites = 0.0, 0, True
+        else:
+            y_raw, y_cp, ny = chrom_level(bins, m, "chrY", Y_MIN_SITES, Y_MIN_BINS, weighted=True)
     anchor = anchor_complement(x_raw, y_raw, y_cp)
     if anchor == "M" and y_cp < 1:
         y_cp = 1
@@ -81,9 +101,9 @@ def sex_state(bins, scan, m, min_sites=20, min_bins=5):
     sl = bins.of("chrY")
     y_total = int(sl.stop - sl.start)
     y_masked = int(bins.masked[sl].sum()) if bins.masked is not None and y_total else 0
-    y_thin = int((bins.n_dp[m][sl] < min_sites).sum()) if y_total else 0
+    y_thin = int((bins.n_dp[m][sl] < Y_MIN_SITES).sum()) if y_total else 0
     return dict(x_copies=x_cp, x_copies_raw=x_raw, x_bins=nx, y_copies=y_cp, y_copies_raw=y_raw, y_bins=ny, y_in_vcf=y_in_vcf, y_bins_total=y_total,
-                y_bins_masked=y_masked, y_bins_thin=y_thin, y_min_sites=min_sites, anchor=anchor)
+                y_bins_masked=y_masked, y_bins_thin=y_thin, y_min_sites=Y_MIN_SITES, anchor=anchor, y_from_sites=y_from_sites)
 
 
 def y_unread(st):
@@ -91,6 +111,8 @@ def y_unread(st):
     than min_sites depth sites each - and fewer than Y_MIN_BINS remain."""
     if not st.get("y_in_vcf"):
         return "Y not in the VCF"
+    if st.get("y_from_sites"):
+        return "no Y reads: the median depth over the Y's euchromatic sites under 3%% of the autosomes'"
     return "Y unreadable: %d usable Y bin(s) of %d, %d needed (%d masked by the panel, %d with fewer than %d depth sites)" % (
         st.get("y_bins", 0), st.get("y_bins_total", 0), Y_MIN_BINS, st.get("y_bins_masked", 0), st.get("y_bins_thin", 0), st.get("y_min_sites", 20))
 
@@ -104,7 +126,7 @@ def x_check(sex, st):
         return "agrees"
     k = karyotype(xc, st["y_copies"])
     if k:
-        why = "an XX male, or a sample swap" if (sex == "M" and k == "XX") else "a sample swap, or an XY female" if (sex == "F" and k == "XY") else KARYOTYPE_NAME.get(k, k)
+        why = "a daughter recorded as male, an XX male, or a sample swap" if (sex == "M" and k == "XX") else "a sample swap, or an XY female" if (sex == "F" and k == "XY") else KARYOTYPE_NAME.get(k, k)
     else:
         why = {("M", 2): "47,XXY or an XX male?", ("F", 1): "45,X?", ("F", 3): "47,XXX?", ("M", 3): "48,XXXY?"}.get((sex, int(xc)), y_unread(st))
     return "X copies %d in a reported %s (%s)" % (int(xc), "male" if sex == "M" else "female", why)
@@ -157,7 +179,8 @@ def sex_check(sex, st):
     if k == expected:
         return "agrees"
     if sex == "M" and k == "XX":
-        name = "an XX male, a sample swap, or an X without heterozygosity (an isodisomy) that a sex called from X heterozygosity reads male"
+        name = ("two X chromosomes and no Y: a daughter recorded as male (the paternal X present, as the phased track shows), an XX male, "
+                "a sample swap, or an X without heterozygosity (an isodisomy) that a sex called from X heterozygosity reads male")
     elif sex == "F" and k == "XY":
         name = "a sample swap, or an XY female"
     elif sex == "F" and k == "XXY":
@@ -199,7 +222,8 @@ def apply_x_offset(bins, offset):
 def y_father_son(scan, bins, min_sites=Y_FATHER_SON_MIN_SITES):
     """log2 of the father's Y depth over the son's, each relative to its autosomal median depth, as the median over the Y sites
     with depth in both (outside the pseudoautosomal regions), and the site count. The two Y chromosomes are the same sequence,
-    so mapping cancels: a negative value is a lower Y copy number in the father (mosaic loss of Y), a positive one in the son."""
+    so mapping cancels: zero where both carry one Y, a negative value where the father has less (mosaic loss of Y) or the son
+    more (47,XYY: about -1), a positive one the other way round. Over thousands of sites, where the Y's bins are few."""
     s = scan.sites("chrY")
     if s is None:
         return NA, 0
@@ -213,10 +237,12 @@ def y_father_son(scan, bins, min_sites=Y_FATHER_SON_MIN_SITES):
     return float(np.median(r)), int(ok.sum())
 
 
-def sex_chromosome_events(m, sample, states, sexes, bins, genome, min_f, y_ref=False, y_ratio=NA):
+def sex_chromosome_events(m, sample, states, sexes, bins, genome, min_f, y_ref=False, y_ratio=NA, y_ratio_n=0):
     """The member's whole-X and whole-Y events against the complement its own Y implies (effective_sex: XY with a Y, XX without;
     the pedigree sex where the Y is unreadable). states: {role: sex_state}; y_ref: the panel carries Y rows, so the Y level is
-    corrected; y_ratio: y_father_son's log2 ratio (NaN without a son)."""
+    corrected; y_ratio: y_father_son's log2 ratio over y_ratio_n sites (NaN without a son with a Y). A whole Y gained or lost is
+    read from the level; a mosaic deviation of the father's or the son's Y is reported only as the ratio bears it out, since the
+    Y's usable bins are few and a bin of twenty sites can move the level by a quarter copy."""
     role = MEMBERS[m]
     st = states[role]
     out = []
@@ -249,19 +275,38 @@ def sex_chromosome_events(m, sample, states, sexes, bins, genome, min_f, y_ref=F
         dev = y_raw - ex_y
         kind = "gain" if dev > 0 else "loss"
         f_level = float(min(abs(dev), 2.0 if kind == "gain" else 1.0))
-        f_ratio = NA
+        # the other male of the trio, through the site-level father/son ratio: the member's Y copies implied by the other's level
+        implied, other_name, other_raw = NA, "", NA
         if np.isfinite(y_ratio):
             other = states["child" if role == "father" else "father"]
+            other_name, other_raw = ("son" if role == "father" else "father"), other["y_copies_raw"]
+            if np.isfinite(other_raw):
+                implied = float(other_raw * (2.0 ** y_ratio if role == "father" else 2.0 ** -y_ratio))
+        dev_ratio = implied - ex_y if np.isfinite(implied) else NA
+        ratio_text = "the father/son Y depth ratio (%.2f log2 over %d sites) against the %s's %.2f copies implies %.2f" % (y_ratio, y_ratio_n, other_name, other_raw, implied) if np.isfinite(implied) else ""
+        if y_ref and f_level >= 0.9:                                   # a whole Y gained or lost: read from the level, the ratio a confirmation
+            f, how = f_level, "from the Y depth against the panel's male level" + ("; " + ratio_text if ratio_text else "")
+        elif y_ref and np.isfinite(dev_ratio) and abs(other_raw - 1.0) < 0.5:   # a mosaic deviation, the other male at one Y: the ratio over thousands of sites decides
+            if abs(dev_ratio) >= min_f and (f_level < min_f or np.sign(dev_ratio) == np.sign(dev)):
+                kind = "gain" if dev_ratio > 0 else "loss"
+                f = float(min(abs(dev_ratio), 2.0 if kind == "gain" else 1.0))
+                how = ratio_text + "; the Y depth against the panel's male level reads %.2f" % y_raw
+            else:
+                f = NA                                                 # the bins' deviation, not borne out site by site against the other male
+        elif y_ref and f_level >= min_f:
+            f, how = f_level, "from the Y depth against the panel's male level (%s)" % ("the other male's Y itself off one copy, so the father/son ratio is not read here" if np.isfinite(other_raw) else "no son or father to compare")
+        elif not y_ref and np.isfinite(y_ratio) and np.isfinite(other_raw):
+            # no panel: both males carry the Y's mappability deficit, so only the ratio, the difference between them, is read; the
+            # member farther from one copy owns the deviation
             lower = (role == "father" and y_ratio < 0) or (role == "child" and y_ratio > 0)
-            if lower and np.isfinite(other["y_copies_raw"]) and y_raw <= other["y_copies_raw"]:
-                f_ratio = float(1.0 - 2.0 ** (-abs(y_ratio)))
-        if y_ref and f_level >= min_f:
-            f, how = f_level, "from the Y depth against the panel's male level"
-            if np.isfinite(f_ratio):
-                how += "; the father/son Y ratio gives %.0f%%" % (100 * f_ratio)
-        elif np.isfinite(f_ratio) and f_ratio >= min_f and kind == "loss":
-            f, how = f_ratio, "from the father/son Y ratio (the %s's Y taken as one copy; the Y depth alone reads %.2f copies, uncorrected for mappability)" % (
-                "son" if role == "father" else "father", y_raw)
+            mine = abs(y_raw - 1.0) >= abs(other_raw - 1.0)
+            f_ratio = float(1.0 - 2.0 ** (-abs(y_ratio))) if lower else float(2.0 ** abs(y_ratio) - 1.0)
+            if mine and f_ratio >= min_f and (lower or abs(y_ratio) >= 0.9):
+                kind, f = ("loss" if lower else "gain"), float(min(f_ratio, 1.0 if lower else 2.0))
+                how = "from the father/son Y depth ratio (%.2f log2 over %d sites; the %s's Y taken as one copy; the Y depth alone reads %.2f copies, uncorrected for mappability)" % (
+                    y_ratio, y_ratio_n, other_name, y_raw)
+            else:
+                f = NA
         elif not y_ref and not np.isfinite(y_ratio) and f_level >= Y_EVENT_FLOOR_NO_REF:
             f, how = f_level, "from the Y depth alone, uncorrected for mappability (no panel with Y rows, no son to compare)"
         else:

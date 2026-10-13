@@ -1,0 +1,5 @@
+track name="triokaryo NA19208" description="large chromosomal events (triokaryo)" useScore=1
+chr2	89000000	95000000	NA19208|child|loss|p11.2q11.1|f=0.19|paternal_copy_lost	188	.
+chr9	0	138000000	NA19208|child|gain|p24.3q34.3|f=0.87|extra_copy_paternal	872	.
+chr11	130000000	135086622	NA19206|mother|loss|q25|f=0.11	115	.
+chrX	64028946	80175117	NA19206|mother|loss|q11.2q21.1|f=0.08|the_lost_homologue_is_the_one_not_passed_to_the_child	84	.

@@ -118,7 +118,7 @@ def test_isodisomic_xxy_and_x_isodisomy_one_homologue_read(tmp_path):
     assert e.chrom == "chrX" and e.type == "LOH" and e.span == "whole" and e.origin == "maternal copy retained (paternal replaced)", (e.type, e.origin)
     s = res["summary"]
     assert s["child_sex_anchor"] == "F" and s["child_sex_karyotype"] == "XX" and s["child_karyotype"] == "46,XX,upd(X)mat(iso)", s["child_karyotype"]
-    assert s["child_sex_check"].startswith("XX in a reported male (an XX male, a sample swap, or an X without heterozygosity")
+    assert s["child_sex_check"].startswith("XX in a reported male (two X chromosomes and no Y: a daughter recorded as male") and "isodisomy" in s["child_sex_check"]
 
 
 def test_sex_chromosome_mosaics(tmp_path):
@@ -244,3 +244,33 @@ def test_mosaic_maternal_xxy_is_staged_from_a_low_cell_fraction(tmp_path):
     assert e.type == "gain" and abs(e.f - 0.2) < 0.06 and e.origin == "extra copy maternal" and e.origin_phase == "extra copy maternal", (e.f, e.origin, e.origin_phase)
     assert e.stage == "meiosis I" and e.centromere == "heterodisomic" and e.n_crossovers == 0, (e.stage, e.centromere, e.n_crossovers, e.hetero_share)
     assert res["summary"]["child_karyotype"] == "mos 47,XXY(mat,MI)[%.2f]/46,XY" % e.f
+
+
+def test_xyy_son_confirmed_by_the_father_son_ratio(tmp_path):
+    """A son with two copies of the father's Y: the Y level reads two, the father/son Y depth ratio about -1 log2, and the event
+    names the ratio; the father, at one Y, gets no event although the son's level differs from his."""
+    from triokaryo.mock import write_mock
+    m = write_mock(str(tmp_path / "xyy"), seed=31, no_events=True, xyy=True, contigs=("chr20", "chr21", "chr22", "chrX", "chrY"), sites_per_mb=300)
+    trio = read_trios(m["trios"])[0]
+    res = run_trio(m["vcf"], trio, str(tmp_path / "out"), gc_track=m["gc"], figures=False, log=lambda s: None)
+    s = res["summary"]
+    assert s["child_y_copies"] == 2 and s["father_y_copies"] == 1 and s["child_sex_karyotype"] == "XYY", (s["child_y_copies_raw"], s["father_y_copies_raw"])
+    assert -1.3 < s["y_father_son_log2"] < -0.7 and s["y_father_son_sites"] > 200, s["y_father_son_log2"]
+    (ev,) = [e for e in res["events"] if e.chrom == "chrY"]
+    assert ev.role == "child" and ev.type == "gain" and ev.f >= 0.9 and "father/son Y depth ratio" in ev.note and "47,XYY" in ev.note, ev.note
+    assert s["child_karyotype"] == "47,XYY" and s["father_karyotype"] == "46,XY"
+
+
+def test_daughter_recorded_as_male_reads_as_xx(tmp_path):
+    """A pedigree says male, the genome has two X chromosomes and no Y reads: the complement is XX and the check says so (a daughter
+    recorded as male, an XX male, or a swap); no whole-X gain is reported, since the Y, read as absent from its sites, implies XX."""
+    from triokaryo.mock import write_mock
+    m = write_mock(str(tmp_path / "xx"), seed=32, no_events=True, child_sex="F", pedigree_sex="M", contigs=("chr20", "chr21", "chr22", "chrX", "chrY"), sites_per_mb=300)
+    trio = read_trios(m["trios"])[0]
+    assert trio.sexes[0] == "M"
+    res = run_trio(m["vcf"], trio, str(tmp_path / "out"), gc_track=m["gc"], figures=False, log=lambda s: None)
+    s = res["summary"]
+    assert s["child_x_copies"] == 2 and s["child_y_copies"] == 0 and s["child_sex_karyotype"] == "XX", (s["child_x_copies_raw"], s["child_y_copies_raw"])
+    assert "daughter recorded as male" in s["child_sex_check"], s["child_sex_check"]
+    assert not [e for e in res["events"] if e.role == "child" and e.chrom in ("chrX", "chrY")], [e.note for e in res["events"]]
+    assert s["child_karyotype"] == "46,XX", s["child_karyotype"]

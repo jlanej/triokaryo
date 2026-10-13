@@ -1,0 +1,3 @@
+track name="triokaryo NA10865" description="large chromosomal events (triokaryo)" useScore=1
+chr11	131000000	135086622	NA10865|child|gain|q24.3q25|f=0.10|extra_copy_paternal	101	.
+chr15	22000000	101991189	NA11891|father|gain|q11.2q26.3|f=0.93|the_duplicated_homologue_is,_up_to_48.2_Mb,_the_one_not_passed_to_the_child;_the_transmitted_homologue_switches_at_48.2_Mb_(the_child's_crossover)	933	.

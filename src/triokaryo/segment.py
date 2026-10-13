@@ -206,10 +206,13 @@ def span_of(chrom, start, end, valid_starts, genome, frac):
     return "stretch"
 
 
-def join_pieces(events, bins, genome, max_gap_bins=3, max_dlrr=0.08, frac=0.90):
-    """Adjacent events of one member, chromosome and type, separated by at most max_gap_bins bins (e.g. a masked centromere)
-    and differing in level by at most max_dlrr, are joined into one event: the LRR re-averaged over the pieces, the span
-    re-classified. Site counts are summed; d_hat and the bands' cell fraction are taken from the larger piece."""
+def join_pieces(events, bins, genome, max_gap_bins=3, max_dlrr=0.08, frac=0.90, max_unmasked_gap=4):
+    """Adjacent events of one member, chromosome and type, separated by at most max_gap_bins bins, or by a run of bins of any
+    length of which fewer than a segment's worth (max_unmasked_gap, one under the five-bin minimum) are unmasked - a centromere,
+    the heterochromatin of 1q12, 9q12 or 16q11, with the few uncalled bins at its flanks: too few to have formed a segment and
+    spoken against continuity - and differing in level by at most max_dlrr, are joined into one event: the LRR re-averaged over
+    the pieces, the span re-classified. Site counts are summed; d_hat and the bands' cell fraction are taken from the larger
+    piece."""
     out = []
     by = {}
     for e in events:
@@ -220,13 +223,16 @@ def join_pieces(events, bins, genome, max_gap_bins=3, max_dlrr=0.08, frac=0.90):
         for e in evs[1:]:
             last = merged[-1]
             gap = (e.start - last.end) / bins.bin_size
-            if gap <= max_gap_bins and (abs(e.lrr - last.lrr) <= max_dlrr if e.type != "LOH" else abs(e.f_baf - last.f_baf) <= 0.15):
+            sl = bins.of(e.chrom)
+            between = (bins.start[sl] >= last.end) & (bins.start[sl] < e.start)
+            n_masked = int(bins.masked[sl][between].sum()) if bins.masked is not None else 0
+            n_unmasked = int(between.sum()) - n_masked
+            same_level = abs(e.lrr - last.lrr) <= max_dlrr if e.type != "LOH" else abs(e.f_baf - last.f_baf) <= 0.15
+            if same_level and (gap <= max_gap_bins or n_unmasked <= max_unmasked_gap):
                 n1, n2 = last.n_bins, e.n_bins
                 if gap > 0:                                        # the bins between the pieces: masked by the panel, or without a call
-                    sl = bins.of(e.chrom)
-                    between = (bins.start[sl] >= last.end) & (bins.start[sl] < e.start)
-                    masked = bins.masked is not None and between.any() and bool(bins.masked[sl][between].all())
-                    last.note = (last.note + "; " if last.note else "") + "joined across %d bin(s) %s" % (int(round(gap)), "masked by the panel" if masked else "without a call")
+                    how = "masked by the panel" if n_unmasked == 0 else "without a call" if n_masked == 0 else "%d masked by the panel, %d without a call" % (n_masked, n_unmasked)
+                    last.note = (last.note + "; " if last.note else "") + "joined across %d bin(s) %s" % (int(round(gap)), how)
                 last.lrr = (last.lrr * n1 + e.lrr * n2) / (n1 + n2)
                 last.lrr_se = last.lrr_se * np.sqrt(n1) / np.sqrt(n1 + n2)
                 last.n_bins = n1 + n2
@@ -319,6 +325,8 @@ def call_member(bins, scan, m, sample, genome, params=None, sex=""):
         # over bins the depth did not call
         if chrom == "chrX" and (x_copies != 2 or sex == "M" or x_mosaic):
             continue                                           # a single X has no heterozygous sites; a third X, a male's second X and a whole-X mosaic are whole-X events (sexchrom)
+        if chrom == "chrX" and getattr(scan, "x_haploid_frac", None) is not None and scan.x_haploid_frac[m] > 0.9:
+            continue                                           # the caller called this member's X haploid (a male by its records): no heterozygous call to search
         banned = bins.masked_bands[sl][valid] if bins.masked_bands is not None else np.zeros(int(valid.sum()), dtype=bool)
         use_panel = bins.het_rel is not None and np.isfinite(bins.het_rel[m][auto]).sum() > 100
         if use_panel:                                              # the member's own baselines on the panel-relative tracks

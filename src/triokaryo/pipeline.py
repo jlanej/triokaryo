@@ -70,11 +70,12 @@ def run_trio(vcf, trio, out, gc_track=None, events_path=None, bin_size=1_000_000
         events += ev
         x_copies[role] = xc
     y_ref = bool(pan is not None and np.isfinite(bins.panel_median[bins.of("chrY")]).sum() >= 3)
-    y_ratio, y_ratio_n = y_father_son(scan, bins) if states["child"]["y_copies"] == 1 and states["father"]["y_copies"] == 1 else (float("nan"), 0)
+    both_y = all(np.isfinite(states[r]["y_copies"]) and int(states[r]["y_copies"]) >= 1 for r in ("child", "father"))
+    y_ratio, y_ratio_n = y_father_son(scan, bins) if both_y else (float("nan"), 0)
     for m, role in enumerate(MEMBERS):
         states[role]["x_check"] = x_check(trio.sexes[m], states[role])
         states[role]["sex_check"] = sex_check(trio.sexes[m], states[role])
-        events += sex_chromosome_events(m, trio.members[m], states, trio.sexes, bins, G, P["min_f"], y_ref=y_ref, y_ratio=y_ratio)
+        events += sex_chromosome_events(m, trio.members[m], states, trio.sexes, bins, G, P["min_f"], y_ref=y_ref, y_ratio=y_ratio, y_ratio_n=y_ratio_n)
     sex_info = dict(states=states, sex_read=dict(zip(MEMBERS, sex_read)), y_father_son_log2=y_ratio, y_father_son_sites=y_ratio_n, y_panel=y_ref, x_offset_trio=x_off)
     log("sex chromosomes: %s; Y father/son log2 ratio %s" % ("; ".join("%s %s (%s)" % (role, states[role]["sex_check"] and (("X" * int(states[role]["x_copies"]) if np.isfinite(states[role]["x_copies"]) else "?") +
                                                                       ("Y" * int(states[role]["y_copies"]) if np.isfinite(states[role]["y_copies"]) else "")) or "unknown", states[role]["sex_check"] or "no pedigree sex")

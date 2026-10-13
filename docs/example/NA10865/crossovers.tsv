@@ -1,0 +1,2 @@
+trio	sample	role	chrom	position	position_mb	from_state	to_state	event_type	event_f	stage	parent
+NA10865	NA11891	father	chr15	48220000	48.22	untransmitted	transmitted	gain	0.933		

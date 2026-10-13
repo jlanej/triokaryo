@@ -251,3 +251,24 @@ def test_scan_reads_the_trio_by_name_whatever_the_vcf_column_order(tmp_path):
     auto = np.median(np.concatenate([b.chroms[c].dp[1] for c in b.chroms if c not in ("chrX", "chrY")]))
     autom = np.median(np.concatenate([b.chroms[c].dp[2] for c in b.chroms if c not in ("chrX", "chrY")]))
     assert np.median(x.dp[1][~x.par]) / auto < 0.75 < np.median(x.dp[2][~x.par]) / autom
+
+
+def test_pieces_join_across_any_run_of_masked_bins():
+    """Two arm-level pieces of one event separated by a masked stretch of twenty bins (a chromosome's heterochromatin) join into one
+    whole-chromosome event; separated by twenty unmasked bins without a call they stay apart."""
+    from types import SimpleNamespace
+    from triokaryo.segment import Event, join_pieces
+    G = genome()
+    L = G.length["chr9"]
+    nb = int(np.ceil(L / 1e6))
+    start = np.arange(nb) * 1_000_000
+    masked = np.zeros(nb, dtype=bool)
+    masked[39:67] = True                                           # 9q12 and the centromere flanks, masked by the panel
+    bins = SimpleNamespace(bin_size=1_000_000, start=start, masked=masked, lrr_gc=np.zeros((3, nb)), of=lambda c: slice(0, nb))
+    bins.lrr_gc[0, :] = 0.5
+    mk = lambda a, b: Event("K", "child", "chr9", a, b, "stretch", "gain", lrr=0.5, n_bins=int((b - a) // 1_000_000), f_lrr=0.8)
+    joined = join_pieces([mk(0, 39_000_000), mk(67_000_000, L)], bins, G)
+    assert len(joined) == 1 and joined[0].span == "whole" and "masked by the panel" in joined[0].note, [(e.start, e.end, e.note) for e in joined]
+    bins.masked[:] = False
+    apart = join_pieces([mk(0, 39_000_000), mk(67_000_000, L)], bins, G)
+    assert len(apart) == 2

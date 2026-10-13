@@ -1,0 +1,4 @@
+track name="triokaryo HG03456" description="large chromosomal events (triokaryo)" useScore=1
+chrY	0	57227415	HG03456|child|gain|p11.32q12|f=1.06	1000	.
+chr11	93846249	103432907	HG03455|mother|loss|q21q22.3|f=0.09|the_lost_homologue_is_the_one_not_passed_to_the_child	91	.
+chr12	10573	133264810	HG03455|mother|gain|p13.33q24.33|f=0.09|the_duplicated_homologue_is,_up_to_12.6_Mb,_the_one_passed_to_the_child;_the_transmitted_homologue_switches_at_12.6,_40.6,_86.7,_117.5_Mb_(the_child's_crossovers)	94	.

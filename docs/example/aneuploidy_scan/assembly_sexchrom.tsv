@@ -1,0 +1,17 @@
+sample	complement	source	haplotype	chrom	length_non_par	aligned_bases	covered_bases	aligned_over_covered	contigs	largest_contig_bases	largest_contig
+HG03456	47,XYY	HGSVC3 verkko (Strand-seq phased)	hap1	chr21	46709983	43325637	37158564	1.17	18	36095988	haplotype1-0000029
+HG03456	47,XYY	HGSVC3 verkko (Strand-seq phased)	hap1	chrX	152939905	7407	7407	1.00	2	6050	haplotype1-0000003
+HG03456	47,XYY	HGSVC3 verkko (Strand-seq phased)	hap1	chrY	54126425	37097617	23356206	1.59	25	35792568	haplotype1-0000020
+HG03456	47,XYY	HGSVC3 verkko (Strand-seq phased)	hap2	chr21	46709983	44818844	37298723	1.20	15	36254252	haplotype2-0000159
+HG03456	47,XYY	HGSVC3 verkko (Strand-seq phased)	hap2	chrX	152939905	151469918	149949923	1.01	4	151453852	haplotype2-0000145
+HG03456	47,XYY	HGSVC3 verkko (Strand-seq phased)	hap2	chrY	54126425	494647	119310	4.15	17	122613	haplotype2-0000167
+HG00731	46,XY	HGSVC3 verkko (Strand-seq phased), control	hap1	chr21	46709983	43785063	37203953	1.18	15	36144816	haplotype1-0000008
+HG00731	46,XY	HGSVC3 verkko (Strand-seq phased), control	hap1	chrX	152939905	152918200	150199179	1.02	7	112856510	haplotype1-0000004
+HG00731	46,XY	HGSVC3 verkko (Strand-seq phased), control	hap1	chrY	54126425	1036383	260506	3.98	17	248432	haplotype1-0000015
+HG00731	46,XY	HGSVC3 verkko (Strand-seq phased), control	hap2	chr21	46709983	44083787	37415163	1.18	14	36143163	haplotype2-0000045
+HG00731	46,XY	HGSVC3 verkko (Strand-seq phased), control	hap2	chrX	152939905	7600	7600	1.00	3	4490	haplotype2-0000066
+HG00731	46,XY	HGSVC3 verkko (Strand-seq phased), control	hap2	chrY	54126425	34346092	23453720	1.46	17	33547818	haplotype2-0000041
+HG02300	XX (pedigree XY; HPRC: female)	HPRC release 2 hifiasm trio-binned	mat	chrX	152939905	285725322	150665167	1.90	77	68962413	HG02300#2#JBHDSE010000057.1
+HG02300	XX (pedigree XY; HPRC: female)	HPRC release 2 hifiasm trio-binned	mat	chrY	54126425	47383231	9405696	5.04	81	3350784	HG02300#2#JBHDSE010000016.1
+HG02300	XX (pedigree XY; HPRC: female)	HPRC release 2 hifiasm trio-binned	pat	chrX	152939905	282756206	149659395	1.89	77	66788239	HG02300#1#JBHDSD010000003.1
+HG02300	XX (pedigree XY; HPRC: female)	HPRC release 2 hifiasm trio-binned	pat	chrY	54126425	47200709	9403717	5.02	74	3605493	HG02300#1#JBHDSD010000066.1

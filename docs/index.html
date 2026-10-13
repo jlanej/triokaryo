@@ -84,7 +84,8 @@ footer{padding:28px 0 48px;color:var(--muted);font-size:14px;border-top:1px soli
   <div class="cta">
     <a class="primary" href="example/NA12739/index.html">Trio NA12739: a trisomy 12 and a mosaic father</a>
     <a href="example/HG01103/index.html">Trio HG01103: mosaic losses of 2q and 14q</a>
-    <a href="example/cohort/index.html">The cohort report: both trios against NGS-DOSE and DRAGEN</a>
+    <a href="#more">Six more trios: a trisomy 9, a 47,XXY, a 47,XYY with its assembly, a daughter recorded as male</a>
+    <a href="example/cohort/index.html">The cohort report: all eight trios against NGS-DOSE and DRAGEN</a>
     <a href="example/cohort/guide.html">The guide</a>
   </div>
 </div>
@@ -132,6 +133,82 @@ footer{padding:28px 0 48px;color:var(--muted);font-size:14px;border-top:1px soli
     <a href="example/HG01103/figures/chrom_chr2.png"><img src="example/HG01103/figures/chrom_chr2.png" alt="Chromosome 2 of trio HG01103" loading="lazy"></a>
     <figcaption><b>A mosaic loss with its parent of origin.</b> Chromosome 2 of trio HG01103. In the child (left) the raw BAF (row 2) splits into bands at 0.24 and 0.76 over 141–173 Mb with the maternal alleles (pink) on the upper band; the maternal-allele fraction (row 3) steps to 0.70; the copy-number track (row 4) shows the paternal copy (orange) falling to 0.35 while the maternal stays at 1. Both parents are flat. The second step, 173–180 Mb at 31% of cells, is a subclone.</figcaption>
   </figure>
+</section>
+
+<section id="more">
+  <h2>Six more trios, from a scan of the cohort</h2>
+  <p class="sub">DRAGEN's per-sample ploidy VCFs, one small file per genome, were scanned across all 3,202 genomes of the 1000 Genomes DRAGEN re-analysis for whole-chromosome deviations, and the hits crossed with the cohort's 602 trios and with the HPRC and HGSVC3 long-read assemblies (<a href="https://github.com/jlanej/triokaryo/blob/main/docs/example/aneuploidy_scan/README.md">the scan</a>, reproducible from public data). No autosomal trisomy has an assembly; the sex-chromosome cases do. Six trios from it, each run as the two above, with DRAGEN's own CNV and ploidy calls as the comparison. None of their members is in the shipped panel.</p>
+  <div class="grid">
+    <div class="card">
+      <a href="example/NA19208/figures/chrom_chr9.png"><img src="example/NA19208/figures/chrom_chr9.png" alt="Chromosome 9 of trio NA19208" loading="lazy"></a>
+      <div class="body">
+        <h3>NA19208, a YRI trio: trisomy 9 in the child</h3>
+        <ul>
+          <li><b>+9 in 87% of the child's cells</b> (0.86 by the bands, 0.85 by the phased track over 20,216 sites), the extra copy <b>paternal</b> and the two paternal copies <b>one homologue throughout</b>: a mitotic duplication, as a cell line acquires, or a meiosis II error without a crossover. One event across the 28 masked bins of the 9q12 heterochromatin. DRAGEN ploidy: 2.87 copies.</li>
+          <li>A 19% loss over 2p11.2–q11.1 (89–95 Mb) with the paternal copy lost: the immunoglobulin kappa locus, rearranged in the lymphoblastoid clone.</li>
+          <li>The mother: a mosaic loss of one X over Xq11–q21 (8%, phased, the depth agreeing), as in two other mothers here.</li>
+        </ul>
+        <div class="links"><a href="example/NA19208/index.html">The page</a> · <a href="example/NA19208/figures/genome.png">genome</a></div>
+      </div>
+    </div>
+    <div class="card">
+      <a href="example/HG01683/figures/chrom_chrX.png"><img src="example/HG01683/figures/chrom_chrX.png" alt="Chromosome X of trio HG01683" loading="lazy"></a>
+      <div class="body">
+        <h3>HG01683, an IBS trio: 47,XXY</h3>
+        <ul>
+          <li><b>Two X chromosomes and a Y</b> in a reported male: 2.00 X copies, 0.95 Y copies, the father/son Y depth ratio 0.03 log2 (one Y each). DRAGEN ploidy: X 1.93 copies.</li>
+          <li>The extra X is <b>paternal</b> (2,873 phased sites): X and Y transmitted together, a <b>paternal meiosis I</b> error. Nothing else in the trio.</li>
+        </ul>
+        <div class="links"><a href="example/HG01683/index.html">The page</a> · <a href="example/HG01683/figures/chrom_chrY.png">chromosome Y</a></div>
+      </div>
+    </div>
+    <div class="card">
+      <a href="example/HG03456/figures/chrom_chrY.png"><img src="example/HG03456/figures/chrom_chrY.png" alt="Chromosome Y of trio HG03456" loading="lazy"></a>
+      <div class="body">
+        <h3>HG03456, an MSL trio: 47,XYY, with a verkko assembly</h3>
+        <ul>
+          <li><b>Two Y chromosomes</b>: 2.06 copies against the panel's male level, the father/son Y depth ratio −0.74 log2 over 4,421 sites (the son's Y deeper than the father's); one X. DRAGEN ploidy: Y 1.94 copies.</li>
+          <li><b>The assembly</b> (HGSVC3, verkko, Strand-seq phased): the X one contig in one haplotype, the Y one 36-Mb contig in the other and nothing of a second Y, exactly as the 46,XY control from the same batch. The two Y chromosomes are identical copies, so the assembly collapses them into one path and reads as 46,XY; the second Y is dosage, which the trio analysis reads.</li>
+          <li>The mother: a <b>mosaic trisomy 12 in 9% of her cells</b>, found by the phased scan folded across the son's maternal crossovers at 12.6, 40.6 and 86.6 Mb, the depth agreeing (+55 SE) under its own 10% floor; and a 9% loss over 11q21–q22.3.</li>
+        </ul>
+        <div class="links"><a href="example/HG03456/index.html">The page</a> · <a href="example/HG03456/figures/chrom_chr12.png">chromosome 12</a> · <a href="https://github.com/jlanej/triokaryo/blob/main/docs/example/aneuploidy_scan/README.md#the-assemblies">the assembly comparison</a></div>
+      </div>
+    </div>
+    <div class="card">
+      <a href="example/HG02300/figures/genome.png"><img src="example/HG02300/figures/genome.png" alt="Genome-wide tracks of trio HG02300" loading="lazy"></a>
+      <div class="body">
+        <h3>HG02300, a PEL trio: a daughter recorded as male, with an HPRC assembly</h3>
+        <ul>
+          <li>The pedigree says male; the genome has <b>1.99 X copies and no Y reads</b>: XX. The phased track shows the paternal X present, so the sex check names a daughter recorded as male (HPRC's own sample table says female), an XX male, or a swap.</li>
+          <li>DRAGEN, told male, called her X haploid, so she has no heterozygous X call and the copy-neutral LOH search on the X is skipped; the depth and the allele fractions read her X regardless. DRAGEN ploidy: X 1.93 "of the expected", expecting one.</li>
+          <li><b>The assembly</b> (HPRC release 2, hifiasm trio-binned): an X covered once in the paternal haplotype and once in the maternal, no Y euchromatin in either.</li>
+        </ul>
+        <div class="links"><a href="example/HG02300/index.html">The page</a></div>
+      </div>
+    </div>
+    <div class="card">
+      <a href="example/HG01358/figures/chrom_chr12.png"><img src="example/HG01358/figures/chrom_chr12.png" alt="Chromosome 12 of trio HG01358" loading="lazy"></a>
+      <div class="body">
+        <h3>HG01358, a CLM trio: trisomy 12 in the mother's line</h3>
+        <ul>
+          <li><b>+12 in 79% of the mother's cells</b> (0.78 by the bands, 0.76 by the phased track over 55,104 sites), the duplicated homologue the one she passed to the son up to his crossover at 27.7 Mb, where the phased sign flips. The son is disomic: the trisomy is her line's, not transmitted. DRAGEN ploidy: 2.82 copies.</li>
+          <li>Runs of homozygosity: the son's 16p13.3, the mother's 15q23–q25.2. The son has an HPRC year-1 assembly, of a disomic genome.</li>
+        </ul>
+        <div class="links"><a href="example/HG01358/index.html">The page</a></div>
+      </div>
+    </div>
+    <div class="card">
+      <a href="example/NA10865/figures/chrom_chr15.png"><img src="example/NA10865/figures/chrom_chr15.png" alt="Chromosome 15 of trio NA10865" loading="lazy"></a>
+      <div class="body">
+        <h3>NA10865, a CEU trio: trisomy 15 in the father's line</h3>
+        <ul>
+          <li><b>+15 in 93% of the father's cells</b> (0.90 by the bands, 0.85 by the phased track over 30,404 sites), the duplicated homologue the one he did not pass to the son up to the son's crossover at 48.2 Mb. The son is disomic. DRAGEN ploidy: 2.98 copies.</li>
+          <li>The son: a 10% gain over 11q24.3–q25 by depth that the phased track puts at 1%, flagged.</li>
+        </ul>
+        <div class="links"><a href="example/NA10865/index.html">The page</a></div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <section id="read">

@@ -1,0 +1,2 @@
+sample	role	chrom	start	end	shift	windows	reason
+NA19208	child	chr6	32517327	32635826	0.02921	8	spans 0.12 Mb, under the floor of 2 Mb (a dense cluster of sites)

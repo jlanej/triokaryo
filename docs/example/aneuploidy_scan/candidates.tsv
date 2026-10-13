@@ -1,0 +1,3 @@
+sample	sex	population	superpopulation	trio	flags	x_copies	y_copies	autosomal_depth	assembly
+HG02300	M	PEL	AMR	child of HG02299 x HG02298	sex chromosomes XX against the pedigree's XY (X 1.91, Y 0.00 copies)	1.91	0.00	38.0	HPRC-r2 hifiasm trio
+HG03456	M	MSL	AFR	child of HG03454 x HG03455	sex chromosomes XYY against the pedigree's XY (X 0.98, Y 1.94 copies)	0.98	1.94	35.4	HGSVC3 verkko

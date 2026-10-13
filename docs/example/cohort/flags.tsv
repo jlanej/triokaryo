@@ -4,5 +4,17 @@ HG01103	HG01101	father	chr11	21000000	26000000	LOH	bands	1	no heterozygous calls
 HG01103	HG01101	father	chr11	44000000	59000000	LOH	bands	1	no heterozygous calls: in every cell (a uniparental disomy, or a deletion the depth missed); in every cell: a run of homozygosity (identical by descent) unless the depth says otherwise
 HG01103	HG01101	father	chr17	43000000	50000000	LOH	bands	1	no heterozygous calls: in every cell (a uniparental disomy, or a deletion the depth missed); in every cell: a run of homozygosity (identical by descent) unless the depth says otherwise
 HG01103	HG01102	mother	chr7	79000000	87000000	LOH	bands	1	no heterozygous calls: in every cell (a uniparental disomy, or a deletion the depth missed); in every cell: a run of homozygosity (identical by descent) unless the depth says otherwise
+HG01358	HG01358	child	chr16	0	7000000	LOH	bands	1	no heterozygous calls: in every cell (a uniparental disomy, or a deletion the depth missed); a run of homozygosity (both copies identical by descent), not a uniparental disomy: no Mendelian errors
+HG01358	HG01357	mother	chr15	71000000	79000000	LOH	bands	1	no heterozygous calls: in every cell (a uniparental disomy, or a deletion the depth missed); in every cell: a run of homozygosity (identical by descent) unless the depth says otherwise
+HG01683	HG01683	child	chrX	0	156040895	gain	depth	0.9959	whole-chromosome X: 2.00 copies against 1 expected for a reported male (47,XXY)
+HG02300	HG02300	child	chr10	130790735	133763665	LOH	phased	0.05839	from the phased bands: the depth is flat (0.7 standard errors); a copy-neutral LOH at this share, or a gain in 12% / a loss in 11% of cells
+HG02300	HG02300	child	chr22	18208470	21320674	LOH	phased	0.2478	from the phased bands: the depth is flat (0.5 standard errors); a copy-neutral LOH at this share, or a gain in 66% / a loss in 40% of cells
+HG03456	HG03456	child	chrY	0	57227415	gain	depth	1.063	whole-chromosome Y (47,XYY): 2.06 copies against 1 expected for a reported male, from the Y depth against the panel's male level; the father/son Y depth ratio (-0.74 log2 over 4421 sites) against the father's 0.99 copies implies 1.65
+HG03456	HG03455	mother	chr11	93846249	103432907	loss	phased	0.09057	from the phased bands: the depth leans the same way (-15.4 standard errors) but under its own threshold
+HG03456	HG03455	mother	chr12	10573	133264810	gain	phased	0.09388	from the phased bands: the depth leans the same way (54.8 standard errors) but under its own threshold
+NA10865	NA10865	child	chr11	131000000	135086622	gain	depth	0.1009	the phased bands read a share of 1% against the depth's 10%: the depth's call may be an artefact (GC, the panel's edge) rather than a copy change
 NA12739	NA12748	father	chr21	42761648	46699598	loss	phased	0.5974	from the phased bands: the depth leans the same way (-93.2 standard errors) but under its own threshold
 NA12739	NA12749	mother	chrX	147876362	155693713	loss	phased	0.09247	from the phased bands: the depth leans the same way (-8.0 standard errors) but under its own threshold
+NA19208	NA19208	child	chr9	0	138000000	gain	depth	0.8721	joined across 28 bin(s) 24 masked by the panel, 4 without a call
+NA19208	NA19206	mother	chr11	130000000	135086622	loss	depth	0.1149	the phased bands read a share of 0% against the depth's 11%: the depth's call may be an artefact (GC, the panel's edge) rather than a copy change
+NA19208	NA19206	mother	chrX	64028946	80175117	loss	phased	0.08432	from the phased bands: the depth leans the same way (-9.1 standard errors) but under its own threshold

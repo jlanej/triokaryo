@@ -283,10 +283,18 @@ def gc_correct(lrr, gc, fit_mask, window=41):
     return out
 
 
-def chrom_level(bins, m, chrom, min_sites=20, min_bins=5):
+def weighted_median(v, w):
+    o = np.argsort(v)
+    cw = np.cumsum(w[o])
+    return float(v[o][int(np.searchsorted(cw, 0.5 * cw[-1]))])
+
+
+def chrom_level(bins, m, chrom, min_sites=20, min_bins=5, weighted=False):
     """A chromosome's copy number from the member's corrected LRR over its usable bins (outside the pseudoautosomal regions,
     with at least min_sites sites): (raw copies 2 x 2^median LRR, rounded copies, usable bins); (NaN, NaN, bins) with fewer
-    than min_bins usable bins."""
+    than min_bins usable bins. weighted: the median weighted by each bin's depth sites, capped at 100, for the Y, whose few
+    usable bins hold from five to two thousand sites: a bin of five does not decide the level, nor does the one bin of two
+    thousand (an ampliconic array) alone."""
     sl = bins.of(chrom)
     if sl.start == sl.stop:
         return NA, NA, 0
@@ -294,7 +302,8 @@ def chrom_level(bins, m, chrom, min_sites=20, min_bins=5):
     ok = np.isfinite(y) & (bins.n_dp[m][sl] >= min_sites) & ~bins.par[sl]
     if ok.sum() < min_bins:
         return NA, NA, int(ok.sum())
-    raw = 2.0 * 2.0 ** float(np.median(y[ok]))
+    level = weighted_median(y[ok], np.minimum(bins.n_dp[m][sl][ok], 100).astype(float)) if weighted else float(np.median(y[ok]))
+    raw = 2.0 * 2.0 ** level
     return raw, int(round(raw)), int(ok.sum())
 
 

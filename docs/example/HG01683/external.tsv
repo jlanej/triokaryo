@@ -1,0 +1,19 @@
+sample	chrom	start	end	label	match
+HG01683	chrX	5245493	30019024	DRAGEN CNV: CN 2 (segment mean 1.96)	matched: gain whole chrX f 1.00
+HG01683	chrX	30547425	37084065	DRAGEN CNV: CN 2 (segment mean 1.92)	matched: gain whole chrX f 1.00
+HG01683	chrX	37518782	49317161	DRAGEN CNV: CN 2 (segment mean 1.97)	matched: gain whole chrX f 1.00
+HG01683	chrX	49604504	52668501	DRAGEN CNV: CN 2 (segment mean 1.91)	matched: gain whole chrX f 1.00
+HG01683	chrX	52795214	57696712	DRAGEN CNV: CN 2 (segment mean 1.94)	matched: gain whole chrX f 1.00
+HG01683	chrX	62507156	67415844	DRAGEN CNV: CN 2 (segment mean 1.90)	matched: gain whole chrX f 1.00
+HG01683	chrX	67518894	71682599	DRAGEN CNV: CN 2 (segment mean 1.91)	matched: gain whole chrX f 1.00
+HG01683	chrX	72980209	77865333	DRAGEN CNV: CN 2 (segment mean 1.91)	matched: gain whole chrX f 1.00
+HG01683	chrX	79669899	89208198	DRAGEN CNV: CN 2 (segment mean 1.88)	matched: gain whole chrX f 1.00
+HG01683	chrX	92856625	102186359	DRAGEN CNV: CN 2 (segment mean 1.90)	matched: gain whole chrX f 1.00
+HG01683	chrX	102489426	115720303	DRAGEN CNV: CN 2 (segment mean 1.92)	matched: gain whole chrX f 1.00
+HG01683	chrX	115889844	120872168	DRAGEN CNV: CN 2 (segment mean 1.96)	matched: gain whole chrX f 1.00
+HG01683	chrX	120986880	129366304	DRAGEN CNV: CN 2 (segment mean 1.91)	matched: gain whole chrX f 1.00
+HG01683	chrX	129368316	135747411	DRAGEN CNV: CN 2 (segment mean 1.95)	matched: gain whole chrX f 1.00
+HG01683	chrX	135889654	140994965	DRAGEN CNV: CN 2 (segment mean 1.92)	matched: gain whole chrX f 1.00
+HG01683	chrX	141601939	143652805	DRAGEN CNV: CN 2 (segment mean 1.88)	matched: gain whole chrX f 1.00
+HG01683	chrX	145342782	152998160	DRAGEN CNV: CN 2 (segment mean 1.90)	matched: gain whole chrX f 1.00
+HG01683	chrX	0	156040895	DRAGEN ploidy: DUP, 1.93 copies (1.93 of the expected depth)	matched: gain whole chrX f 1.00

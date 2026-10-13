@@ -1,0 +1,389 @@
+{
+ "trio": "HG01358",
+ "members": [
+  "HG01358",
+  "HG01356",
+  "HG01357"
+ ],
+ "sexes": [
+  "M",
+  "M",
+  "F"
+ ],
+ "sexes_read": [
+  "M",
+  "M",
+  "F"
+ ],
+ "x_copies": {
+  "child": 1,
+  "father": 1,
+  "mother": 2
+ },
+ "mie_rate_genome": 0.010654592264298324,
+ "phasing": {
+  "child": {
+   "ref_bias": -0.00423188187776069,
+   "window_sites": 54,
+   "n_phased": 403809,
+   "n_aux": 3361182,
+   "windows_shared": 32
+  },
+  "father": {
+   "ref_bias": -0.004156595054492451,
+   "window_sites": 167,
+   "n_phased": 1199830,
+   "n_aux": 749523,
+   "windows_shared": 47
+  },
+  "mother": {
+   "ref_bias": -0.0030029224068346405,
+   "window_sites": 158,
+   "n_phased": 1200972,
+   "n_aux": 713117,
+   "windows_shared": 35
+  }
+ },
+ "sex_chromosomes": {
+  "child": {
+   "x_copies": 1,
+   "x_copies_raw": 1.0005583057919871,
+   "x_bins": 147,
+   "y_copies": 1,
+   "y_copies_raw": 1.0548146813748243,
+   "y_bins": 11,
+   "y_bins_total": 58,
+   "y_bins_masked": 45,
+   "y_bins_thin": 37,
+   "y_min_sites": 5,
+   "anchor": "M",
+   "y_from_sites": false,
+   "x_check": "agrees",
+   "sex_check": "agrees"
+  },
+  "father": {
+   "x_copies": 1,
+   "x_copies_raw": 1.0047754665023494,
+   "x_bins": 147,
+   "y_copies": 1,
+   "y_copies_raw": 0.9635099334391455,
+   "y_bins": 13,
+   "y_bins_total": 58,
+   "y_bins_masked": 45,
+   "y_bins_thin": 36,
+   "y_min_sites": 5,
+   "anchor": "M",
+   "y_from_sites": false,
+   "x_check": "agrees",
+   "sex_check": "agrees"
+  },
+  "mother": {
+   "x_copies": 2,
+   "x_copies_raw": 1.9758275364894464,
+   "x_bins": 147,
+   "y_copies": 0,
+   "y_copies_raw": 0.0,
+   "y_bins": 0,
+   "y_bins_total": 58,
+   "y_bins_masked": 45,
+   "y_bins_thin": 58,
+   "y_min_sites": 5,
+   "anchor": "F",
+   "y_from_sites": true,
+   "x_check": "agrees",
+   "sex_check": "agrees"
+  }
+ },
+ "karyotypes": {
+  "child": "46,XY,roh(16)(p13.3)",
+  "father": "46,XY",
+  "mother": "mos 47,XX,+12[0.79]/46,XX,roh(15)(q23q25.2)"
+ },
+ "y_father_son": {
+  "log2": 0.01937665950079372,
+  "sites": 2655
+ },
+ "x_offset_trio": 0.0,
+ "genome": "grch38",
+ "mock_note": "",
+ "events": [
+  {
+   "sample": "HG01358",
+   "role": "child",
+   "chrom": "chr16",
+   "start": 0,
+   "end": 7000000,
+   "span": "stretch",
+   "type": "LOH",
+   "bands": "p13.3",
+   "lrr": 0.003326529736991071,
+   "lrr_se": 0.007634957017639664,
+   "n_bins": 7,
+   "f_lrr": NaN,
+   "d_hat": 0.13,
+   "llr_baf": 104.21854322887475,
+   "f_baf": 1.0,
+   "het_rate": 0.01622235999173383,
+   "het_rate_rel": 0.02501440365637777,
+   "n_het": 157,
+   "n_called": 9678,
+   "mie_rate": 0.014411067699993596,
+   "origin": "",
+   "origin_llr": NaN,
+   "origin_n": 25,
+   "inheritance": "new (neither parent carries it)",
+   "external": "",
+   "note": "no heterozygous calls: in every cell (a uniparental disomy, or a deletion the depth missed); a run of homozygosity (both copies identical by descent), not a uniparental disomy: no Mendelian errors",
+   "source": "bands",
+   "phase_shift": 0.24540563072377708,
+   "phase_se": 0.021801036009847365,
+   "n_phased": 25,
+   "f_phase": 0.49081126144755416,
+   "origin_phase": "",
+   "start_fine": NaN,
+   "end_fine": 7383497,
+   "edge_sites": 1711,
+   "homologues": "",
+   "hetero_share": NaN,
+   "stage": "",
+   "centromere": "",
+   "n_crossovers": 0,
+   "crossovers": "",
+   "crossover_states": "",
+   "f": 1.0
+  },
+  {
+   "sample": "HG01357",
+   "role": "mother",
+   "chrom": "chr12",
+   "start": 0,
+   "end": 133275309,
+   "span": "whole",
+   "type": "gain",
+   "bands": "p13.33q24.33",
+   "lrr": 0.48155554859785493,
+   "lrr_se": 0.001435594191881029,
+   "n_bins": 131,
+   "f_lrr": 0.7924966473050872,
+   "d_hat": 0.14,
+   "llr_baf": 120299.4155573966,
+   "f_baf": 0.7777777777777779,
+   "het_rate": 0.6217121983098088,
+   "het_rate_rel": 0.9898162359855095,
+   "n_het": 111307,
+   "n_called": 179033,
+   "mie_rate": 0.01077060278081803,
+   "origin": "",
+   "origin_llr": NaN,
+   "origin_n": 0,
+   "inheritance": "not passed to the child",
+   "external": "DRAGEN CNV: CN 3 (segment mean 1.43); DRAGEN CNV: CN 3 (segment mean 1.43); DRAGEN CNV: CN 3 (segment mean 1.42); DRAGEN CNV: CN 3 (segment mean 1.39); DRAGEN CNV: CN 3 (segment mean 1.38); DRAGEN CNV: CN 3 (segment mean 1.44); DRAGEN CNV: CN 3 (segment mean 1.41); DRAGEN CNV: CN 3 (segment mean 1.36); DRAGEN CNV: CN 3 (segment mean 1.34); DRAGEN CNV: CN 3 (segment mean 1.42); DRAGEN CNV: CN 3 (segment mean 1.42); DRAGEN CNV: CN 3 (segment mean 1.45); DRAGEN CNV: CN 3 (segment mean 1.42); DRAGEN CNV: CN 3 (segment mean 1.39); DRAGEN CNV: CN 3 (segment mean 1.36); DRAGEN ploidy: DUP, 2.82 copies (1.41 of the expected depth)",
+   "note": "",
+   "source": "depth",
+   "phase_shift": 0.13716746739490632,
+   "phase_se": 0.00032615418265558857,
+   "n_phased": 55104,
+   "f_phase": 0.7560924397272786,
+   "origin_phase": "the duplicated homologue is, up to 27.7 Mb, the one passed to the child; the transmitted homologue switches at 27.7 Mb (the child's crossover)",
+   "start_fine": NaN,
+   "end_fine": NaN,
+   "edge_sites": 0,
+   "homologues": "",
+   "hetero_share": NaN,
+   "stage": "",
+   "centromere": "",
+   "n_crossovers": 1,
+   "crossovers": "27.67",
+   "crossover_states": "transmitted>untransmitted",
+   "f": 0.7924966473050872
+  },
+  {
+   "sample": "HG01357",
+   "role": "mother",
+   "chrom": "chr15",
+   "start": 71000000,
+   "end": 79000000,
+   "span": "stretch",
+   "type": "LOH",
+   "bands": "q23q25.2",
+   "lrr": 0.010314602676889658,
+   "lrr_se": 0.005734644574763086,
+   "n_bins": 8,
+   "f_lrr": NaN,
+   "d_hat": 0.08,
+   "llr_baf": 60.21031222288184,
+   "f_baf": 1.0,
+   "het_rate": 0.06007662835249042,
+   "het_rate_rel": 0.10122263783683597,
+   "n_het": 392,
+   "n_called": 6525,
+   "mie_rate": 0.008259961877099029,
+   "origin": "",
+   "origin_llr": NaN,
+   "origin_n": 0,
+   "inheritance": "not passed to the child",
+   "external": "",
+   "note": "no heterozygous calls: in every cell (a uniparental disomy, or a deletion the depth missed); in every cell: a run of homozygosity (identical by descent) unless the depth says otherwise",
+   "source": "bands",
+   "phase_shift": -0.045485562139267154,
+   "phase_se": 0.004969285352866561,
+   "n_phased": 310,
+   "f_phase": 0.09097112427853431,
+   "origin_phase": "",
+   "start_fine": 70137120,
+   "end_fine": 82082658,
+   "edge_sites": 1035,
+   "homologues": "",
+   "hetero_share": NaN,
+   "stage": "",
+   "centromere": "",
+   "n_crossovers": 0,
+   "crossovers": "",
+   "crossover_states": "",
+   "f": 1.0
+  }
+ ],
+ "external": [
+  {
+   "sample": "HG01357",
+   "chrom": "chr12",
+   "start": 78304,
+   "end": 5112389,
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.43)",
+   "match": "matched: gain whole chr12 f 0.79"
+  },
+  {
+   "sample": "HG01357",
+   "chrom": "chr12",
+   "start": 5114413,
+   "end": 7669796,
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.43)",
+   "match": "matched: gain whole chr12 f 0.79"
+  },
+  {
+   "sample": "HG01357",
+   "chrom": "chr12",
+   "start": 11875051,
+   "end": 16266234,
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.42)",
+   "match": "matched: gain whole chr12 f 0.79"
+  },
+  {
+   "sample": "HG01357",
+   "chrom": "chr12",
+   "start": 16268353,
+   "end": 30324660,
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.39)",
+   "match": "matched: gain whole chr12 f 0.79"
+  },
+  {
+   "sample": "HG01357",
+   "chrom": "chr12",
+   "start": 37261900,
+   "end": 45508891,
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.38)",
+   "match": "matched: gain whole chr12 f 0.79"
+  },
+  {
+   "sample": "HG01357",
+   "chrom": "chr12",
+   "start": 45516758,
+   "end": 57633798,
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.44)",
+   "match": "matched: gain whole chr12 f 0.79"
+  },
+  {
+   "sample": "HG01357",
+   "chrom": "chr12",
+   "start": 62000919,
+   "end": 71208215,
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.41)",
+   "match": "matched: gain whole chr12 f 0.79"
+  },
+  {
+   "sample": "HG01357",
+   "chrom": "chr12",
+   "start": 71964009,
+   "end": 81745660,
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.36)",
+   "match": "matched: gain whole chr12 f 0.79"
+  },
+  {
+   "sample": "HG01357",
+   "chrom": "chr12",
+   "start": 81750659,
+   "end": 86031420,
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.34)",
+   "match": "matched: gain whole chr12 f 0.79"
+  },
+  {
+   "sample": "HG01357",
+   "chrom": "chr12",
+   "start": 87540376,
+   "end": 98561694,
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.42)",
+   "match": "matched: gain whole chr12 f 0.79"
+  },
+  {
+   "sample": "HG01357",
+   "chrom": "chr12",
+   "start": 98565769,
+   "end": 108849370,
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.42)",
+   "match": "matched: gain whole chr12 f 0.79"
+  },
+  {
+   "sample": "HG01357",
+   "chrom": "chr12",
+   "start": 108850550,
+   "end": 114012027,
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.45)",
+   "match": "matched: gain whole chr12 f 0.79"
+  },
+  {
+   "sample": "HG01357",
+   "chrom": "chr12",
+   "start": 114013107,
+   "end": 123910210,
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.42)",
+   "match": "matched: gain whole chr12 f 0.79"
+  },
+  {
+   "sample": "HG01357",
+   "chrom": "chr12",
+   "start": 124542085,
+   "end": 127123091,
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.39)",
+   "match": "matched: gain whole chr12 f 0.79"
+  },
+  {
+   "sample": "HG01357",
+   "chrom": "chr12",
+   "start": 128086892,
+   "end": 131645699,
+   "label": "DRAGEN CNV: CN 3 (segment mean 1.36)",
+   "match": "matched: gain whole chr12 f 0.79"
+  },
+  {
+   "sample": "HG01357",
+   "chrom": "chr12",
+   "start": 0,
+   "end": 133275309,
+   "label": "DRAGEN ploidy: DUP, 2.82 copies (1.41 of the expected depth)",
+   "match": "matched: gain whole chr12 f 0.79"
+  }
+ ],
+ "sites_used": 5633846,
+ "records": 5708111,
+ "skipped": {
+  "contig": 74265
+ },
+ "seconds": 82.4,
+ "genotypes_from_pl": false,
+ "depth_sites": "all",
+ "homref_depth_ratio": {
+  "child": null,
+  "father": null,
+  "mother": null
+ }
+}

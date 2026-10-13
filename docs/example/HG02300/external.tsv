@@ -1,0 +1,20 @@
+sample	chrom	start	end	label	match
+HG02300	chrX	5245493	30019024	DRAGEN CNV: CN 2 (segment mean 1.95)	unmatched
+HG02300	chrX	30020374	37084065	DRAGEN CNV: CN 2 (segment mean 1.91)	unmatched
+HG02300	chrX	38728948	49317161	DRAGEN CNV: CN 2 (segment mean 1.96)	unmatched
+HG02300	chrX	49604504	52668501	DRAGEN CNV: CN 2 (segment mean 1.90)	unmatched
+HG02300	chrX	52795214	57696712	DRAGEN CNV: CN 2 (segment mean 1.94)	unmatched
+HG02300	chrX	62507156	67903887	DRAGEN CNV: CN 2 (segment mean 1.88)	unmatched
+HG02300	chrX	67910317	71682599	DRAGEN CNV: CN 2 (segment mean 1.92)	unmatched
+HG02300	chrX	72980209	87023340	DRAGEN CNV: CN 2 (segment mean 1.89)	unmatched
+HG02300	chrX	87025801	89208198	DRAGEN CNV: CN 2 (segment mean 1.86)	unmatched
+HG02300	chrX	95140545	102186359	DRAGEN CNV: CN 2 (segment mean 1.90)	unmatched
+HG02300	chrX	102489426	115720303	DRAGEN CNV: CN 2 (segment mean 1.91)	unmatched
+HG02300	chrX	115889844	119738884	DRAGEN CNV: CN 2 (segment mean 1.93)	unmatched
+HG02300	chrX	120986880	127462949	DRAGEN CNV: CN 2 (segment mean 1.89)	unmatched
+HG02300	chrX	127468217	135747411	DRAGEN CNV: CN 2 (segment mean 1.92)	unmatched
+HG02300	chrX	135889654	140411815	DRAGEN CNV: CN 2 (segment mean 1.92)	unmatched
+HG02300	chrX	141601939	143652805	DRAGEN CNV: CN 2 (segment mean 1.85)	unmatched
+HG02300	chrX	145342782	154143684	DRAGEN CNV: CN 2 (segment mean 1.90)	unmatched
+HG02300	chrX	0	156040895	DRAGEN ploidy: DUP, 1.91 copies (1.91 of the expected depth)	unmatched
+HG02300	chrY	0	57227415	DRAGEN ploidy: DEL, 0.00 copies (0.00 of the expected depth)	unmatched

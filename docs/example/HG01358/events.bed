@@ -1,0 +1,4 @@
+track name="triokaryo HG01358" description="large chromosomal events (triokaryo)" useScore=1
+chr16	0	7000000	HG01358|child|LOH|p13.3|f=1.00	1000	.
+chr12	0	133275309	HG01357|mother|gain|p13.33q24.33|f=0.79|the_duplicated_homologue_is,_up_to_27.7_Mb,_the_one_passed_to_the_child;_the_transmitted_homologue_switches_at_27.7_Mb_(the_child's_crossover)	792	.
+chr15	71000000	79000000	HG01357|mother|LOH|q23q25.2|f=1.00	1000	.
